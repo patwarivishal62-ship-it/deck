@@ -1,0 +1,18 @@
+{
+  "name": "deck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deck — Project Control Center. Marketing project, goal, and task tracker.",
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "build": "npm --prefix client run build",
+    "start:server": "npm --prefix server run start",
+    "start:client": "npm --prefix client run start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

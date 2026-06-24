@@ -1,0 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #14161f;
+  color: #1b1e2a;
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::selection {
+  background: #ff5a38;
+  color: #fff;
+}
+
+*:focus-visible {
+  outline: 2px solid #ff5a38;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* VU-meter style progress bar: dashed track, hatched fill */
+.meter {
+  position: relative;
+  height: 7px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #e3e5ed 0 6px, #f1f2f7 6px 8px);
+  overflow: hidden;
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 3px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.16) 0 1px,
+    transparent 1px 7px
+  );
+  transition: width 0.3s ease;
+}
+
+.project-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

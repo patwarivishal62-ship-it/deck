@@ -1,0 +1,41 @@
+"use client";
+
+export function Field({ label, children }) {
+  return (
+    <label className="mb-3 block">
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-text-soft">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+const inputClasses =
+  "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-text outline-none transition focus:border-signal focus:bg-card";
+
+export function TextInput(props) {
+  return <input {...props} className={`${inputClasses} ${props.className || ""}`} />;
+}
+
+export function TextArea(props) {
+  return <textarea {...props} className={`${inputClasses} resize-none ${props.className || ""}`} />;
+}
+
+export function Select({ children, ...props }) {
+  return (
+    <select {...props} className={`${inputClasses} ${props.className || ""}`}>
+      {children}
+    </select>
+  );
+}
+
+export function Button({ variant = "primary", className = "", ...props }) {
+  const base = "rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50";
+  const variants = {
+    primary: "bg-signal text-white hover:bg-signal-deep",
+    ghost: "bg-transparent text-text-soft hover:bg-paper",
+    danger: "bg-transparent text-signal-deep hover:bg-signal-tint",
+  };
+  return <button {...props} className={`${base} ${variants[variant]} ${className}`} />;
+}

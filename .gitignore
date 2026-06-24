@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.db
+*.db-journal
+.DS_Store
+npm-debug.log*
+
+# Next.js
+client/.next/
+client/out/
+
+# Build artifacts
+server/dist/
