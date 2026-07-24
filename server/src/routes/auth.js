@@ -32,13 +32,17 @@ router.post("/signup", async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const existing = usersDb.findByEmail(normalizedEmail);
+    const existing = await usersDb.findByEmail(normalizedEmail);
     if (existing) {
       return res.status(409).json({ error: "An account with that email already exists." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = usersDb.create({ email: normalizedEmail, passwordHash, name: name?.trim() || null });
+    const user = await usersDb.create({
+      email: normalizedEmail,
+      passwordHash,
+      name: name?.trim() || null,
+    });
 
     const token = signToken(user.id);
     res.cookie("deck_token", token, COOKIE_OPTS);
@@ -56,7 +60,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password are required." });
     }
 
-    const user = usersDb.findByEmail(email.toLowerCase().trim());
+    const user = await usersDb.findByEmail(email.toLowerCase().trim());
     if (!user) {
       return res.status(401).json({ error: "Incorrect email or password." });
     }
@@ -81,7 +85,7 @@ router.post("/logout", (req, res) => {
 });
 
 router.get("/me", requireAuth, async (req, res) => {
-  const user = usersDb.findById(req.userId);
+  const user = await usersDb.findById(req.userId);
   if (!user) return res.status(401).json({ error: "Not signed in." });
   res.json({ user: publicUser(user) });
 });
