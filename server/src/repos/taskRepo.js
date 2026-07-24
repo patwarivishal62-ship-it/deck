@@ -1,43 +1,81 @@
 const { nanoid } = require("nanoid");
-const db = require("../db/connection");
+const { getDb } = require("../db/mongodb");
 
-function listByProject(projectId) {
-  return db.prepare("SELECT * FROM tasks WHERE projectId = ? ORDER BY createdAt ASC").all(projectId);
+function tasks() {
+  return getDb().collection("tasks");
 }
 
-function findById(id) {
-  return db.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
+async function listByProject(projectId) {
+  return await tasks()
+    .find({ projectId })
+    .sort({ createdAt: 1 })
+    .toArray();
 }
 
-function findInProject(id, projectId) {
-  return db.prepare("SELECT * FROM tasks WHERE id = ? AND projectId = ?").get(id, projectId);
+async function findById(id) {
+  return await tasks().findOne({ id });
 }
 
-function create({ projectId, goalId, title, notes, status, dueDate }) {
-  const id = nanoid();
-  const completedAt = status === "done" ? new Date().toISOString() : null;
-  db.prepare(
-    `INSERT INTO tasks (id, projectId, goalId, title, notes, status, dueDate, completedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, projectId, goalId || null, title, notes || "", status || "todo", dueDate || null, completedAt);
-  return findById(id);
+async function findInProject(id, projectId) {
+  return await tasks().findOne({ id, projectId });
 }
 
-function update(id, fields) {
-  const current = findById(id);
+async function create({
+  projectId,
+  goalId,
+  title,
+  notes,
+  status,
+  dueDate,
+}) {
+  const task = {
+    id: nanoid(),
+    projectId,
+    goalId: goalId || null,
+    title,
+    notes: notes || "",
+    status: status || "todo",
+    dueDate: dueDate || null,
+    completedAt: status === "done" ? new Date() : null,
+    createdAt: new Date(),
+  };
+
+  await tasks().insertOne(task);
+
+  return task;
+}
+
+async function update(id, fields) {
+  const current = await findById(id);
   if (!current) return null;
-  const next = { ...current, ...fields };
-  const completedAt =
-    next.status === "done" ? current.completedAt || new Date().toISOString() : null;
 
-  db.prepare(
-    `UPDATE tasks SET goalId = ?, title = ?, notes = ?, status = ?, dueDate = ?, completedAt = ? WHERE id = ?`
-  ).run(next.goalId || null, next.title, next.notes, next.status, next.dueDate || null, completedAt, id);
-  return findById(id);
+  const next = {
+    ...current,
+    ...fields,
+  };
+
+  next.completedAt =
+    next.status === "done"
+      ? current.completedAt || new Date()
+      : null;
+
+  await tasks().updateOne(
+    { id },
+    { $set: next }
+  );
+
+  return await findById(id);
 }
 
-function remove(id) {
-  db.prepare("DELETE FROM tasks WHERE id = ?").run(id);
+async function remove(id) {
+  await tasks().deleteOne({ id });
 }
 
-module.exports = { listByProject, findById, findInProject, create, update, remove };
+module.exports = {
+  listByProject,
+  findById,
+  findInProject,
+  create,
+  update,
+  remove,
+};
