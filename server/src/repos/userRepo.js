@@ -1,28 +1,45 @@
 const { nanoid } = require("nanoid");
-const db = require("../db/connection");
+const { getDb } = require("../db/mongodb");
 
-function findByEmail(email) {
-  return db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+function users() {
+  return getDb().collection("users");
 }
 
-function findById(id) {
-  return db.prepare("SELECT * FROM users WHERE id = ?").get(id);
+async function findByEmail(email) {
+  return await users().findOne({ email });
 }
 
-function create({ email, passwordHash, name }) {
-  const id = nanoid();
-  db.prepare("INSERT INTO users (id, email, passwordHash, name) VALUES (?, ?, ?, ?)").run(
-    id,
+async function findById(id) {
+  return await users().findOne({ id });
+}
+
+async function create({ email, passwordHash, name }) {
+  const user = {
+    id: nanoid(),
     email,
     passwordHash,
-    name || null
-  );
-  return findById(id);
+    name: name || null,
+    createdAt: new Date(),
+  };
+
+  await users().insertOne(user);
+
+  return user;
 }
 
 function toPublic(user) {
   if (!user) return null;
-  return { id: user.id, email: user.email, name: user.name };
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  };
 }
 
-module.exports = { findByEmail, findById, create, toPublic };
+module.exports = {
+  findByEmail,
+  findById,
+  create,
+  toPublic,
+};
