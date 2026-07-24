@@ -1,56 +1,70 @@
 const { nanoid } = require("nanoid");
-const db = require("./database");
+const { getDb } = require("./mongodb");
 const goalsDb = require("./goals");
 const tasksDb = require("./tasks");
 
-function attachChildren(project) {
+function collection() {
+  return getDb().collection("projects");
+}
+
+function toProject(doc) {
+  if (!doc) return null;
+  const { _id, ...project } = doc;
+  return project;
+}
+
+async function attachChildren(project) {
   if (!project) return null;
-  return {
-    ...project,
-    goals: goalsDb.listByProject(project.id),
-    tasks: tasksDb.listByProject(project.id),
-  };
+  const [goals, tasks] = await Promise.all([
+    goalsDb.listByProject(project.id),
+    tasksDb.listByProject(project.id),
+  ]);
+  return { ...project, goals, tasks };
 }
 
-function listByUser(userId) {
-  const stmt = db.prepare("SELECT * FROM projects WHERE userId = ? ORDER BY createdAt ASC");
-  return stmt.all(userId).map(attachChildren);
+async function listByUser(userId) {
+  const docs = await collection().find({ userId }).sort({ createdAt: 1, _id: 1 }).toArray();
+  return Promise.all(docs.map(toProject).map(attachChildren));
 }
 
-function findById(id) {
-  const stmt = db.prepare("SELECT * FROM projects WHERE id = ?");
-  return stmt.get(id) || null;
+async function findById(id) {
+  return toProject(await collection().findOne({ id }));
 }
 
-function findByIdForUser(id, userId) {
-  const stmt = db.prepare("SELECT * FROM projects WHERE id = ? AND userId = ?");
-  const project = stmt.get(id, userId);
+async function findByIdForUser(id, userId) {
+  const project = toProject(await collection().findOne({ id, userId }));
   return project ? attachChildren(project) : null;
 }
 
-function create({ userId, name, description }) {
-  const id = nanoid();
-  const stmt = db.prepare("INSERT INTO projects (id, userId, name, description) VALUES (?, ?, ?, ?)");
-  stmt.run(id, userId, name, description);
-  return attachChildren(findById(id));
+async function create({ userId, name, description }) {
+  const project = {
+    id: nanoid(),
+    userId,
+    name,
+    description,
+    createdAt: new Date().toISOString(),
+  };
+  await collection().insertOne(project);
+  return attachChildren(toProject(project));
 }
 
-function update(id, fields) {
+async function update(id, fields) {
   const allowed = ["name", "description"];
   const keys = Object.keys(fields).filter((k) => allowed.includes(k));
-  if (keys.length === 0) return attachChildren(findById(id));
+  if (keys.length === 0) return attachChildren(await findById(id));
 
-  const setClause = keys.map((k) => `${k} = ?`).join(", ");
-  const values = keys.map((k) => fields[k]);
-  const stmt = db.prepare(`UPDATE projects SET ${setClause} WHERE id = ?`);
-  stmt.run(...values, id);
-  return attachChildren(findById(id));
+  const setDoc = {};
+  keys.forEach((k) => (setDoc[k] = fields[k]));
+  await collection().updateOne({ id }, { $set: setDoc });
+  return attachChildren(await findById(id));
 }
 
-function remove(id) {
-  // goals/tasks cascade via FOREIGN KEY ... ON DELETE CASCADE
-  const stmt = db.prepare("DELETE FROM projects WHERE id = ?");
-  stmt.run(id);
+async function remove(id) {
+  // goals/tasks used to cascade via SQLite's FOREIGN KEY ... ON DELETE CASCADE;
+  // Mongo has no equivalent, so it's done explicitly here.
+  await goalsDb.removeByProject(id);
+  await tasksDb.removeByProject(id);
+  await collection().deleteOne({ id });
 }
 
 module.exports = { listByUser, findById, findByIdForUser, create, update, remove, attachChildren };

@@ -1,51 +1,79 @@
 const { nanoid } = require("nanoid");
-const db = require("./database");
+const { getDb } = require("./mongodb");
 
-function listByProject(projectId) {
-  const stmt = db.prepare("SELECT * FROM tasks WHERE projectId = ? ORDER BY createdAt ASC");
-  return stmt.all(projectId);
+function collection() {
+  return getDb().collection("tasks");
 }
 
-function findById(id) {
-  const stmt = db.prepare("SELECT * FROM tasks WHERE id = ?");
-  return stmt.get(id) || null;
+function toTask(doc) {
+  if (!doc) return null;
+  const { _id, ...task } = doc;
+  return task;
 }
 
-function findByIdInProject(id, projectId) {
-  const stmt = db.prepare("SELECT * FROM tasks WHERE id = ? AND projectId = ?");
-  return stmt.get(id, projectId) || null;
+async function listByProject(projectId) {
+  const docs = await collection().find({ projectId }).sort({ createdAt: 1, _id: 1 }).toArray();
+  return docs.map(toTask);
 }
 
-function create({ projectId, title, notes, goalId, status, dueDate, completedAt }) {
-  const id = nanoid();
-  const stmt = db.prepare(`
-    INSERT INTO tasks (id, projectId, title, notes, goalId, status, dueDate, completedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  stmt.run(id, projectId, title, notes, goalId || null, status, dueDate || null, completedAt || null);
-  return findById(id);
+async function findById(id) {
+  return toTask(await collection().findOne({ id }));
 }
 
-function update(id, fields) {
+async function findByIdInProject(id, projectId) {
+  return toTask(await collection().findOne({ id, projectId }));
+}
+
+async function create({ projectId, title, notes, goalId, status, dueDate, completedAt }) {
+  const task = {
+    id: nanoid(),
+    projectId,
+    title,
+    notes,
+    goalId: goalId || null,
+    status,
+    dueDate: dueDate || null,
+    createdAt: new Date().toISOString(),
+    completedAt: completedAt || null,
+  };
+  await collection().insertOne(task);
+  return toTask(task);
+}
+
+async function update(id, fields) {
   const allowed = ["title", "notes", "goalId", "status", "dueDate", "completedAt"];
   const keys = Object.keys(fields).filter((k) => allowed.includes(k));
   if (keys.length === 0) return findById(id);
 
-  const setClause = keys.map((k) => `${k} = ?`).join(", ");
-  const values = keys.map((k) => (fields[k] === undefined ? null : fields[k]));
-  const stmt = db.prepare(`UPDATE tasks SET ${setClause} WHERE id = ?`);
-  stmt.run(...values, id);
+  const setDoc = {};
+  keys.forEach((k) => (setDoc[k] = fields[k] === undefined ? null : fields[k]));
+  await collection().updateOne({ id }, { $set: setDoc });
   return findById(id);
 }
 
-function unlinkGoal(goalId) {
-  const stmt = db.prepare("UPDATE tasks SET goalId = NULL WHERE goalId = ?");
-  stmt.run(goalId);
+// Replaces SQLite's ON DELETE SET NULL (FOREIGN KEY goalId -> goals.id)
+// when a single goal is deleted.
+async function unlinkGoal(goalId) {
+  await collection().updateMany({ goalId }, { $set: { goalId: null } });
 }
 
-function remove(id) {
-  const stmt = db.prepare("DELETE FROM tasks WHERE id = ?");
-  stmt.run(id);
+async function remove(id) {
+  await collection().deleteOne({ id });
 }
 
-module.exports = { listByProject, findById, findByIdInProject, create, update, unlinkGoal, remove };
+// Replaces SQLite's ON DELETE CASCADE (FOREIGN KEY projectId -> projects.id)
+// when a whole project is deleted.
+async function removeByProject(projectId) {
+  await collection().deleteMany({ projectId });
+}
+
+module.exports = {
+  listByProject,
+  findById,
+  findByIdInProject,
+  create,
+  update,
+  unlinkGoal,
+  remove,
+  removeByProject,
+};
