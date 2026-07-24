@@ -8,27 +8,27 @@ const { STATUSES } = require("../constants");
 const router = express.Router();
 router.use(requireAuth);
 
-function ownedProject(projectId, userId) {
+async function ownedProject(projectId, userId) {
   return projectsDb.findByIdForUser(projectId, userId);
 }
 
 // When a task's status flips to/from "done", nudge its linked goal's currentValue
 // by the goal's step — mirrors the original app's applyTaskStatusChange().
-function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
+async function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
   if (!goalId) return;
   const wasDone = oldStatus === "done";
   const isDone = newStatus === "done";
   if (wasDone === isDone) return;
 
-  const goal = goalsDb.findById(goalId);
+  const goal = await goalsDb.findById(goalId);
   if (!goal) return;
   const step = Number(goal.step) || 1;
   const nextValue = isDone ? goal.currentValue + step : Math.max(0, goal.currentValue - step);
-  goalsDb.setCurrentValue(goalId, nextValue);
+  await goalsDb.setCurrentValue(goalId, nextValue);
 }
 
-router.post("/:projectId/tasks", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.post("/:projectId/tasks", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req.userId);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const { title, notes, goalId, status, dueDate } = req.body || {};
@@ -38,11 +38,11 @@ router.post("/:projectId/tasks", (req, res) => {
   const finalStatus = STATUSES.includes(status) ? status : "todo";
 
   if (goalId) {
-    const goal = goalsDb.findByIdInProject(goalId, project.id);
+    const goal = await goalsDb.findByIdInProject(goalId, project.id);
     if (!goal) return res.status(400).json({ error: "Linked goal not found in this project." });
   }
 
-  const task = tasksDb.create({
+  const task = await tasksDb.create({
     projectId: project.id,
     title: title.trim(),
     notes: (notes || "").trim(),
@@ -53,17 +53,17 @@ router.post("/:projectId/tasks", (req, res) => {
   });
 
   if (finalStatus === "done" && goalId) {
-    syncGoalOnStatusChange(goalId, "todo", "done");
+    await syncGoalOnStatusChange(goalId, "todo", "done");
   }
 
   res.status(201).json({ task });
 });
 
-router.patch("/:projectId/tasks/:taskId", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.patch("/:projectId/tasks/:taskId", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req.userId);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
-  const task = tasksDb.findByIdInProject(req.params.taskId, project.id);
+  const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });
 
   const { title, notes, goalId, status, dueDate } = req.body || {};
@@ -71,14 +71,14 @@ router.patch("/:projectId/tasks/:taskId", (req, res) => {
     return res.status(400).json({ error: "Task title is required." });
   }
   if (goalId) {
-    const goal = goalsDb.findByIdInProject(goalId, project.id);
+    const goal = await goalsDb.findByIdInProject(goalId, project.id);
     if (!goal) return res.status(400).json({ error: "Linked goal not found in this project." });
   }
 
   const oldStatus = task.status;
   const newStatus = status !== undefined ? (STATUSES.includes(status) ? status : task.status) : task.status;
 
-  const updated = tasksDb.update(task.id, {
+  const updated = await tasksDb.update(task.id, {
     ...(title !== undefined ? { title: title.trim() } : {}),
     ...(notes !== undefined ? { notes: notes.trim() } : {}),
     ...(goalId !== undefined ? { goalId: goalId || null } : {}),
@@ -88,7 +88,7 @@ router.patch("/:projectId/tasks/:taskId", (req, res) => {
   });
 
   if (oldStatus !== newStatus) {
-    syncGoalOnStatusChange(updated.goalId, oldStatus, newStatus);
+    await syncGoalOnStatusChange(updated.goalId, oldStatus, newStatus);
   }
 
   res.json({ task: updated });
@@ -96,33 +96,33 @@ router.patch("/:projectId/tasks/:taskId", (req, res) => {
 
 // PATCH /api/projects/:projectId/tasks/:taskId/cycle-status
 // Powers the click-to-cycle status button: todo -> in_progress -> done -> todo
-router.patch("/:projectId/tasks/:taskId/cycle-status", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req.userId);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
-  const task = tasksDb.findByIdInProject(req.params.taskId, project.id);
+  const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });
 
   const idx = STATUSES.indexOf(task.status);
   const newStatus = STATUSES[(idx + 1) % STATUSES.length];
 
-  const updated = tasksDb.update(task.id, {
+  const updated = await tasksDb.update(task.id, {
     status: newStatus,
     completedAt: newStatus === "done" ? new Date().toISOString() : null,
   });
 
-  syncGoalOnStatusChange(task.goalId, task.status, newStatus);
+  await syncGoalOnStatusChange(task.goalId, task.status, newStatus);
   res.json({ task: updated });
 });
 
-router.delete("/:projectId/tasks/:taskId", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.delete("/:projectId/tasks/:taskId", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req.userId);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
-  const task = tasksDb.findByIdInProject(req.params.taskId, project.id);
+  const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });
 
-  tasksDb.remove(task.id);
+  await tasksDb.remove(task.id);
   res.json({ ok: true });
 });
 
