@@ -1,22 +1,33 @@
 const { MongoClient } = require("mongodb");
 
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  throw new Error("MONGODB_URI is not defined");
-}
-
-const client = new MongoClient(uri);
-
+let client;
 let db;
 
 async function connectDB() {
   if (db) return db;
 
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI is not defined");
+  }
+
+  client = new MongoClient(uri);
   await client.connect();
 
   // Replace "deck" with your database name if you chose something else.
   db = client.db("deck");
+
+  // Mirrors the constraints/indexes that used to live in the SQLite schema
+  // (UNIQUE email, FK lookup columns) so lookups stay fast and emails stay unique.
+  await db.collection("users").createIndex({ id: 1 }, { unique: true });
+  await db.collection("users").createIndex({ email: 1 }, { unique: true });
+  await db.collection("projects").createIndex({ id: 1 }, { unique: true });
+  await db.collection("projects").createIndex({ userId: 1 });
+  await db.collection("goals").createIndex({ id: 1 }, { unique: true });
+  await db.collection("goals").createIndex({ projectId: 1 });
+  await db.collection("tasks").createIndex({ id: 1 }, { unique: true });
+  await db.collection("tasks").createIndex({ projectId: 1 });
+  await db.collection("tasks").createIndex({ goalId: 1 });
 
   console.log("✅ Connected to MongoDB");
 
@@ -34,3 +45,4 @@ function getDb() {
 module.exports = {
   connectDB,
   getDb,
+};
