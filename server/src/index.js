@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+const { connectDB } = require("./db/mongodb");
+
 const authRoutes = require("./routes/auth");
 const projectRoutes = require("./routes/projects");
 const goalRoutes = require("./routes/goals");
@@ -16,24 +18,40 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
-// Goals and tasks are nested under /api/projects/:projectId/... inside their own routers.
 app.use("/api/projects", goalRoutes);
 app.use("/api/projects", taskRoutes);
 
-// Centralized fallback error handler.
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: "Something went wrong on the server." });
+  res.status(500).json({
+    error: "Something went wrong on the server.",
+  });
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Deck API listening on http://localhost:${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Deck API listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to connect to MongoDB");
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+startServer();
