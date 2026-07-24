@@ -1,56 +1,87 @@
 const { nanoid } = require("nanoid");
-const db = require("../db/connection");
+const { getDb } = require("../db/mongodb");
 
-function listByProject(projectId) {
-  return db.prepare("SELECT * FROM goals WHERE projectId = ? ORDER BY rowid ASC").all(projectId);
+function goals() {
+  return getDb().collection("goals");
 }
 
-function findById(id) {
-  return db.prepare("SELECT * FROM goals WHERE id = ?").get(id);
+async function listByProject(projectId) {
+  return await goals()
+    .find({ projectId })
+    .sort({ createdAt: 1 })
+    .toArray();
 }
 
-function findInProject(id, projectId) {
-  return db.prepare("SELECT * FROM goals WHERE id = ? AND projectId = ?").get(id, projectId);
+async function findById(id) {
+  return await goals().findOne({ id });
 }
 
-function create({ projectId, category, platform, label, targetValue, currentValue, unit, period, step }) {
-  const id = nanoid();
-  db.prepare(
-    `INSERT INTO goals (id, projectId, category, platform, label, targetValue, currentValue, unit, period, step)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, projectId, category, platform, label, targetValue, currentValue, unit, period, step);
-  return findById(id);
+async function findInProject(id, projectId) {
+  return await goals().findOne({ id, projectId });
 }
 
-function update(id, fields) {
-  const current = findById(id);
-  if (!current) return null;
-  const next = { ...current, ...fields };
-  db.prepare(
-    `UPDATE goals SET category = ?, platform = ?, label = ?, targetValue = ?, currentValue = ?,
-     unit = ?, period = ?, step = ? WHERE id = ?`
-  ).run(
-    next.category,
-    next.platform,
-    next.label,
-    next.targetValue,
-    next.currentValue,
-    next.unit,
-    next.period,
-    next.step,
-    id
+async function create({
+  projectId,
+  category,
+  platform,
+  label,
+  targetValue,
+  currentValue,
+  unit,
+  period,
+  step,
+}) {
+  const goal = {
+    id: nanoid(),
+    projectId,
+    category,
+    platform,
+    label,
+    targetValue,
+    currentValue,
+    unit,
+    period,
+    step,
+    createdAt: new Date(),
+  };
+
+  await goals().insertOne(goal);
+  return goal;
+}
+
+async function update(id, fields) {
+  await goals().updateOne(
+    { id },
+    { $set: fields }
   );
+
   return findById(id);
 }
 
-function setCurrentValue(id, currentValue) {
-  db.prepare("UPDATE goals SET currentValue = ? WHERE id = ?").run(currentValue, id);
+async function setCurrentValue(id, currentValue) {
+  await goals().updateOne(
+    { id },
+    { $set: { currentValue } }
+  );
+
   return findById(id);
 }
 
-function remove(id) {
-  db.prepare("UPDATE tasks SET goalId = NULL WHERE goalId = ?").run(id);
-  db.prepare("DELETE FROM goals WHERE id = ?").run(id);
+async function remove(id) {
+  await getDb().collection("tasks").updateMany(
+    { goalId: id },
+    { $set: { goalId: null } }
+  );
+
+  await goals().deleteOne({ id });
 }
 
-module.exports = { listByProject, findById, findInProject, create, update, setCurrentValue, remove };
+module.exports = {
+  listByProject,
+  findById,
+  findInProject,
+  create,
+  update,
+  setCurrentValue,
+  remove,
+};
