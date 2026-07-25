@@ -24,6 +24,22 @@ export const STATUSES = [
   { value: "done", label: "Done" },
 ];
 
+export const PRIORITIES = {
+  low: { label: "Low", color: "#8a8fa3" },
+  medium: { label: "Medium", color: "#e8a23d" },
+  high: { label: "High", color: "#ff5a38" },
+};
+
+export const PRIORITY_KEYS = Object.keys(PRIORITIES);
+
+export const PROJECT_SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "name", label: "Name (A–Z)" },
+  { value: "dueDate", label: "Due date" },
+  { value: "priority", label: "Priority" },
+];
+
 export function statusLabel(value) {
   return STATUSES.find((s) => s.value === value)?.label || value;
 }

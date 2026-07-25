@@ -38,7 +38,16 @@ export const api = {
   deleteAccount: (body) => request("/account/me", { method: "DELETE", body }),
 
   // projects
-  listProjects: () => request("/projects"),
+  listProjects: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.tags && params.tags.length) query.set("tags", params.tags.join(","));
+    if (params.priority) query.set("priority", params.priority);
+    if (params.archived !== undefined) query.set("archived", String(params.archived));
+    if (params.sort) query.set("sort", params.sort);
+    const qs = query.toString();
+    return request(`/projects${qs ? `?${qs}` : ""}`);
+  },
   getProject: (id) => request(`/projects/${id}`),
   createProject: (body) => request("/projects", { method: "POST", body }),
   updateProject: (id, body) => request(`/projects/${id}`, { method: "PATCH", body }),

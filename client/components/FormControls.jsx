@@ -34,8 +34,10 @@ export function Button({ variant = "primary", className = "", ...props }) {
   const base = "rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50";
   const variants = {
     primary: "bg-signal text-white hover:bg-signal-deep",
+    secondary: "border border-line bg-card text-text hover:border-signal/40",
     ghost: "bg-transparent text-text-soft hover:bg-paper",
     danger: "bg-transparent text-signal-deep hover:bg-signal-tint",
+    destructive: "bg-signal-deep text-white hover:bg-signal",
   };
   return <button {...props} className={`${base} ${variants[variant]} ${className}`} />;
 }
