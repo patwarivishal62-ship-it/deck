@@ -67,4 +67,15 @@ async function remove(id) {
   await collection().deleteOne({ id });
 }
 
-module.exports = { listByUser, findById, findByIdForUser, create, update, remove, attachChildren };
+// Used when a whole account is deleted — removes every project this user
+// owns, cascading to each project's goals and tasks the same way remove() does.
+async function removeByUser(userId) {
+  const docs = await collection().find({ userId }, { projection: { id: 1 } }).toArray();
+  for (const doc of docs) {
+    await goalsDb.removeByProject(doc.id);
+    await tasksDb.removeByProject(doc.id);
+  }
+  await collection().deleteMany({ userId });
+}
+
+module.exports = { listByUser, findById, findByIdForUser, create, update, remove, removeByUser, attachChildren };

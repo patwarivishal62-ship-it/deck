@@ -11,6 +11,9 @@ function toRequest(doc) {
   return request;
 }
 
+// Kept as an audit trail of account deletions (who, when, why) even though
+// deletion is now immediate rather than going through manual review — the
+// record documents that it happened.
 async function create({ userId, fullName, email, reason }) {
   const request = {
     id: nanoid(),
@@ -19,15 +22,10 @@ async function create({ userId, fullName, email, reason }) {
     email,
     reason: reason || "",
     requestedAt: new Date().toISOString(),
-    status: "pending",
+    status: "approved",
   };
   await collection().insertOne(request);
   return toRequest(request);
 }
 
-// A user can have at most one open (pending) request at a time.
-async function findPendingByUser(userId) {
-  return toRequest(await collection().findOne({ userId, status: "pending" }));
-}
-
-module.exports = { create, findPendingByUser };
+module.exports = { create };

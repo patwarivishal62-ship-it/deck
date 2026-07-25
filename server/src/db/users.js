@@ -40,4 +40,8 @@ async function updatePasswordHash(id, passwordHash) {
   await collection().updateOne({ id }, { $set: { passwordHash } });
 }
 
-module.exports = { findByEmail, findById, create, updateName, updatePasswordHash };
+async function deleteById(id) {
+  await collection().deleteOne({ id });
+}
+
+module.exports = { findByEmail, findById, create, updateName, updatePasswordHash, deleteById };
