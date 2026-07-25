@@ -20,6 +20,12 @@ export default function TopBar() {
         {user && (
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs text-text-faint">{user.name || user.email}</span>
+            <Link
+              href="/settings"
+              className="rounded-md border border-ink-line px-3 py-1.5 text-xs font-medium text-white/80 transition hover:border-signal hover:text-white"
+            >
+              Settings
+            </Link>
             <button
               type="button"
               onClick={logout}
