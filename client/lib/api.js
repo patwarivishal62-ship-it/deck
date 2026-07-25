@@ -31,6 +31,8 @@ export const api = {
   me: () => request("/auth/me"),
   updateProfile: (body) => request("/auth/me", { method: "PATCH", body }),
   changePassword: (body) => request("/auth/change-password", { method: "POST", body }),
+  forgotPassword: (body) => request("/auth/forgot-password", { method: "POST", body }),
+  resetPassword: (body) => request("/auth/reset-password", { method: "POST", body }),
 
   // account
   deleteAccount: (body) => request("/account/me", { method: "DELETE", body }),

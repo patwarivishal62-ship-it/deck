@@ -44,4 +44,28 @@ async function deleteById(id) {
   await collection().deleteOne({ id });
 }
 
-module.exports = { findByEmail, findById, create, updateName, updatePasswordHash, deleteById };
+// Stores a hash of the reset token (never the raw token) plus an expiry.
+// The raw token only ever exists in the emailed link and in memory here.
+async function setResetToken(id, resetTokenHash, resetTokenExpiresAt) {
+  await collection().updateOne({ id }, { $set: { resetTokenHash, resetTokenExpiresAt } });
+}
+
+async function findByResetTokenHash(resetTokenHash) {
+  return toUser(await collection().findOne({ resetTokenHash }));
+}
+
+async function clearResetToken(id) {
+  await collection().updateOne({ id }, { $unset: { resetTokenHash: "", resetTokenExpiresAt: "" } });
+}
+
+module.exports = {
+  findByEmail,
+  findById,
+  create,
+  updateName,
+  updatePasswordHash,
+  deleteById,
+  setResetToken,
+  findByResetTokenHash,
+  clearResetToken,
+};

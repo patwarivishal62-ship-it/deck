@@ -81,6 +81,14 @@ function LoginForm() {
                 placeholder="••••••••"
               />
             </Field>
+            {mode === "login" && (
+              <Link
+                href="/forgot-password"
+                className="mb-3 mt-[-8px] inline-block text-xs text-text-soft hover:text-signal-deep"
+              >
+                Forgot password?
+              </Link>
+            )}
 
             {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}
 

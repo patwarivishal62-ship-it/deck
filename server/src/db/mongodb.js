@@ -21,6 +21,7 @@ async function connectDB() {
   // (UNIQUE email, FK lookup columns) so lookups stay fast and emails stay unique.
   await db.collection("users").createIndex({ id: 1 }, { unique: true });
   await db.collection("users").createIndex({ email: 1 }, { unique: true });
+  await db.collection("users").createIndex({ resetTokenHash: 1 }, { sparse: true });
   await db.collection("projects").createIndex({ id: 1 }, { unique: true });
   await db.collection("projects").createIndex({ userId: 1 });
   await db.collection("goals").createIndex({ id: 1 }, { unique: true });

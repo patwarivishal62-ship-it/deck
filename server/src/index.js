@@ -13,6 +13,11 @@ const taskRoutes = require("./routes/tasks");
 
 const app = express();
 
+// Render sits behind a reverse proxy — without this, rate limiting (and
+// anything else relying on req.ip) would see Render's proxy IP for every
+// request instead of the real client IP.
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",

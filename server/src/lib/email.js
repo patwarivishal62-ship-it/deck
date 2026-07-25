@@ -60,4 +60,23 @@ async function sendAccountDeletedEmail({ fullName, email, reason, requestedAt })
   });
 }
 
-module.exports = { sendEmail, sendAccountDeletedEmail };
+// NOTE: without a verified custom domain on Resend, this can only actually
+// deliver when `to` matches the email that owns the Resend account. Until a
+// domain is verified, password reset only works end-to-end for that one
+// address — every other signup's reset request will fail to send.
+async function sendPasswordResetEmail({ to, resetUrl }) {
+  const html = `
+    <h2>Reset your Deck password</h2>
+    <p>We got a request to reset the password on your Deck account.</p>
+    <p><a href="${resetUrl}">Click here to choose a new password</a>. This link expires in 1 hour.</p>
+    <p>If you didn't request this, you can safely ignore this email.</p>
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: "Reset your Deck password",
+    html,
+  });
+}
+
+module.exports = { sendEmail, sendAccountDeletedEmail, sendPasswordResetEmail };
