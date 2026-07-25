@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const { connectDB } = require("./db/mongodb");
 
 const authRoutes = require("./routes/auth");
+const accountRoutes = require("./routes/account");
 const projectRoutes = require("./routes/projects");
 const goalRoutes = require("./routes/goals");
 const taskRoutes = require("./routes/tasks");
@@ -27,6 +28,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/account", accountRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/projects", goalRoutes);
 app.use("/api/projects", taskRoutes);

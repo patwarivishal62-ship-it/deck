@@ -31,4 +31,13 @@ async function create({ email, passwordHash, name }) {
   return toUser(user);
 }
 
-module.exports = { findByEmail, findById, create };
+async function updateName(id, name) {
+  await collection().updateOne({ id }, { $set: { name: name || null } });
+  return findById(id);
+}
+
+async function updatePasswordHash(id, passwordHash) {
+  await collection().updateOne({ id }, { $set: { passwordHash } });
+}
+
+module.exports = { findByEmail, findById, create, updateName, updatePasswordHash };

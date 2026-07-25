@@ -90,4 +90,44 @@ router.get("/me", requireAuth, async (req, res) => {
   res.json({ user: publicUser(user) });
 });
 
+router.patch("/me", requireAuth, async (req, res) => {
+  try {
+    const { name } = req.body || {};
+    if (name !== undefined && typeof name !== "string") {
+      return res.status(400).json({ error: "Name must be text." });
+    }
+    const updated = await usersDb.updateName(req.userId, name?.trim() || null);
+    if (!updated) return res.status(401).json({ error: "Not signed in." });
+    res.json({ user: publicUser(updated) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not update profile." });
+  }
+});
+
+router.post("/change-password", requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current and new password are required." });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters." });
+    }
+
+    const user = await usersDb.findById(req.userId);
+    if (!user) return res.status(401).json({ error: "Not signed in." });
+
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "Current password is incorrect." });
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await usersDb.updatePasswordHash(user.id, passwordHash);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not change password." });
+  }
+});
+
 module.exports = router;
