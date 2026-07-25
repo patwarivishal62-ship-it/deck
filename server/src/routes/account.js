@@ -1,56 +1,61 @@
 const express = require("express");
 const usersDb = require("../db/users");
+const projectsDb = require("../db/projects");
 const deletionRequestsDb = require("../db/deletionRequests");
 const { requireAuth } = require("../middleware/auth");
-const { sendDeletionRequestEmail } = require("../lib/email");
+const { sendAccountDeletedEmail } = require("../lib/email");
 
 const router = express.Router();
 router.use(requireAuth);
 
-// Note: this does NOT delete the account. It records a request for an admin
-// to review, per the "no immediate deletion" requirement, and notifies the
-// admin by email (via Resend — see lib/email.js).
-router.post("/deletion-request", async (req, res) => {
+// Must match the cookie options used when the cookie was set (routes/auth.js),
+// or clearCookie won't actually remove it in the browser.
+const COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: "none",
+  secure: true,
+};
+
+// Deletes the account, all of its projects/goals/tasks, and signs the user
+// out — immediately and irreversibly. An audit record is still kept
+// (db/deletionRequests.js) and the admin is notified by email.
+router.delete("/me", async (req, res) => {
   try {
     const user = await usersDb.findById(req.userId);
     if (!user) return res.status(401).json({ error: "Not signed in." });
 
-    const existing = await deletionRequestsDb.findPendingByUser(user.id);
-    if (existing) {
-      return res.status(409).json({ error: "You already have a pending deletion request." });
-    }
-
     const { reason } = req.body || {};
-    const request = await deletionRequestsDb.create({
+
+    await deletionRequestsDb.create({
       userId: user.id,
       fullName: user.name,
       email: user.email,
       reason: (reason || "").trim(),
     });
 
-    // A failed email shouldn't fail the request itself — the record is what
-    // matters, the email is a courtesy notification on top of it.
+    await projectsDb.removeByUser(user.id);
+    await usersDb.deleteById(user.id);
+
+    res.clearCookie("deck_token", COOKIE_OPTS);
+
+    // A failed email shouldn't undo the deletion that already happened —
+    // the account is gone either way, the email is just a courtesy notice.
     try {
-      await sendDeletionRequestEmail({
-        fullName: request.fullName,
-        email: request.email,
-        reason: request.reason,
-        requestedAt: request.requestedAt,
+      await sendAccountDeletedEmail({
+        fullName: user.name,
+        email: user.email,
+        reason: (reason || "").trim(),
+        requestedAt: new Date().toISOString(),
       });
     } catch (emailErr) {
-      console.error("Failed to send deletion-request admin email:", emailErr);
+      console.error("Failed to send account-deleted admin email:", emailErr);
     }
 
-    res.status(201).json({ request });
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Could not submit deletion request." });
+    res.status(500).json({ error: "Could not delete account." });
   }
-});
-
-router.get("/deletion-request", async (req, res) => {
-  const request = await deletionRequestsDb.findPendingByUser(req.userId);
-  res.json({ request });
 });
 
 module.exports = router;

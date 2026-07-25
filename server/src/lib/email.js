@@ -37,26 +37,27 @@ async function sendEmail({ to, subject, html }) {
   return res.json();
 }
 
-async function sendDeletionRequestEmail({ fullName, email, reason, requestedAt }) {
+async function sendAccountDeletedEmail({ fullName, email, reason, requestedAt }) {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) {
-    console.warn("ADMIN_EMAIL is not set — skipping deletion request notification.");
+    console.warn("ADMIN_EMAIL is not set — skipping account-deletion notification.");
     return { skipped: true };
   }
 
   const html = `
-    <h2>New Account Deletion Request – Deck</h2>
+    <h2>Account Deleted – Deck</h2>
+    <p>The following account was deleted immediately by its owner:</p>
     <p><strong>Full Name:</strong> ${fullName || "(not set)"}</p>
     <p><strong>Email:</strong> ${email}</p>
-    <p><strong>Reason:</strong> ${reason ? reason : "(none given)"}</p>
-    <p><strong>Requested Date:</strong> ${new Date(requestedAt).toLocaleString()}</p>
+    <p><strong>Reason given:</strong> ${reason ? reason : "(none given)"}</p>
+    <p><strong>Deleted At:</strong> ${new Date(requestedAt).toLocaleString()}</p>
   `.trim();
 
   return sendEmail({
     to: adminEmail,
-    subject: "New Account Deletion Request – Deck",
+    subject: "Account Deleted – Deck",
     html,
   });
 }
 
-module.exports = { sendEmail, sendDeletionRequestEmail };
+module.exports = { sendEmail, sendAccountDeletedEmail };
