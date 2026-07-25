@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -10,6 +10,7 @@ import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
 import TaskFormModal from "@/components/TaskFormModal";
+import ProjectFormModal from "@/components/ProjectFormModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { Button } from "@/components/FormControls";
 import Meter from "@/components/Meter";
@@ -17,9 +18,14 @@ import { api } from "@/lib/api";
 
 function ProjectDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [projectFormOpen, setProjectFormOpen] = useState(false);
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const [goalFormOpen, setGoalFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -47,6 +53,23 @@ function ProjectDetail() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // --- Project itself ---
+  async function handleProjectSubmit(values) {
+    const data = await api.updateProject(id, values);
+    setProject((p) => ({ ...p, ...data.project }));
+  }
+
+  async function handleDeleteProject() {
+    setDeletingProject(true);
+    try {
+      await api.deleteProject(id);
+      router.replace("/projects");
+    } catch (err) {
+      setError(err.message);
+      setDeletingProject(false);
+    }
+  }
 
   // --- Goals ---
   async function handleGoalSubmit(values) {
@@ -187,16 +210,12 @@ function ProjectDetail() {
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingGoal(null);
-                setGoalFormOpen(true);
-              }}
-            >
+            <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
               Edit project
             </Button>
-            <Button variant="destructive">Delete</Button>
+            <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
+              Delete
+            </Button>
           </div>
         </div>
 
@@ -334,6 +353,21 @@ function ProjectDetail() {
           )}
         </section>
       </main>
+
+      <ProjectFormModal
+        open={projectFormOpen}
+        onClose={() => setProjectFormOpen(false)}
+        onSubmit={handleProjectSubmit}
+        initial={project}
+      />
+      <ConfirmModal
+        open={deleteProjectOpen}
+        title="Delete project?"
+        message={`This will permanently delete "${project.name}" along with all of its goals and tasks.`}
+        onConfirm={handleDeleteProject}
+        onCancel={() => setDeleteProjectOpen(false)}
+        busy={deletingProject}
+      />
 
       <GoalFormModal
         open={goalFormOpen}
