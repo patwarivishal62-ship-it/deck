@@ -6,8 +6,11 @@ import TopBar from "@/components/TopBar";
 import ProjectCard from "@/components/ProjectCard";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import StatCard from "@/components/StatCard";
+import RecentActivity from "@/components/RecentActivity";
 import { Button } from "@/components/FormControls";
 import { api } from "@/lib/api";
+import { summarizeProjectStatuses } from "@/lib/projectStatus";
 
 function ProjectsDashboard() {
   const [projects, setProjects] = useState([]);
@@ -67,6 +70,27 @@ function ProjectsDashboard() {
         </div>
 
         {error && <p className="mb-4 text-sm text-signal-deep">{error}</p>}
+
+        {!loading && projects.length > 0 && (
+          <>
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(() => {
+                const summary = summarizeProjectStatuses(projects);
+                return (
+                  <>
+                    <StatCard label="Total projects" value={summary.total} />
+                    <StatCard label="Completed" value={summary.completed} accent="good" />
+                    <StatCard label="In progress" value={summary.in_progress} accent="signal" />
+                    <StatCard label="Pending" value={summary.pending} accent="faint" />
+                  </>
+                );
+              })()}
+            </div>
+            <div className="mb-6">
+              <RecentActivity projects={projects} />
+            </div>
+          </>
+        )}
 
         {loading ? (
           <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
