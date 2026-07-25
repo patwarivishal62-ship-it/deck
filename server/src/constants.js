@@ -14,4 +14,13 @@ const CATEGORY_KEYS = Object.keys(CATEGORIES);
 const PERIODS = ["weekly", "monthly", "quarterly", "onetime"];
 const STATUSES = ["todo", "in_progress", "done"];
 
-module.exports = { CATEGORIES, CATEGORY_KEYS, PERIODS, STATUSES };
+const PRIORITIES = {
+  low: { label: "Low", color: "#8a8fa3" },
+  medium: { label: "Medium", color: "#e8a23d" },
+  high: { label: "High", color: "#ff5a38" },
+};
+const PRIORITY_KEYS = Object.keys(PRIORITIES);
+
+const PROJECT_SORTS = ["newest", "oldest", "name", "dueDate", "priority"];
+
+module.exports = { CATEGORIES, CATEGORY_KEYS, PERIODS, STATUSES, PRIORITIES, PRIORITY_KEYS, PROJECT_SORTS };

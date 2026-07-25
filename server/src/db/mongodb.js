@@ -24,6 +24,8 @@ async function connectDB() {
   await db.collection("users").createIndex({ resetTokenHash: 1 }, { sparse: true });
   await db.collection("projects").createIndex({ id: 1 }, { unique: true });
   await db.collection("projects").createIndex({ userId: 1 });
+  await db.collection("projects").createIndex({ userId: 1, archived: 1 });
+  await db.collection("projects").createIndex({ userId: 1, tags: 1 });
   await db.collection("goals").createIndex({ id: 1 }, { unique: true });
   await db.collection("goals").createIndex({ projectId: 1 });
   await db.collection("tasks").createIndex({ id: 1 }, { unique: true });
