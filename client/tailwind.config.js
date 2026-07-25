@@ -41,9 +41,19 @@ module.exports = {
           "70%": { boxShadow: "0 0 0 7px rgba(255,90,56,0)" },
           "100%": { boxShadow: "0 0 0 0 rgba(255,90,56,0)" },
         },
+        float: {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(16px, -22px)" },
+        },
+        float_alt: {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(-18px, 18px)" },
+        },
       },
       animation: {
         pulse_dot: "pulse_dot 2.6s infinite",
+        float: "float 14s ease-in-out infinite",
+        float_alt: "float_alt 17s ease-in-out infinite",
       },
     },
   },
