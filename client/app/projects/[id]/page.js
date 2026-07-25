@@ -15,6 +15,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { Button } from "@/components/FormControls";
 import Meter from "@/components/Meter";
 import { api } from "@/lib/api";
+import { PRIORITIES } from "@/lib/constants";
 
 function ProjectDetail() {
   const { id } = useParams();
@@ -208,6 +209,36 @@ function ProjectDetail() {
           <div>
             <h1 className="font-display text-2xl font-semibold text-text">{project.name}</h1>
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span
+                className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-white"
+                style={{ backgroundColor: (PRIORITIES[project.priority] || PRIORITIES.medium).color }}
+              >
+                {(PRIORITIES[project.priority] || PRIORITIES.medium).label}
+              </span>
+              {project.archived && (
+                <span className="rounded bg-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-faint">
+                  Archived
+                </span>
+              )}
+              {project.dueDate && (
+                <span className="text-xs text-text-faint">
+                  Due {new Date(`${project.dueDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              )}
+              {project.tags && project.tags.length > 0 && (
+                <span className="flex flex-wrap gap-1.5">
+                  {project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-line bg-paper px-2 py-0.5 text-[11px] text-text-soft"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 gap-2">
             <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
