@@ -29,6 +29,12 @@ export const api = {
   login: (body) => request("/auth/login", { method: "POST", body }),
   logout: () => request("/auth/logout", { method: "POST" }),
   me: () => request("/auth/me"),
+  updateProfile: (body) => request("/auth/me", { method: "PATCH", body }),
+  changePassword: (body) => request("/auth/change-password", { method: "POST", body }),
+
+  // account
+  requestAccountDeletion: (body) => request("/account/deletion-request", { method: "POST", body }),
+  getDeletionRequest: () => request("/account/deletion-request"),
 
   // projects
   listProjects: () => request("/projects"),
