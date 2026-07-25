@@ -175,13 +175,11 @@ export default function Home() {
     if (!loading && user) router.replace("/projects");
   }, [loading, user, router]);
 
-  if (loading || user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-ink">
-        <span className="font-mono text-xs uppercase tracking-widest text-text-faint">Loading…</span>
-      </div>
-    );
-  }
-
+  // Show the landing page immediately rather than blocking on the
+  // in-flight session check — this matters most when Render's free tier
+  // is "cold" and that check can take many seconds. An already-logged-in
+  // visitor sees the landing page for a moment, then gets redirected once
+  // the check resolves; that's a far better tradeoff than every new,
+  // logged-out visitor staring at a blank screen on their first visit.
   return <LandingPage />;
 }
