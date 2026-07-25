@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { Field, TextInput, Button } from "@/components/FormControls";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login, signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [mode, setMode] = useState(searchParams.get("mode") === "signup" ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -37,10 +39,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-ink px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2">
+        <Link
+          href="/"
+          className="mb-6 flex items-center justify-center gap-2 transition hover:opacity-80"
+        >
           <span className="h-2 w-2 animate-pulse_dot rounded-full bg-signal" />
           <span className="font-display text-xl font-semibold text-white">Deck</span>
-        </div>
+        </Link>
 
         <div className="rounded-card bg-card p-6 shadow-2xl">
           <h1 className="mb-1 font-display text-lg font-semibold text-text">
@@ -97,5 +102,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
