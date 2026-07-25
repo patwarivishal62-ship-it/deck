@@ -1,4 +1,5 @@
 import TopBar from "@/components/TopBar";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata = {
   title: "Terms & Conditions — Deck",
@@ -18,6 +19,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-paper">
       <TopBar />
       <main className="mx-auto max-w-2xl px-5 py-10">
+        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Terms & Conditions" }]} />
         <h1 className="mb-1 font-display text-2xl font-semibold text-text">Terms &amp; Conditions</h1>
         <p className="mb-8 text-sm text-text-faint">Last updated: July 2026</p>
 

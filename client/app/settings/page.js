@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
 import SettingsCard from "@/components/SettingsCard";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Modal from "@/components/Modal";
 import { Field, TextInput, TextArea, Button } from "@/components/FormControls";
 import { useAuth } from "@/lib/AuthContext";
@@ -217,6 +218,7 @@ function SettingsPageContent() {
     <div className="min-h-screen bg-paper">
       <TopBar />
       <main className="mx-auto max-w-2xl px-5 py-8">
+        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Settings" }]} />
         <div className="mb-6">
           <h1 className="font-display text-2xl font-semibold text-text">Settings</h1>
           <p className="text-sm text-text-soft">Manage your profile, security, and account.</p>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
@@ -172,12 +173,13 @@ function ProjectDetail() {
     <div className="min-h-screen bg-paper">
       <TopBar />
       <main className="mx-auto max-w-6xl px-5 py-8">
-        <Link href="/projects" className="mb-4 inline-flex items-center gap-1 text-sm text-text-soft hover:text-signal-deep">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          All projects
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/projects" },
+            { label: "Projects", href: "/projects" },
+            { label: project.name },
+          ]}
+        />
 
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
