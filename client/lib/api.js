@@ -33,8 +33,7 @@ export const api = {
   changePassword: (body) => request("/auth/change-password", { method: "POST", body }),
 
   // account
-  requestAccountDeletion: (body) => request("/account/deletion-request", { method: "POST", body }),
-  getDeletionRequest: () => request("/account/deletion-request"),
+  deleteAccount: (body) => request("/account/me", { method: "DELETE", body }),
 
   // projects
   listProjects: () => request("/projects"),

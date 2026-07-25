@@ -40,8 +40,14 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  // Used after account deletion: the account and cookie are already gone
+  // server-side by that point, this just clears the in-memory state to match.
+  const clearSession = useCallback(() => {
+    setUser(null);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateProfile, clearSession }}>
       {children}
     </AuthContext.Provider>
   );

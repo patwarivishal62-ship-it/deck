@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
 import SettingsCard from "@/components/SettingsCard";
@@ -124,23 +125,26 @@ function SecuritySection() {
 }
 
 function AccountActionsSection() {
-  const { logout } = useAuth();
+  const router = useRouter();
+  const { logout, clearSession } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+
+  const canConfirm = confirmText.trim().toLowerCase() === "delete";
 
   async function handleSubmit() {
+    if (!canConfirm) return;
     setSubmitting(true);
     setError("");
     try {
-      await api.requestAccountDeletion({ reason });
-      setSubmitted(true);
-      setConfirmOpen(false);
+      await api.deleteAccount({ reason });
+      clearSession();
+      router.replace("/login");
     } catch (err) {
       setError(err.message);
-    } finally {
       setSubmitting(false);
     }
   }
@@ -161,33 +165,46 @@ function AccountActionsSection() {
         <div>
           <p className="text-sm font-medium text-signal-deep">Delete account</p>
           <p className="text-xs text-text-soft">
-            Submits a request for your account and data to be permanently removed.
+            Permanently deletes your account and all of its projects, goals, and tasks — right away.
           </p>
         </div>
-        {submitted ? (
-          <span className="text-xs font-medium text-good">Request submitted</span>
-        ) : (
-          <Button variant="danger" onClick={() => setConfirmOpen(true)}>
-            Delete account
-          </Button>
-        )}
+        <Button variant="danger" onClick={() => setConfirmOpen(true)}>
+          Delete account
+        </Button>
       </div>
 
-      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Delete your account?">
-        <p className="mb-3 text-sm text-text-soft">
-          This action is irreversible. Your projects and account data may be permanently removed once
-          reviewed. This submits a request — your account isn't deleted immediately.
+      <Modal
+        open={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setConfirmText("");
+        }}
+        title="Delete your account?"
+      >
+        <p className="mb-3 text-sm text-signal-deep">
+          This deletes your account and every project, goal, and task in it immediately. This cannot be
+          undone.
         </p>
         <Field label="Reason for leaving (optional)">
           <TextArea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
+        <Field label={`Type "delete" to confirm`}>
+          <TextInput value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoFocus />
+        </Field>
         {error && <p className="mb-3 text-sm text-signal-deep">{error}</p>}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={submitting}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setConfirmOpen(false);
+              setConfirmText("");
+            }}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleSubmit} disabled={submitting}>
-            {submitting ? "Submitting…" : "Submit request"}
+          <Button variant="danger" onClick={handleSubmit} disabled={submitting || !canConfirm}>
+            {submitting ? "Deleting…" : "Permanently delete"}
           </Button>
         </div>
       </Modal>
