@@ -44,7 +44,7 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Wearvero Launch"
+            placeholder="Project Name"
           />
         </Field>
         <Field label="Description">
