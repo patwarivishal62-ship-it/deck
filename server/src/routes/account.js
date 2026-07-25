@@ -2,14 +2,14 @@ const express = require("express");
 const usersDb = require("../db/users");
 const deletionRequestsDb = require("../db/deletionRequests");
 const { requireAuth } = require("../middleware/auth");
+const { sendDeletionRequestEmail } = require("../lib/email");
 
 const router = express.Router();
 router.use(requireAuth);
 
 // Note: this does NOT delete the account. It records a request for an admin
-// to review, per the "no immediate deletion" requirement. Wiring up an actual
-// admin notification email needs an email provider (e.g. Resend, SendGrid) —
-// EMAIL_FROM / provider API key env vars would go here once one is chosen.
+// to review, per the "no immediate deletion" requirement, and notifies the
+// admin by email (via Resend — see lib/email.js).
 router.post("/deletion-request", async (req, res) => {
   try {
     const user = await usersDb.findById(req.userId);
@@ -27,6 +27,19 @@ router.post("/deletion-request", async (req, res) => {
       email: user.email,
       reason: (reason || "").trim(),
     });
+
+    // A failed email shouldn't fail the request itself — the record is what
+    // matters, the email is a courtesy notification on top of it.
+    try {
+      await sendDeletionRequestEmail({
+        fullName: request.fullName,
+        email: request.email,
+        reason: request.reason,
+        requestedAt: request.requestedAt,
+      });
+    } catch (emailErr) {
+      console.error("Failed to send deletion-request admin email:", emailErr);
+    }
 
     res.status(201).json({ request });
   } catch (err) {
