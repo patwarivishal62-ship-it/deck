@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
-import { Field, TextInput, TextArea, Button } from "./FormControls";
+import { Field, TextInput, TextArea, Select, Button } from "./FormControls";
+import { PRIORITIES, PRIORITY_KEYS } from "@/lib/constants";
 
 export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [tagsText, setTagsText] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -14,6 +18,9 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
     if (open) {
       setName(initial?.name || "");
       setDescription(initial?.description || "");
+      setTagsText((initial?.tags || []).join(", "));
+      setPriority(initial?.priority || "medium");
+      setDueDate(initial?.dueDate ? initial.dueDate.slice(0, 10) : "");
       setError("");
     }
   }, [open, initial]);
@@ -27,7 +34,18 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
     setBusy(true);
     setError("");
     try {
-      await onSubmit({ name: name.trim(), description: description.trim() });
+      const tags = tagsText
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim(),
+        tags,
+        priority,
+        dueDate: dueDate || null,
+      });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -53,6 +71,27 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What's this project about?"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Priority">
+            <Select value={priority} onChange={(e) => setPriority(e.target.value)}>
+              {PRIORITY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {PRIORITIES[key].label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Due date">
+            <TextInput type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Tags (comma separated)">
+          <TextInput
+            value={tagsText}
+            onChange={(e) => setTagsText(e.target.value)}
+            placeholder="client-a, launch, q3"
           />
         </Field>
         {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}
