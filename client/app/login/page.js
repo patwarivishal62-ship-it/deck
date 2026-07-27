@@ -12,7 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
 
   const [mode, setMode] = useState(searchParams.get("mode") === "signup" ? "signup" : "login");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +28,8 @@ function LoginForm() {
       } else {
         await signup(email.trim(), password, name.trim());
       }
-      router.replace("/projects");
+      const next = searchParams.get("next");
+      router.replace(next && next.startsWith("/") ? next : "/projects");
     } catch (err) {
       setError(err.message);
     } finally {
