@@ -64,6 +64,9 @@ export const api = {
   createProject: (body) => request("/projects", { method: "POST", body }),
   updateProject: (id, body) => request(`/projects/${id}`, { method: "PATCH", body }),
   deleteProject: (id) => request(`/projects/${id}`, { method: "DELETE" }),
+  getProjectAccess: (id) => request(`/projects/${id}/access`),
+  updateProjectAccess: (id, userId, grant) =>
+    request(`/projects/${id}/access`, { method: "PATCH", body: { userId, grant } }),
 
   // goals
   createGoal: (projectId, body) => request(`/projects/${projectId}/goals`, { method: "POST", body }),

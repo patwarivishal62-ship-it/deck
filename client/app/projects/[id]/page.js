@@ -11,6 +11,7 @@ import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
 import TaskFormModal from "@/components/TaskFormModal";
 import ProjectFormModal from "@/components/ProjectFormModal";
+import ProjectAccessModal from "@/components/ProjectAccessModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { Button } from "@/components/FormControls";
 import Meter from "@/components/Meter";
@@ -26,6 +27,7 @@ function ProjectDetail() {
   const [error, setError] = useState("");
 
   const [projectFormOpen, setProjectFormOpen] = useState(false);
+  const [accessModalOpen, setAccessModalOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
 
@@ -243,6 +245,11 @@ function ProjectDetail() {
               </Button>
             )}
             {canManage && (
+              <Button variant="secondary" onClick={() => setAccessModalOpen(true)}>
+                Manage access
+              </Button>
+            )}
+            {canManage && (
               <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
                 Delete
               </Button>
@@ -393,6 +400,12 @@ function ProjectDetail() {
         onClose={() => setProjectFormOpen(false)}
         onSubmit={handleProjectSubmit}
         initial={project}
+      />
+      <ProjectAccessModal
+        open={accessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        projectId={id}
+        projectName={project.name}
       />
       <ConfirmModal
         open={deleteProjectOpen}
