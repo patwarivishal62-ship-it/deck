@@ -37,6 +37,18 @@ export const api = {
   // account
   deleteAccount: (body) => request("/account/me", { method: "DELETE", body }),
 
+  // workspaces
+  listWorkspaces: () => request("/workspaces"),
+  createWorkspace: (body) => request("/workspaces", { method: "POST", body }),
+  listMembers: (workspaceId) => request(`/workspaces/${workspaceId}/members`),
+  inviteMember: (workspaceId, body) => request(`/workspaces/${workspaceId}/invite`, { method: "POST", body }),
+  updateMemberRole: (workspaceId, membershipId, role) =>
+    request(`/workspaces/${workspaceId}/members/${membershipId}`, { method: "PATCH", body: { role } }),
+  removeMember: (workspaceId, membershipId) =>
+    request(`/workspaces/${workspaceId}/members/${membershipId}`, { method: "DELETE" }),
+  previewInvite: (token) => request(`/workspaces/invites/preview?token=${encodeURIComponent(token)}`),
+  acceptInvite: (token) => request("/workspaces/invites/accept", { method: "POST", body: { token } }),
+
   // projects
   listProjects: (params = {}) => {
     const query = new URLSearchParams();
