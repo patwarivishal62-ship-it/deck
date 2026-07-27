@@ -2,6 +2,7 @@ const express = require("express");
 const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
+const membershipsDb = require("../db/memberships");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { STATUSES } = require("../constants");
@@ -10,8 +11,16 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(attachWorkspaces);
 
-async function ownedProject(projectId, workspaceIds) {
-  return projectsDb.findByIdInWorkspaces(projectId, workspaceIds);
+async function ownedProject(projectId, req) {
+  return projectsDb.findByIdForCaller(projectId, {
+    fullAccessWorkspaceIds: req.fullAccessWorkspaceIds,
+    restrictedWorkspaceIds: req.restrictedWorkspaceIds,
+    userId: req.userId,
+  });
+}
+
+function roleFor(req, workspaceId) {
+  return req.workspaces.find((w) => w.id === workspaceId)?.role;
 }
 
 // When a task's status flips to/from "done", nudge its linked goal's currentValue
@@ -30,7 +39,7 @@ async function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
 }
 
 router.post("/:projectId/tasks", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const { title, notes, goalId, status, dueDate } = req.body || {};
@@ -62,7 +71,7 @@ router.post("/:projectId/tasks", async (req, res) => {
 });
 
 router.patch("/:projectId/tasks/:taskId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
@@ -99,7 +108,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
 // PATCH /api/projects/:projectId/tasks/:taskId/cycle-status
 // Powers the click-to-cycle status button: todo -> in_progress -> done -> todo
 router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
@@ -117,9 +126,17 @@ router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
   res.json({ task: updated });
 });
 
+// Deleting a task is Admin/Owner only (Members can create and update tasks,
+// per the "add tasks and update them" rule, but not remove them) — matches
+// how project deletion is already gated.
 router.delete("/:projectId/tasks/:taskId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+
+  const role = roleFor(req, project.workspaceId);
+  if (!membershipsDb.hasAtLeastRole(role, "admin")) {
+    return res.status(403).json({ error: "Only workspace admins or owners can delete tasks." });
+  }
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });

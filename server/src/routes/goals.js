@@ -2,6 +2,7 @@ const express = require("express");
 const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
+const membershipsDb = require("../db/memberships");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { CATEGORY_KEYS, PERIODS } = require("../constants");
@@ -10,13 +11,37 @@ const router = express.Router();
 router.use(requireAuth);
 router.use(attachWorkspaces);
 
-async function ownedProject(projectId, workspaceIds) {
-  return projectsDb.findByIdInWorkspaces(projectId, workspaceIds);
+async function ownedProject(projectId, req) {
+  return projectsDb.findByIdForCaller(projectId, {
+    fullAccessWorkspaceIds: req.fullAccessWorkspaceIds,
+    restrictedWorkspaceIds: req.restrictedWorkspaceIds,
+    userId: req.userId,
+  });
+}
+
+function roleFor(req, workspaceId) {
+  return req.workspaces.find((w) => w.id === workspaceId)?.role;
+}
+
+// Goals can be viewed by anyone with project access, but only created,
+// edited, or deleted by a workspace Admin/Owner — Members can see progress
+// but not change what's being measured. There's deliberately no "nudge"
+// endpoint: the only way a goal's currentValue moves is by completing an
+// actual linked task (see routes/tasks.js), so every unit of progress
+// traces back to a real, accountable record instead of an arbitrary click.
+function requireGoalManager(req, res, project) {
+  const role = roleFor(req, project.workspaceId);
+  if (!membershipsDb.hasAtLeastRole(role, "admin")) {
+    res.status(403).json({ error: "Only workspace admins or owners can manage goals." });
+    return false;
+  }
+  return true;
 }
 
 router.post("/:projectId/goals", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
   const { category, platform, label, targetValue, currentValue, unit, period, step } = req.body || {};
   if (!label || !label.trim()) {
@@ -38,8 +63,9 @@ router.post("/:projectId/goals", async (req, res) => {
 });
 
 router.patch("/:projectId/goals/:goalId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
   const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
   if (!goal) return res.status(404).json({ error: "Goal not found." });
@@ -62,27 +88,10 @@ router.patch("/:projectId/goals/:goalId", async (req, res) => {
   res.json({ goal: updated });
 });
 
-// PATCH /api/projects/:projectId/goals/:goalId/nudge  { direction: "inc" | "dec" }
-// Powers the +/- stepper buttons on the goal card.
-router.patch("/:projectId/goals/:goalId/nudge", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
-  if (!project) return res.status(404).json({ error: "Project not found." });
-
-  const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
-  if (!goal) return res.status(404).json({ error: "Goal not found." });
-
-  const { direction } = req.body || {};
-  const step = Number(goal.step) || 1;
-  const nextValue =
-    direction === "inc" ? goal.currentValue + step : Math.max(0, goal.currentValue - step);
-
-  const updated = await goalsDb.setCurrentValue(goal.id, nextValue);
-  res.json({ goal: updated });
-});
-
 router.delete("/:projectId/goals/:goalId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.workspaceIds);
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
   const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
   if (!goal) return res.status(404).json({ error: "Goal not found." });
