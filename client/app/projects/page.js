@@ -15,6 +15,7 @@ import { PRIORITIES, PRIORITY_KEYS, PROJECT_SORTS } from "@/lib/constants";
 
 function ProjectsDashboard() {
   const [projects, setProjects] = useState([]);
+  const [workspaces, setWorkspaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -54,6 +55,7 @@ function ProjectsDashboard() {
         sort,
       });
       setProjects(data.projects);
+      setWorkspaces(data.workspaces || []);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -201,13 +203,19 @@ function ProjectsDashboard() {
                 project={project}
                 onDelete={setDeleteTarget}
                 onArchiveToggle={handleArchiveToggle}
+                showWorkspaceLabel={workspaces.length > 1}
               />
             ))}
           </div>
         )}
       </main>
 
-      <ProjectFormModal open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleCreate} />
+      <ProjectFormModal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleCreate}
+        workspaces={workspaces}
+      />
 
       <ConfirmModal
         open={!!deleteTarget}

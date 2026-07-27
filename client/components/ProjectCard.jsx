@@ -14,7 +14,7 @@ function isOverdue(iso) {
   return due < new Date();
 }
 
-export default function ProjectCard({ project, onDelete, onArchiveToggle }) {
+export default function ProjectCard({ project, onDelete, onArchiveToggle, showWorkspaceLabel }) {
   const totalGoals = project.goals.length;
   const totalTasks = project.tasks.length;
   const doneTasks = project.tasks.filter((t) => t.status === "done").length;
@@ -52,6 +52,11 @@ export default function ProjectCard({ project, onDelete, onArchiveToggle }) {
           {project.archived && (
             <span className="rounded bg-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-faint">
               Archived
+            </span>
+          )}
+          {showWorkspaceLabel && project.workspaceName && (
+            <span className="rounded bg-paper px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-faint">
+              {project.workspaceName}
             </span>
           )}
         </div>
@@ -114,19 +119,21 @@ export default function ProjectCard({ project, onDelete, onArchiveToggle }) {
             </svg>
           )}
         </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            onDelete(project);
-          }}
-          aria-label="Delete project"
-          className="rounded-md p-1.5 text-text-faint transition hover:bg-signal-tint hover:text-signal-deep"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
-          </svg>
-        </button>
+        {(project.workspaceRole === "admin" || project.workspaceRole === "owner" || !project.workspaceRole) && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete(project);
+            }}
+            aria-label="Delete project"
+            className="rounded-md p-1.5 text-text-faint transition hover:bg-signal-tint hover:text-signal-deep"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

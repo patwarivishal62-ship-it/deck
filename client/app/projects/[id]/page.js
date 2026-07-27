@@ -21,6 +21,7 @@ function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
   const [project, setProject] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -43,6 +44,7 @@ function ProjectDetail() {
     try {
       const data = await api.getProject(id);
       setProject(data.project);
+      setRole(data.role);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -244,9 +246,11 @@ function ProjectDetail() {
             <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
               Edit project
             </Button>
-            <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
-              Delete
-            </Button>
+            {(role === "admin" || role === "owner") && (
+              <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
+                Delete
+              </Button>
+            )}
           </div>
         </div>
 

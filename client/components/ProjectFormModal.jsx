@@ -5,12 +5,13 @@ import Modal from "./Modal";
 import { Field, TextInput, TextArea, Select, Button } from "./FormControls";
 import { PRIORITIES, PRIORITY_KEYS } from "@/lib/constants";
 
-export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
+export default function ProjectFormModal({ open, onClose, onSubmit, initial, workspaces = [] }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tagsText, setTagsText] = useState("");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
+  const [workspaceId, setWorkspaceId] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -21,9 +22,10 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
       setTagsText((initial?.tags || []).join(", "));
       setPriority(initial?.priority || "medium");
       setDueDate(initial?.dueDate ? initial.dueDate.slice(0, 10) : "");
+      setWorkspaceId(initial?.workspaceId || workspaces.find((w) => w.personal)?.id || workspaces[0]?.id || "");
       setError("");
     }
-  }, [open, initial]);
+  }, [open, initial, workspaces]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -45,6 +47,7 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
         tags,
         priority,
         dueDate: dueDate || null,
+        ...(!initial ? { workspaceId } : {}),
       });
       onClose();
     } catch (err) {
@@ -57,6 +60,19 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial }) {
   return (
     <Modal open={open} onClose={onClose} title={initial ? "Edit project" : "New project"}>
       <form onSubmit={handleSubmit}>
+        {/* Workspace can only be chosen at creation time — a project can't move
+            between workspaces later, which would silently change who can see it. */}
+        {!initial && workspaces.length > 1 && (
+          <Field label="Workspace">
+            <Select value={workspaceId} onChange={(e) => setWorkspaceId(e.target.value)}>
+              {workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Project name">
           <TextInput
             autoFocus
