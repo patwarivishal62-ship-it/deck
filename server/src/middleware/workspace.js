@@ -4,9 +4,14 @@ const membershipsDb = require("../db/memberships");
 const projectsDb = require("../db/projects");
 
 // Runs after requireAuth. Attaches:
-//   req.workspaces    — [{ ...workspace, role }] for every workspace the
-//                       user is an active member of
-//   req.workspaceIds  — just the ids, for convenience in queries
+//   req.workspaces               — [{ ...workspace, role }] for every
+//                                  workspace the user is an active member of
+//   req.workspaceIds             — just the ids
+//   req.fullAccessWorkspaceIds   — workspaces where role is owner/admin —
+//                                  the caller sees every project in these
+//   req.restrictedWorkspaceIds   — workspaces where role is member — the
+//                                  caller only sees projects they created or
+//                                  were explicitly given access to
 //
 // Also lazily creates a personal workspace the first time a user needs one
 // (covers both brand-new signups and any pre-existing account from before
@@ -28,6 +33,10 @@ async function attachWorkspaces(req, res, next) {
 
     req.workspaces = workspaces.map((w) => ({ ...w, role: roleByWorkspaceId[w.id] }));
     req.workspaceIds = req.workspaces.map((w) => w.id);
+    req.fullAccessWorkspaceIds = req.workspaces
+      .filter((w) => w.role === "owner" || w.role === "admin")
+      .map((w) => w.id);
+    req.restrictedWorkspaceIds = req.workspaces.filter((w) => w.role === "member").map((w) => w.id);
     next();
   } catch (err) {
     console.error(err);

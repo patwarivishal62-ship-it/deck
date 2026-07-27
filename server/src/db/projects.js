@@ -46,36 +46,53 @@ function sortProjects(projects, sort) {
   }
 }
 
+// Builds the "can this caller see this project" condition as a single $or
+// clause: full visibility in owner/admin workspaces, but in a workspace
+// where the caller is only a Member, restricted to projects they created
+// or were explicitly granted access to via memberAccess.
+function visibilityOr({ fullAccessWorkspaceIds = [], restrictedWorkspaceIds = [], userId }) {
+  const clauses = [];
+  if (fullAccessWorkspaceIds.length > 0) {
+    clauses.push({ workspaceId: { $in: fullAccessWorkspaceIds } });
+  }
+  if (restrictedWorkspaceIds.length > 0) {
+    clauses.push({
+      workspaceId: { $in: restrictedWorkspaceIds },
+      $or: [{ userId }, { memberAccess: userId }],
+    });
+  }
+  return clauses;
+}
+
 // options: { search, tags, priority, archived, sort }
-// workspaceIds: every workspace the requesting user is an active member of —
-// a project is visible if it belongs to any of them.
-async function listByWorkspaces(workspaceIds, options = {}) {
+// access: { fullAccessWorkspaceIds, restrictedWorkspaceIds, userId }
+async function listForCaller(access, options = {}) {
   const { search, tags, priority, archived = false, sort = "newest" } = options;
+  const visibility = visibilityOr(access);
+  if (visibility.length === 0) return [];
 
-  if (!workspaceIds || workspaceIds.length === 0) return [];
-
-  const filter = { workspaceId: { $in: workspaceIds } };
+  const and = [{ $or: visibility }];
 
   if (archived === true) {
-    filter.archived = true;
+    and.push({ archived: true });
   } else if (archived !== "all") {
-    filter.archived = { $ne: true };
+    and.push({ archived: { $ne: true } });
   }
 
   if (search) {
     const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    filter.$or = [{ name: regex }, { description: regex }];
+    and.push({ $or: [{ name: regex }, { description: regex }] });
   }
 
   if (tags && tags.length > 0) {
-    filter.tags = { $in: tags };
+    and.push({ tags: { $in: tags } });
   }
 
   if (priority) {
-    filter.priority = priority;
+    and.push({ priority });
   }
 
-  const docs = await collection().find(filter).toArray();
+  const docs = await collection().find({ $and: and }).toArray();
   const projects = await Promise.all(docs.map(toProject).map(attachChildren));
   return sortProjects(projects, sort);
 }
@@ -84,28 +101,45 @@ async function findById(id) {
   return toProject(await collection().findOne({ id }));
 }
 
-// Visible only if the project's workspace is one the caller belongs to.
-async function findByIdInWorkspaces(id, workspaceIds) {
-  if (!workspaceIds || workspaceIds.length === 0) return null;
-  const project = toProject(await collection().findOne({ id, workspaceId: { $in: workspaceIds } }));
+// Visible only if the caller has full access to the project's workspace, or
+// (in a workspace where they're only a Member) they created it or were
+// explicitly granted access.
+async function findByIdForCaller(id, access) {
+  const visibility = visibilityOr(access);
+  if (visibility.length === 0) return null;
+  const project = toProject(await collection().findOne({ id, $or: visibility }));
   return project ? attachChildren(project) : null;
 }
 
-async function create({ workspaceId, userId, name, description, tags, priority, dueDate }) {
+async function create({ workspaceId, userId, name, description, tags, priority, dueDate, memberAccess }) {
   const project = {
     id: nanoid(),
     workspaceId,
-    userId, // the creator — kept for attribution, access control now goes through workspace membership
+    userId, // the creator — kept for attribution, and for Member-level visibility (see visibilityOr)
     name,
     description,
     tags: Array.isArray(tags) ? tags : [],
     priority: priority || "medium",
     dueDate: dueDate || null,
     archived: false,
+    // Explicit per-project grants for Members in a workspace where they
+    // don't have blanket (owner/admin) visibility. Irrelevant for
+    // owner/admin viewers, who see everything regardless of this list.
+    memberAccess: Array.isArray(memberAccess) ? memberAccess : [],
     createdAt: new Date().toISOString(),
   };
   await collection().insertOne(project);
   return attachChildren(toProject(project));
+}
+
+async function grantAccess(id, userId) {
+  await collection().updateOne({ id }, { $addToSet: { memberAccess: userId } });
+  return attachChildren(await findById(id));
+}
+
+async function revokeAccess(id, userId) {
+  await collection().updateOne({ id }, { $pull: { memberAccess: userId } });
+  return attachChildren(await findById(id));
 }
 
 async function update(id, fields) {
@@ -150,13 +184,15 @@ async function backfillMissingWorkspace(userId, workspaceId) {
 }
 
 module.exports = {
-  listByWorkspaces,
+  listForCaller,
   findById,
-  findByIdInWorkspaces,
+  findByIdForCaller,
   create,
   update,
   remove,
   removeByWorkspace,
   backfillMissingWorkspace,
+  grantAccess,
+  revokeAccess,
   attachChildren,
 };
