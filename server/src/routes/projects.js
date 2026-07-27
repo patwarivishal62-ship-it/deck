@@ -1,10 +1,13 @@
 const express = require("express");
 const projectsDb = require("../db/projects");
+const membershipsDb = require("../db/memberships");
 const { requireAuth } = require("../middleware/auth");
+const { attachWorkspaces } = require("../middleware/workspace");
 const { PRIORITY_KEYS, PROJECT_SORTS } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(attachWorkspaces);
 
 function parseTags(input) {
   if (!input) return [];
@@ -15,7 +18,11 @@ function parseTags(input) {
     .filter(Boolean);
 }
 
-// GET /api/projects — list, with optional ?search=&tags=a,b&priority=high&archived=true|false|all&sort=
+function roleFor(req, workspaceId) {
+  return req.workspaces.find((w) => w.id === workspaceId)?.role;
+}
+
+// GET /api/projects — across every workspace the caller belongs to
 router.get("/", async (req, res) => {
   const { search, tags, priority, archived, sort } = req.query;
 
@@ -23,7 +30,7 @@ router.get("/", async (req, res) => {
   if (archived === "true") archivedOption = true;
   else if (archived === "all") archivedOption = "all";
 
-  const projects = await projectsDb.listByUser(req.userId, {
+  const projects = await projectsDb.listByWorkspaces(req.workspaceIds, {
     search: search ? String(search).trim() : undefined,
     tags: parseTags(tags),
     priority: PRIORITY_KEYS.includes(priority) ? priority : undefined,
@@ -31,12 +38,22 @@ router.get("/", async (req, res) => {
     sort: PROJECT_SORTS.includes(sort) ? sort : "newest",
   });
 
-  res.json({ projects });
+  // Attach the caller's role in each project's workspace, and the workspace
+  // name, so the client can show "shared in X" / gate the delete button.
+  const withContext = projects.map((p) => {
+    const workspace = req.workspaces.find((w) => w.id === p.workspaceId);
+    return { ...p, workspaceName: workspace?.name, workspaceRole: workspace?.role };
+  });
+
+  res.json({ projects: withContext, workspaces: req.workspaces });
 });
 
-// POST /api/projects — create a project
+// POST /api/projects — create a project in a given workspace (defaults to
+// the caller's personal workspace if omitted)
 router.post("/", async (req, res) => {
   const { name, description, tags, priority, dueDate } = req.body || {};
+  let { workspaceId } = req.body || {};
+
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "Project name is required." });
   }
@@ -44,7 +61,15 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Invalid priority." });
   }
 
+  if (!workspaceId) {
+    workspaceId = req.workspaces.find((w) => w.personal)?.id;
+  }
+  if (!roleFor(req, workspaceId)) {
+    return res.status(403).json({ error: "You don't have access to that workspace." });
+  }
+
   const project = await projectsDb.create({
+    workspaceId,
     userId: req.userId,
     name: name.trim(),
     description: (description || "").trim(),
@@ -55,16 +80,16 @@ router.post("/", async (req, res) => {
   res.status(201).json({ project });
 });
 
-// GET /api/projects/:id — single project with goals + tasks
+// GET /api/projects/:id
 router.get("/:id", async (req, res) => {
-  const project = await projectsDb.findByIdForUser(req.params.id, req.userId);
+  const project = await projectsDb.findByIdInWorkspaces(req.params.id, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
-  res.json({ project });
+  res.json({ project, role: roleFor(req, project.workspaceId) });
 });
 
-// PATCH /api/projects/:id — update name/description/tags/priority/dueDate/archived
+// PATCH /api/projects/:id — any active member can edit
 router.patch("/:id", async (req, res) => {
-  const existing = await projectsDb.findByIdForUser(req.params.id, req.userId);
+  const existing = await projectsDb.findByIdInWorkspaces(req.params.id, req.workspaceIds);
   if (!existing) return res.status(404).json({ error: "Project not found." });
 
   const { name, description, tags, priority, dueDate, archived } = req.body || {};
@@ -86,10 +111,15 @@ router.patch("/:id", async (req, res) => {
   res.json({ project });
 });
 
-// DELETE /api/projects/:id — delete project + cascading goals/tasks
+// DELETE /api/projects/:id — Admin/Owner only
 router.delete("/:id", async (req, res) => {
-  const existing = await projectsDb.findByIdForUser(req.params.id, req.userId);
+  const existing = await projectsDb.findByIdInWorkspaces(req.params.id, req.workspaceIds);
   if (!existing) return res.status(404).json({ error: "Project not found." });
+
+  const role = roleFor(req, existing.workspaceId);
+  if (!membershipsDb.hasAtLeastRole(role, "admin")) {
+    return res.status(403).json({ error: "Only workspace admins or owners can delete projects." });
+  }
 
   await projectsDb.remove(req.params.id);
   res.json({ ok: true });

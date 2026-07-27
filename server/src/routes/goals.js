@@ -3,17 +3,19 @@ const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
 const { requireAuth } = require("../middleware/auth");
+const { attachWorkspaces } = require("../middleware/workspace");
 const { CATEGORY_KEYS, PERIODS } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(attachWorkspaces);
 
-async function ownedProject(projectId, userId) {
-  return projectsDb.findByIdForUser(projectId, userId);
+async function ownedProject(projectId, workspaceIds) {
+  return projectsDb.findByIdInWorkspaces(projectId, workspaceIds);
 }
 
 router.post("/:projectId/goals", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const { category, platform, label, targetValue, currentValue, unit, period, step } = req.body || {};
@@ -36,7 +38,7 @@ router.post("/:projectId/goals", async (req, res) => {
 });
 
 router.patch("/:projectId/goals/:goalId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
@@ -63,7 +65,7 @@ router.patch("/:projectId/goals/:goalId", async (req, res) => {
 // PATCH /api/projects/:projectId/goals/:goalId/nudge  { direction: "inc" | "dec" }
 // Powers the +/- stepper buttons on the goal card.
 router.patch("/:projectId/goals/:goalId/nudge", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
@@ -79,7 +81,7 @@ router.patch("/:projectId/goals/:goalId/nudge", async (req, res) => {
 });
 
 router.delete("/:projectId/goals/:goalId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);

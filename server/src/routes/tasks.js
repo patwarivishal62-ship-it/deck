@@ -3,13 +3,15 @@ const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
 const { requireAuth } = require("../middleware/auth");
+const { attachWorkspaces } = require("../middleware/workspace");
 const { STATUSES } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(attachWorkspaces);
 
-async function ownedProject(projectId, userId) {
-  return projectsDb.findByIdForUser(projectId, userId);
+async function ownedProject(projectId, workspaceIds) {
+  return projectsDb.findByIdInWorkspaces(projectId, workspaceIds);
 }
 
 // When a task's status flips to/from "done", nudge its linked goal's currentValue
@@ -28,7 +30,7 @@ async function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
 }
 
 router.post("/:projectId/tasks", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const { title, notes, goalId, status, dueDate } = req.body || {};
@@ -60,7 +62,7 @@ router.post("/:projectId/tasks", async (req, res) => {
 });
 
 router.patch("/:projectId/tasks/:taskId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
@@ -97,7 +99,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
 // PATCH /api/projects/:projectId/tasks/:taskId/cycle-status
 // Powers the click-to-cycle status button: todo -> in_progress -> done -> todo
 router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
@@ -116,7 +118,7 @@ router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
 });
 
 router.delete("/:projectId/tasks/:taskId", async (req, res) => {
-  const project = await ownedProject(req.params.projectId, req.userId);
+  const project = await ownedProject(req.params.projectId, req.workspaceIds);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);

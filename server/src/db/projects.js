@@ -32,7 +32,6 @@ function sortProjects(projects, sort) {
     case "name":
       return sorted.sort((a, b) => a.name.localeCompare(b.name));
     case "dueDate":
-      // Projects without a due date sort to the end regardless of direction.
       return sorted.sort((a, b) => {
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
@@ -48,14 +47,14 @@ function sortProjects(projects, sort) {
 }
 
 // options: { search, tags, priority, archived, sort }
-// - archived: false (default) excludes archived projects, true shows only
-//   archived, "all" shows both
-// - tags: array — matches a project that has ANY of the given tags
-// - search: case-insensitive match against name or description
-async function listByUser(userId, options = {}) {
+// workspaceIds: every workspace the requesting user is an active member of —
+// a project is visible if it belongs to any of them.
+async function listByWorkspaces(workspaceIds, options = {}) {
   const { search, tags, priority, archived = false, sort = "newest" } = options;
 
-  const filter = { userId };
+  if (!workspaceIds || workspaceIds.length === 0) return [];
+
+  const filter = { workspaceId: { $in: workspaceIds } };
 
   if (archived === true) {
     filter.archived = true;
@@ -85,15 +84,18 @@ async function findById(id) {
   return toProject(await collection().findOne({ id }));
 }
 
-async function findByIdForUser(id, userId) {
-  const project = toProject(await collection().findOne({ id, userId }));
+// Visible only if the project's workspace is one the caller belongs to.
+async function findByIdInWorkspaces(id, workspaceIds) {
+  if (!workspaceIds || workspaceIds.length === 0) return null;
+  const project = toProject(await collection().findOne({ id, workspaceId: { $in: workspaceIds } }));
   return project ? attachChildren(project) : null;
 }
 
-async function create({ userId, name, description, tags, priority, dueDate }) {
+async function create({ workspaceId, userId, name, description, tags, priority, dueDate }) {
   const project = {
     id: nanoid(),
-    userId,
+    workspaceId,
+    userId, // the creator — kept for attribution, access control now goes through workspace membership
     name,
     description,
     tags: Array.isArray(tags) ? tags : [],
@@ -125,15 +127,36 @@ async function remove(id) {
   await collection().deleteOne({ id });
 }
 
-// Used when a whole account is deleted — removes every project this user
-// owns, cascading to each project's goals and tasks the same way remove() does.
-async function removeByUser(userId) {
-  const docs = await collection().find({ userId }, { projection: { id: 1 } }).toArray();
+// Used when a whole workspace is deleted (currently: a user's personal
+// workspace, when they delete their account) — removes every project in it,
+// cascading to each project's goals/tasks the same way remove() does.
+async function removeByWorkspace(workspaceId) {
+  const docs = await collection().find({ workspaceId }, { projection: { id: 1 } }).toArray();
   for (const doc of docs) {
     await goalsDb.removeByProject(doc.id);
     await tasksDb.removeByProject(doc.id);
   }
-  await collection().deleteMany({ userId });
+  await collection().deleteMany({ workspaceId });
 }
 
-module.exports = { listByUser, findById, findByIdForUser, create, update, remove, removeByUser, attachChildren };
+// One-time-per-project migration: projects created before workspaces existed
+// have userId but no workspaceId. Backfills them into that user's personal
+// workspace. Safe to call repeatedly — a no-op once nothing is missing it.
+async function backfillMissingWorkspace(userId, workspaceId) {
+  await collection().updateMany(
+    { userId, workspaceId: { $exists: false } },
+    { $set: { workspaceId } }
+  );
+}
+
+module.exports = {
+  listByWorkspaces,
+  findById,
+  findByIdInWorkspaces,
+  create,
+  update,
+  remove,
+  removeByWorkspace,
+  backfillMissingWorkspace,
+  attachChildren,
+};
