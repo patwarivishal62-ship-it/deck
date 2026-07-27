@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const usersDb = require("../db/users");
+const workspacesDb = require("../db/workspaces");
 const { requireAuth } = require("../middleware/auth");
 const { authLimiter, passwordResetLimiter } = require("../middleware/rateLimit");
 const { sendPasswordResetEmail } = require("../lib/email");
@@ -46,6 +47,12 @@ router.post("/signup", authLimiter, async (req, res) => {
       passwordHash,
       name: name?.trim() || null,
     });
+
+    // Give the new account its personal workspace right away. Any pending
+    // workspace invites for this email are accepted explicitly later, via
+    // the invite-accept page/flow — not silently here — so the accept page
+    // always behaves consistently whether someone just signed up or logged in.
+    await workspacesDb.ensurePersonal(user.id, user.name);
 
     const token = signToken(user.id);
     res.cookie("deck_token", token, COOKIE_OPTS);

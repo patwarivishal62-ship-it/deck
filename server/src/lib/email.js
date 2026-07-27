@@ -79,4 +79,21 @@ async function sendPasswordResetEmail({ to, resetUrl }) {
   });
 }
 
-module.exports = { sendEmail, sendAccountDeletedEmail, sendPasswordResetEmail };
+// NOTE: same Resend limitation as above — invites to anyone other than the
+// address on the Resend account won't actually deliver until a domain is verified.
+async function sendWorkspaceInviteEmail({ to, workspaceName, inviterName, inviteUrl }) {
+  const html = `
+    <h2>You've been invited to a Deck workspace</h2>
+    <p>${inviterName || "Someone"} invited you to join <strong>${workspaceName}</strong> on Deck.</p>
+    <p><a href="${inviteUrl}">Click here to accept the invite</a>.</p>
+    <p>If you weren't expecting this, you can ignore this email.</p>
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: `You've been invited to ${workspaceName} on Deck`,
+    html,
+  });
+}
+
+module.exports = { sendEmail, sendAccountDeletedEmail, sendPasswordResetEmail, sendWorkspaceInviteEmail };

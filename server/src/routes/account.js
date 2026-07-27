@@ -1,6 +1,8 @@
 const express = require("express");
 const usersDb = require("../db/users");
 const projectsDb = require("../db/projects");
+const workspacesDb = require("../db/workspaces");
+const membershipsDb = require("../db/memberships");
 const deletionRequestsDb = require("../db/deletionRequests");
 const { requireAuth } = require("../middleware/auth");
 const { sendAccountDeletedEmail } = require("../lib/email");
@@ -16,9 +18,13 @@ const COOKIE_OPTS = {
   secure: true,
 };
 
-// Deletes the account, all of its projects/goals/tasks, and signs the user
-// out — immediately and irreversibly. An audit record is still kept
-// (db/deletionRequests.js) and the admin is notified by email.
+// Deletes the account, its personal workspace and everything in it, and
+// signs the user out — immediately and irreversibly. An audit record is
+// still kept (db/deletionRequests.js) and the admin is notified by email.
+//
+// Note: if this user is also a member of OTHER (shared/team) workspaces,
+// they're simply removed as a member there — those workspaces and their
+// projects are left intact for the remaining members.
 router.delete("/me", async (req, res) => {
   try {
     const user = await usersDb.findById(req.userId);
@@ -33,7 +39,12 @@ router.delete("/me", async (req, res) => {
       reason: (reason || "").trim(),
     });
 
-    await projectsDb.removeByUser(user.id);
+    const personalWorkspace = await workspacesDb.findPersonalByOwner(user.id);
+    if (personalWorkspace) {
+      await projectsDb.removeByWorkspace(personalWorkspace.id);
+      await workspacesDb.remove(personalWorkspace.id);
+    }
+    await membershipsDb.removeAllForUser(user.id);
     await usersDb.deleteById(user.id);
 
     res.clearCookie("deck_token", COOKIE_OPTS);
