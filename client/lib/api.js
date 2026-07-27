@@ -69,8 +69,6 @@ export const api = {
   createGoal: (projectId, body) => request(`/projects/${projectId}/goals`, { method: "POST", body }),
   updateGoal: (projectId, goalId, body) =>
     request(`/projects/${projectId}/goals/${goalId}`, { method: "PATCH", body }),
-  nudgeGoal: (projectId, goalId, direction) =>
-    request(`/projects/${projectId}/goals/${goalId}/nudge`, { method: "PATCH", body: { direction } }),
   deleteGoal: (projectId, goalId) =>
     request(`/projects/${projectId}/goals/${goalId}`, { method: "DELETE" }),
 

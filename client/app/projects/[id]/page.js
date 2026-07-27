@@ -85,15 +85,6 @@ function ProjectDetail() {
     }
   }
 
-  async function handleNudge(goal, direction) {
-    try {
-      const data = await api.nudgeGoal(id, goal.id, direction);
-      setProject((p) => ({ ...p, goals: p.goals.map((g) => (g.id === data.goal.id ? data.goal : g)) }));
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   async function handleDeleteGoal() {
     if (!deleteGoalTarget) return;
     setBusy(true);
@@ -194,6 +185,9 @@ function ProjectDetail() {
   }
 
   const goalById = Object.fromEntries(project.goals.map((g) => [g.id, g]));
+  // Admin/Owner can edit the project itself and manage goals; Members can
+  // view goals and manage tasks, but not edit goals or the project.
+  const canManage = role === "admin" || role === "owner";
 
   return (
     <div className="min-h-screen bg-paper">
@@ -243,10 +237,12 @@ function ProjectDetail() {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
-              Edit project
-            </Button>
-            {(role === "admin" || role === "owner") && (
+            {canManage && (
+              <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
+                Edit project
+              </Button>
+            )}
+            {canManage && (
               <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
                 Delete
               </Button>
@@ -315,20 +311,22 @@ function ProjectDetail() {
             <h2 className="font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
               Goals
             </h2>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setEditingGoal(null);
-                setGoalFormOpen(true);
-              }}
-            >
-              + Add goal
-            </Button>
+            {canManage && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingGoal(null);
+                  setGoalFormOpen(true);
+                }}
+              >
+                + Add goal
+              </Button>
+            )}
           </div>
 
           {project.goals.length === 0 ? (
             <p className="rounded-card border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-text-soft">
-              No goals yet. Add one to start tracking progress.
+              No goals yet. {canManage && "Add one to start tracking progress."}
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -336,7 +334,7 @@ function ProjectDetail() {
                 <GoalCard
                   key={goal.id}
                   goal={goal}
-                  onNudge={handleNudge}
+                  canManage={canManage}
                   onEdit={(g) => {
                     setEditingGoal(g);
                     setGoalFormOpen(true);
@@ -377,6 +375,7 @@ function ProjectDetail() {
                   task={task}
                   goal={task.goalId ? goalById[task.goalId] : null}
                   onCycleStatus={handleCycleStatus}
+                  canDelete={canManage}
                   onEdit={(t) => {
                     setEditingTask(t);
                     setTaskFormOpen(true);

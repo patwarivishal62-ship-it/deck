@@ -3,7 +3,7 @@
 import Meter from "./Meter";
 import { CATEGORIES, periodLabel } from "@/lib/constants";
 
-export default function GoalCard({ goal, onNudge, onEdit, onDelete }) {
+export default function GoalCard({ goal, onEdit, onDelete, canManage = true }) {
   const meta = CATEGORIES[goal.category] || CATEGORIES.other;
   const pct = goal.targetValue > 0 ? Math.round((goal.currentValue / goal.targetValue) * 100) : 0;
 
@@ -23,32 +23,37 @@ export default function GoalCard({ goal, onNudge, onEdit, onDelete }) {
           </div>
           <h4 className="mt-1 truncate font-display text-sm font-semibold text-text">{goal.label}</h4>
         </div>
-        <div className="flex shrink-0 gap-1">
-          <button
-            type="button"
-            onClick={() => onEdit(goal)}
-            aria-label="Edit goal"
-            className="rounded-md p-1 text-text-faint hover:bg-paper hover:text-text"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(goal)}
-            aria-label="Delete goal"
-            className="rounded-md p-1 text-text-faint hover:bg-signal-tint hover:text-signal-deep"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
-            </svg>
-          </button>
-        </div>
+        {canManage && (
+          <div className="flex shrink-0 gap-1">
+            <button
+              type="button"
+              onClick={() => onEdit(goal)}
+              aria-label="Edit goal"
+              className="rounded-md p-1 text-text-faint hover:bg-paper hover:text-text"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(goal)}
+              aria-label="Delete goal"
+              className="rounded-md p-1 text-text-faint hover:bg-signal-tint hover:text-signal-deep"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       <Meter value={goal.currentValue} target={goal.targetValue} color={meta.color} />
 
+      {/* No manual +/- here on purpose — progress only moves when a linked
+          task is completed (or un-completed), so every point of progress
+          traces back to a real, accountable task. */}
       <div className="mt-2 flex items-center justify-between">
         <span className="font-mono text-xs text-text-soft">
           {goal.currentValue}
@@ -56,25 +61,7 @@ export default function GoalCard({ goal, onNudge, onEdit, onDelete }) {
           {goal.unit ? ` ${goal.unit}` : ""}
           <span className="ml-1.5 text-text-faint">· {periodLabel(goal.period)}</span>
         </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onNudge(goal, "dec")}
-            aria-label="Decrease"
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-line text-text-soft hover:bg-paper"
-          >
-            −
-          </button>
-          <span className="w-9 text-center font-mono text-xs text-text-faint">{pct}%</span>
-          <button
-            type="button"
-            onClick={() => onNudge(goal, "inc")}
-            aria-label="Increase"
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-line text-text-soft hover:bg-paper"
-          >
-            +
-          </button>
-        </div>
+        <span className="font-mono text-xs text-text-faint">{pct}%</span>
       </div>
     </div>
   );
