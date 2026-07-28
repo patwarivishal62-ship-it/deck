@@ -133,7 +133,11 @@ function ProjectsDashboard() {
               placeholder="Filter by tag…"
             />
           </div>
-          <Select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-auto">
+          <Select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            className="w-40 shrink-0"
+          >
             <option value="">All priorities</option>
             {PRIORITY_KEYS.map((key) => (
               <option key={key} value={key}>
@@ -141,7 +145,7 @@ function ProjectsDashboard() {
               </option>
             ))}
           </Select>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-auto">
+          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-40 shrink-0">
             {PROJECT_SORTS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
@@ -151,7 +155,7 @@ function ProjectsDashboard() {
           <Select
             value={archivedView}
             onChange={(e) => setArchivedView(e.target.value)}
-            className="w-auto"
+            className="w-32 shrink-0"
           >
             <option value="active">Active</option>
             <option value="archived">Archived</option>

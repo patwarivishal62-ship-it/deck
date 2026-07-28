@@ -1,5 +1,7 @@
 "use client";
 
+import { twMerge } from "tailwind-merge";
+
 export function Field({ label, children }) {
   return (
     <label className="mb-3 block">
@@ -15,16 +17,16 @@ const inputClasses =
   "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-text outline-none transition focus:border-signal focus:bg-card";
 
 export function TextInput(props) {
-  return <input {...props} className={`${inputClasses} ${props.className || ""}`} />;
+  return <input {...props} className={twMerge(inputClasses, props.className)} />;
 }
 
 export function TextArea(props) {
-  return <textarea {...props} className={`${inputClasses} resize-none ${props.className || ""}`} />;
+  return <textarea {...props} className={twMerge(inputClasses, "resize-none", props.className)} />;
 }
 
 export function Select({ children, ...props }) {
   return (
-    <select {...props} className={`${inputClasses} ${props.className || ""}`}>
+    <select {...props} className={twMerge(inputClasses, props.className)}>
       {children}
     </select>
   );
@@ -39,5 +41,5 @@ export function Button({ variant = "primary", className = "", ...props }) {
     danger: "bg-transparent text-signal-deep hover:bg-signal-tint",
     destructive: "bg-signal-deep text-white hover:bg-signal",
   };
-  return <button {...props} className={`${base} ${variants[variant]} ${className}`} />;
+  return <button {...props} className={twMerge(base, variants[variant], className)} />;
 }
