@@ -187,6 +187,20 @@ function ProjectDetail() {
   }
 
   const goalById = Object.fromEntries(project.goals.map((g) => [g.id, g]));
+  // Same formula as ProjectCard on the projects list page — average of each
+  // goal's currentValue/targetValue (capped at 100% per goal), not related
+  // to task counts at all.
+  const avgGoalProgressPct =
+    project.goals.length > 0
+      ? Math.round(
+          (project.goals.reduce(
+            (sum, g) => sum + (g.targetValue > 0 ? Math.min(1, g.currentValue / g.targetValue) : 0),
+            0
+          ) /
+            project.goals.length) *
+            100
+        )
+      : 0;
   // Admin/Owner can edit the project itself and manage goals; Members can
   // view goals and manage tasks, but not edit goals or the project.
   const canManage = role === "admin" || role === "owner";
@@ -262,18 +276,19 @@ function ProjectDetail() {
         {/* Overall Progress Tracking */}
         {(project.goals.length > 0 || project.tasks.length > 0) && (
           <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Overall Progress Card */}
+            {/* Overall Progress Card — average progress across this project's
+                goals (currentValue/targetValue), not task completion, which
+                is what "Tasks Done"/"Open Tasks" already cover below. */}
             <div className="rounded-card border border-line bg-card p-4">
               <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Overall Progress</p>
               <div className="mt-3">
-                <Meter
-                  value={project.tasks.filter((t) => t.status === "done").length}
-                  target={project.tasks.length || 1}
-                  color="#ff5a38"
-                />
+                <Meter value={avgGoalProgressPct} target={100} color="#ff5a38" />
               </div>
               <p className="mt-2 text-sm text-text">
-                {project.tasks.filter((t) => t.status === "done").length}/{project.tasks.length}
+                {avgGoalProgressPct}%
+                <span className="ml-1 text-text-faint">
+                  {project.goals.length === 0 ? "no goals yet" : "avg across goals"}
+                </span>
               </p>
             </div>
 
