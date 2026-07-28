@@ -7,6 +7,14 @@ import { STATUSES } from "@/lib/constants";
 
 const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "" };
 
+// Used as the date input's min= — stops the calendar picker from offering
+// past dates for a NEW selection. An already-stored past due date (a task
+// that's simply become overdue with time) still displays fine; this only
+// restricts what you can newly pick.
+function todayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function TaskFormModal({ open, onClose, onSubmit, initial, goals }) {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState("");
@@ -31,6 +39,10 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
     e.preventDefault();
     if (!form.title.trim()) {
       setError("Task title is required.");
+      return;
+    }
+    if (form.dueDate && form.dueDate !== initial?.dueDate && form.dueDate < todayISODate()) {
+      setError("Due date can't be in the past.");
       return;
     }
     setBusy(true);
@@ -86,7 +98,12 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
             </Select>
           </Field>
           <Field label="Due date (optional)">
-            <TextInput type="date" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
+            <TextInput
+              type="date"
+              min={todayISODate()}
+              value={form.dueDate}
+              onChange={(e) => set("dueDate", e.target.value)}
+            />
           </Field>
         </div>
         {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}

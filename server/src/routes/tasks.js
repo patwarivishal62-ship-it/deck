@@ -23,6 +23,12 @@ function roleFor(req, workspaceId) {
   return req.workspaces.find((w) => w.id === workspaceId)?.role;
 }
 
+// Bare YYYY-MM-DD, so lexical comparison against dueDate strings (same
+// format) works directly for chronological ordering.
+function todayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 // When a task's status flips to/from "done", nudge its linked goal's currentValue
 // by the goal's step — mirrors the original app's applyTaskStatusChange().
 async function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
@@ -47,6 +53,13 @@ router.post("/:projectId/tasks", async (req, res) => {
     return res.status(400).json({ error: "Task title is required." });
   }
   const finalStatus = STATUSES.includes(status) ? status : "todo";
+
+  // A task can be scheduled for today or any future date, kept ready as a
+  // "to do" — but not backdated, since that would let progress get recorded
+  // as if it happened before it actually did.
+  if (dueDate && dueDate < todayISODate()) {
+    return res.status(400).json({ error: "Due date can't be in the past." });
+  }
 
   if (goalId) {
     const goal = await goalsDb.findByIdInProject(goalId, project.id);
@@ -80,6 +93,12 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
   const { title, notes, goalId, status, dueDate } = req.body || {};
   if (title !== undefined && !title.trim()) {
     return res.status(400).json({ error: "Task title is required." });
+  }
+  // Only validate when the due date is actually being changed to something
+  // new — an existing task that's already overdue (because time passed,
+  // not because someone backdated it) should still be freely editable.
+  if (dueDate && dueDate !== task.dueDate && dueDate < todayISODate()) {
+    return res.status(400).json({ error: "Due date can't be in the past." });
   }
   if (goalId) {
     const goal = await goalsDb.findByIdInProject(goalId, project.id);
