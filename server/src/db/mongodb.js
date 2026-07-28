@@ -41,6 +41,10 @@ async function connectDB() {
   await db.collection("memberships").createIndex({ userId: 1, status: 1 });
   await db.collection("memberships").createIndex({ inviteTokenHash: 1 }, { sparse: true });
   await db.collection("memberships").createIndex({ workspaceId: 1, email: 1 });
+  await db.collection("comments").createIndex({ id: 1 }, { unique: true });
+  await db.collection("comments").createIndex({ projectId: 1, taskId: 1 });
+  await db.collection("activityLog").createIndex({ id: 1 }, { unique: true });
+  await db.collection("activityLog").createIndex({ projectId: 1, createdAt: -1 });
 
   console.log("✅ Connected to MongoDB");
 

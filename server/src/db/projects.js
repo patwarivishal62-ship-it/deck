@@ -2,6 +2,8 @@ const { nanoid } = require("nanoid");
 const { getDb } = require("./mongodb");
 const goalsDb = require("./goals");
 const tasksDb = require("./tasks");
+const commentsDb = require("./comments");
+const activityLogDb = require("./activityLog");
 
 const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
 
@@ -158,6 +160,8 @@ async function remove(id) {
   // Mongo has no equivalent, so it's done explicitly here.
   await goalsDb.removeByProject(id);
   await tasksDb.removeByProject(id);
+  await commentsDb.removeByProject(id);
+  await activityLogDb.removeByProject(id);
   await collection().deleteOne({ id });
 }
 
@@ -169,6 +173,8 @@ async function removeByWorkspace(workspaceId) {
   for (const doc of docs) {
     await goalsDb.removeByProject(doc.id);
     await tasksDb.removeByProject(doc.id);
+    await commentsDb.removeByProject(doc.id);
+    await activityLogDb.removeByProject(doc.id);
   }
   await collection().deleteMany({ workspaceId });
 }
