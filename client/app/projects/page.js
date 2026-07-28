@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
 import ProjectCard from "@/components/ProjectCard";
 import ProjectFormModal from "@/components/ProjectFormModal";
+import QuickAddTaskModal from "@/components/QuickAddTaskModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import StatCard from "@/components/StatCard";
 import RecentActivity from "@/components/RecentActivity";
@@ -20,6 +21,7 @@ function ProjectsDashboard() {
   const [error, setError] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -114,7 +116,18 @@ function ProjectsDashboard() {
             <h1 className="font-display text-2xl font-semibold text-text">Projects</h1>
             <p className="text-sm text-text-soft">Track goals and tasks across every campaign.</p>
           </div>
-          <Button onClick={() => setFormOpen(true)}>+ New project</Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setQuickAddOpen(true)}
+              disabled={projects.length === 0}
+              title={projects.length === 0 ? "Create a project first" : undefined}
+            >
+              + Quick add task
+            </Button>
+            <Button variant="secondary" onClick={() => setFormOpen(true)}>
+              + New project
+            </Button>
+          </div>
         </div>
 
         {/* Search, filters, sort */}
@@ -219,6 +232,13 @@ function ProjectsDashboard() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleCreate}
         workspaces={workspaces}
+      />
+
+      <QuickAddTaskModal
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        projects={projects}
+        onCreated={load}
       />
 
       <ConfirmModal
