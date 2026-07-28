@@ -3,6 +3,8 @@ const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
 const membershipsDb = require("../db/memberships");
+const usersDb = require("../db/users");
+const activityLogDb = require("../db/activityLog");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { CATEGORY_KEYS, PERIODS } = require("../constants");
@@ -59,6 +61,16 @@ router.post("/:projectId/goals", async (req, res) => {
     period: PERIODS.includes(period) ? period : "monthly",
     step: Number(step) || 1,
   });
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "goal_created",
+    message: `${actor?.name || actor?.email} added the goal "${goal.label}"`,
+  });
+
   res.status(201).json({ goal });
 });
 
@@ -99,6 +111,16 @@ router.delete("/:projectId/goals/:goalId", async (req, res) => {
   // Tasks linked to this goal stay, but unlink so they stop counting toward it.
   await tasksDb.unlinkGoal(goal.id);
   await goalsDb.remove(goal.id);
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "goal_deleted",
+    message: `${actor?.name || actor?.email} deleted the goal "${goal.label}"`,
+  });
+
   res.json({ ok: true });
 });
 

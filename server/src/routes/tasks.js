@@ -3,6 +3,8 @@ const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
 const membershipsDb = require("../db/memberships");
+const usersDb = require("../db/users");
+const activityLogDb = require("../db/activityLog");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { STATUSES } = require("../constants");
@@ -44,6 +46,20 @@ async function syncGoalOnStatusChange(goalId, oldStatus, newStatus) {
   await goalsDb.setCurrentValue(goalId, nextValue);
 }
 
+// Only logs the "completed" moment, not every status change, to keep the
+// timeline meaningful rather than noisy with todo<->in_progress churn.
+async function logIfCompleted(req, project, task, oldStatus, newStatus) {
+  if (oldStatus === "done" || newStatus !== "done") return;
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "task_completed",
+    message: `${actor?.name || actor?.email} completed "${task.title}"`,
+  });
+}
+
 router.post("/:projectId/tasks", async (req, res) => {
   const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
@@ -79,6 +95,16 @@ router.post("/:projectId/tasks", async (req, res) => {
   if (finalStatus === "done" && goalId) {
     await syncGoalOnStatusChange(goalId, "todo", "done");
   }
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "task_created",
+    message: `${actor?.name || actor?.email} added the task "${task.title}"`,
+  });
+  await logIfCompleted(req, project, task, "todo", finalStatus);
 
   res.status(201).json({ task });
 });
@@ -120,6 +146,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
   if (oldStatus !== newStatus) {
     await syncGoalOnStatusChange(updated.goalId, oldStatus, newStatus);
   }
+  await logIfCompleted(req, project, updated, oldStatus, newStatus);
 
   res.json({ task: updated });
 });
@@ -142,6 +169,7 @@ router.patch("/:projectId/tasks/:taskId/cycle-status", async (req, res) => {
   });
 
   await syncGoalOnStatusChange(task.goalId, task.status, newStatus);
+  await logIfCompleted(req, project, updated, task.status, newStatus);
   res.json({ task: updated });
 });
 
@@ -161,6 +189,16 @@ router.delete("/:projectId/tasks/:taskId", async (req, res) => {
   if (!task) return res.status(404).json({ error: "Task not found." });
 
   await tasksDb.remove(task.id);
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "task_deleted",
+    message: `${actor?.name || actor?.email} deleted the task "${task.title}"`,
+  });
+
   res.json({ ok: true });
 });
 

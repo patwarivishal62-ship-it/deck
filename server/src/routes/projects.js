@@ -2,6 +2,7 @@ const express = require("express");
 const projectsDb = require("../db/projects");
 const membershipsDb = require("../db/memberships");
 const usersDb = require("../db/users");
+const activityLogDb = require("../db/activityLog");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { PRIORITY_KEYS, PROJECT_SORTS } = require("../constants");
@@ -94,6 +95,16 @@ router.post("/", async (req, res) => {
     dueDate: dueDate || null,
     memberAccess: role === "member" ? [req.userId] : [],
   });
+
+  const creator = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "project_created",
+    message: `${creator?.name || creator?.email} created this project`,
+  });
+
   res.status(201).json({ project });
 });
 
