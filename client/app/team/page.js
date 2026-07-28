@@ -142,6 +142,7 @@ function MembersList({ workspace, members, currentUserRole, onChanged }) {
 }
 
 function CreateWorkspaceForm({ onCreated }) {
+  const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -153,6 +154,7 @@ function CreateWorkspaceForm({ onCreated }) {
     try {
       await api.createWorkspace({ name: name.trim() });
       setName("");
+      setExpanded(false);
       onCreated();
     } catch (err) {
       setError(err.message);
@@ -161,11 +163,27 @@ function CreateWorkspaceForm({ onCreated }) {
     }
   }
 
+  // Deliberately quiet: anyone can create a workspace, but this isn't
+  // something to spotlight, so it's a plain text link rather than its own
+  // card, and stays collapsed until someone actually wants it.
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="text-sm text-text-faint underline-offset-2 hover:text-text-soft hover:underline"
+      >
+        + Create another workspace
+      </button>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex items-end gap-2">
       <div className="min-w-[200px] flex-1">
         <Field label="New workspace name">
           <TextInput
+            autoFocus
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -174,9 +192,12 @@ function CreateWorkspaceForm({ onCreated }) {
         </Field>
       </div>
       <Button type="submit" disabled={busy}>
-        {busy ? "Creating…" : "Create workspace"}
+        {busy ? "Creating…" : "Create"}
       </Button>
-      {error && <p className="text-sm text-signal-deep">{error}</p>}
+      <Button type="button" variant="ghost" onClick={() => setExpanded(false)} disabled={busy}>
+        Cancel
+      </Button>
+      {error && <p className="w-full text-sm text-signal-deep">{error}</p>}
     </form>
   );
 }
@@ -285,12 +306,9 @@ function TeamPageContent() {
               </SettingsCard>
             )}
 
-            <SettingsCard
-              title="Create a new workspace"
-              description="Separate spaces for separate clients or teams — each with its own members and projects."
-            >
+            <div className="pt-1">
               <CreateWorkspaceForm onCreated={refreshAll} />
-            </SettingsCard>
+            </div>
           </div>
         )}
       </main>
