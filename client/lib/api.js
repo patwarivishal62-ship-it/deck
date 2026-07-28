@@ -68,6 +68,16 @@ export const api = {
   updateProjectAccess: (id, userId, grant) =>
     request(`/projects/${id}/access`, { method: "PATCH", body: { userId, grant } }),
 
+  // comments & activity
+  listCollaborators: (projectId) => request(`/projects/${projectId}/collaborators`),
+  listComments: (projectId, taskId) =>
+    request(`/projects/${projectId}/comments${taskId ? `?taskId=${taskId}` : ""}`),
+  createComment: (projectId, body, taskId) =>
+    request(`/projects/${projectId}/comments`, { method: "POST", body: { body, taskId } }),
+  deleteComment: (projectId, commentId) =>
+    request(`/projects/${projectId}/comments/${commentId}`, { method: "DELETE" }),
+  listActivity: (projectId) => request(`/projects/${projectId}/activity`),
+
   // goals
   createGoal: (projectId, body) => request(`/projects/${projectId}/goals`, { method: "POST", body }),
   updateGoal: (projectId, goalId, body) =>

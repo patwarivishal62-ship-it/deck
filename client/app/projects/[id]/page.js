@@ -12,6 +12,9 @@ import GoalFormModal from "@/components/GoalFormModal";
 import TaskFormModal from "@/components/TaskFormModal";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ProjectAccessModal from "@/components/ProjectAccessModal";
+import CommentThread from "@/components/CommentThread";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { Button } from "@/components/FormControls";
 import Meter from "@/components/Meter";
@@ -38,6 +41,7 @@ function ProjectDetail() {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
+  const [commentTaskTarget, setCommentTaskTarget] = useState(null);
 
   const [busy, setBusy] = useState(false);
 
@@ -403,12 +407,41 @@ function ProjectDetail() {
                     setTaskFormOpen(true);
                   }}
                   onDelete={setDeleteTaskTarget}
+                  onComment={setCommentTaskTarget}
                 />
               ))}
             </div>
           )}
         </section>
+
+        {/* Comments — project-level discussion thread */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Comments
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <CommentThread projectId={id} />
+          </div>
+        </section>
+
+        {/* Activity — a running log of what's happened on this project */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Activity
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <ActivityTimeline projectId={id} />
+          </div>
+        </section>
       </main>
+
+      <Modal
+        open={!!commentTaskTarget}
+        onClose={() => setCommentTaskTarget(null)}
+        title={commentTaskTarget ? `Comments — ${commentTaskTarget.title}` : "Comments"}
+      >
+        {commentTaskTarget && <CommentThread projectId={id} taskId={commentTaskTarget.id} />}
+      </Modal>
 
       <ProjectFormModal
         open={projectFormOpen}

@@ -9,7 +9,7 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { todo: "To do", in_progress: "In progress", done: "Done" };
 
-export default function TaskRow({ task, goal, onCycleStatus, onEdit, onDelete, canDelete = true }) {
+export default function TaskRow({ task, goal, onCycleStatus, onEdit, onDelete, onComment, canDelete = true }) {
   const meta = goal ? CATEGORIES[goal.category] || CATEGORIES.other : null;
 
   return (
@@ -41,6 +41,16 @@ export default function TaskRow({ task, goal, onCycleStatus, onEdit, onDelete, c
       </div>
 
       <div className="flex shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => onComment(task)}
+          aria-label="Comments"
+          className="rounded-md p-1 text-text-faint hover:bg-paper hover:text-text"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={() => onEdit(task)}
