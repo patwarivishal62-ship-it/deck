@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const usersDb = require("../db/users");
 const workspacesDb = require("../db/workspaces");
 const membershipsDb = require("../db/memberships");
+const notificationsDb = require("../db/notifications");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { sendWorkspaceInviteEmail } = require("../lib/email");
@@ -126,6 +127,19 @@ router.post("/:id/invite", async (req, res) => {
     });
   } catch (emailErr) {
     console.error("Failed to send workspace invite email:", emailErr);
+  }
+
+  // If they already have a Deck account, they can also see this invite
+  // without needing to check email at all.
+  if (existingUser) {
+    await notificationsDb.create({
+      userId: existingUser.id,
+      workspaceId: req.params.id,
+      projectId: null,
+      type: "workspace_invite",
+      message: `${inviter?.name || inviter?.email} invited you to join "${workspace?.name}"`,
+      link: `/invite/accept?token=${rawToken}`,
+    });
   }
 
   res.status(201).json({ membership });

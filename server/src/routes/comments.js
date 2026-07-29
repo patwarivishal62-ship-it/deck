@@ -3,8 +3,10 @@ const projectsDb = require("../db/projects");
 const tasksDb = require("../db/tasks");
 const commentsDb = require("../db/comments");
 const activityLogDb = require("../db/activityLog");
+const notificationsDb = require("../db/notifications");
 const membershipsDb = require("../db/memberships");
 const usersDb = require("../db/users");
+const { collaboratorsFor } = require("../lib/collaborators");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 
@@ -22,21 +24,6 @@ async function ownedProject(projectId, req) {
 
 function roleFor(req, workspaceId) {
   return req.workspaces.find((w) => w.id === workspaceId)?.role;
-}
-
-// Everyone who can actually see this specific project: every workspace
-// Owner/Admin (they see all projects), plus Members who've been explicitly
-// granted access to this one. This is the set @mentions are allowed to
-// tag — mentioning someone who can't see the project would be broken.
-async function collaboratorsFor(project) {
-  const memberships = (await membershipsDb.listByWorkspace(project.workspaceId)).filter(
-    (m) => m.status === "active"
-  );
-  const eligible = memberships.filter(
-    (m) => m.role === "owner" || m.role === "admin" || (project.memberAccess || []).includes(m.userId)
-  );
-  const users = await Promise.all(eligible.map((m) => usersDb.findById(m.userId)));
-  return eligible.map((m, i) => ({ userId: m.userId, name: users[i]?.name, email: users[i]?.email }));
 }
 
 async function withAuthors(comments) {
@@ -85,8 +72,9 @@ router.post("/:projectId/comments", async (req, res) => {
   if (!body || !body.trim()) {
     return res.status(400).json({ error: "Comment can't be empty." });
   }
+  let task = null;
   if (taskId) {
-    const task = await tasksDb.findByIdInProject(taskId, project.id);
+    task = await tasksDb.findByIdInProject(taskId, project.id);
     if (!task) return res.status(404).json({ error: "Task not found." });
   }
 
@@ -110,6 +98,33 @@ router.post("/:projectId/comments", async (req, res) => {
       ? `${author?.name || author?.email} commented on a task`
       : `${author?.name || author?.email} commented on the project`,
   });
+
+  // Recipients: everyone @mentioned, plus the project's creator, plus the
+  // task's assignee if this is a task comment — always excluding whoever
+  // just posted it, and never notifying the same person twice for one comment.
+  const recipientRoles = new Map(); // userId -> 'mention' | 'comment'
+  comment.mentions.forEach((userId) => recipientRoles.set(userId, "mention"));
+  if (project.userId && !recipientRoles.has(project.userId)) {
+    recipientRoles.set(project.userId, "comment");
+  }
+  if (task?.assigneeId && !recipientRoles.has(task.assigneeId)) {
+    recipientRoles.set(task.assigneeId, "comment");
+  }
+  recipientRoles.delete(req.userId);
+
+  const link = taskId ? `/projects/${project.id}` : `/projects/${project.id}`;
+  const notifyList = Array.from(recipientRoles.entries()).map(([userId, type]) => ({
+    userId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    type,
+    message:
+      type === "mention"
+        ? `${author?.name || author?.email} mentioned you in a comment`
+        : `${author?.name || author?.email} commented on "${project.name}"`,
+    link,
+  }));
+  await notificationsDb.createMany(notifyList);
 
   res.status(201).json({ comment: (await withAuthors([comment]))[0] });
 });

@@ -3,6 +3,7 @@ const projectsDb = require("../db/projects");
 const membershipsDb = require("../db/memberships");
 const usersDb = require("../db/users");
 const activityLogDb = require("../db/activityLog");
+const notificationsDb = require("../db/notifications");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { PRIORITY_KEYS, PROJECT_SORTS } = require("../constants");
@@ -104,6 +105,23 @@ router.post("/", async (req, res) => {
     type: "project_created",
     message: `${creator?.name || creator?.email} created this project`,
   });
+
+  // Let the rest of the workspace's admins/owners know — they see every
+  // project automatically, so a heads-up is useful even though they didn't
+  // create it themselves.
+  const workspaceMembers = await membershipsDb.listByWorkspace(workspaceId);
+  const notifyRecipients = workspaceMembers
+    .filter((m) => m.status === "active" && m.userId && m.userId !== req.userId)
+    .filter((m) => m.role === "owner" || m.role === "admin")
+    .map((m) => ({
+      userId: m.userId,
+      workspaceId,
+      projectId: project.id,
+      type: "project_created",
+      message: `${creator?.name || creator?.email} created "${project.name}"`,
+      link: `/projects/${project.id}`,
+    }));
+  await notificationsDb.createMany(notifyRecipients);
 
   res.status(201).json({ project });
 });
