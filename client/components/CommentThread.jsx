@@ -42,6 +42,7 @@ export default function CommentThread({ projectId, taskId = null }) {
   const [error, setError] = useState("");
 
   const [text, setText] = useState("");
+  const [insertedMentions, setInsertedMentions] = useState([]); // [{ name, userId }]
   const [busy, setBusy] = useState(false);
   const [mentionQuery, setMentionQuery] = useState(null); // null = dropdown closed
   const textareaRef = useRef(null);
@@ -82,11 +83,20 @@ export default function CommentThread({ projectId, taskId = null }) {
     const match = upToCursor.match(/@([a-zA-Z0-9 ]*)$/);
     if (!match) return;
 
+    const name = collaborator.name || collaborator.email;
     const before = value.slice(0, match.index);
     const after = value.slice(cursor);
-    const token = mentionToken(collaborator.name || collaborator.email, collaborator.userId);
-    const next = `${before}${token} ${after}`;
+    // Show a clean "@Name" while composing — the textarea can only display
+    // plain text, so showing the real @[Name](userId) token here would look
+    // exactly like the bug this fixes. The token is reconstructed silently
+    // from insertedMentions right before the comment is actually sent.
+    const next = `${before}@${name} ${after}`;
     setText(next);
+    setInsertedMentions((prev) =>
+      prev.some((m) => m.userId === collaborator.userId)
+        ? prev
+        : [...prev, { name, userId: collaborator.userId }]
+    );
     setMentionQuery(null);
     requestAnimationFrame(() => textareaRef.current?.focus());
   }
@@ -97,15 +107,29 @@ export default function CommentThread({ projectId, taskId = null }) {
       : (c.name || c.email || "").toLowerCase().includes(mentionQuery)
   );
 
+  function toWireFormat(displayText) {
+    // Reconstruct @[Name](userId) tokens from plain "@Name" text, longest
+    // names first so e.g. "Vishal Patwari" doesn't get partially matched by
+    // a shorter "Vishal" also present in this comment.
+    const sorted = [...insertedMentions].sort((a, b) => b.name.length - a.name.length);
+    let result = displayText;
+    for (const { name, userId } of sorted) {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      result = result.replace(new RegExp(`@${escaped}(?!\\()`, "g"), mentionToken(name, userId));
+    }
+    return result;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!text.trim()) return;
     setBusy(true);
     setError("");
     try {
-      const data = await api.createComment(projectId, text.trim(), taskId);
+      const data = await api.createComment(projectId, toWireFormat(text.trim()), taskId);
       setComments((prev) => [...prev, data.comment]);
       setText("");
+      setInsertedMentions([]);
       setMentionQuery(null);
     } catch (err) {
       setError(err.message);
