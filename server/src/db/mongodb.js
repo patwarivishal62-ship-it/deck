@@ -45,6 +45,9 @@ async function connectDB() {
   await db.collection("comments").createIndex({ projectId: 1, taskId: 1 });
   await db.collection("activityLog").createIndex({ id: 1 }, { unique: true });
   await db.collection("activityLog").createIndex({ projectId: 1, createdAt: -1 });
+  await db.collection("notifications").createIndex({ id: 1 }, { unique: true });
+  await db.collection("notifications").createIndex({ userId: 1, createdAt: -1 });
+  await db.collection("notifications").createIndex({ userId: 1, read: 1 });
 
   console.log("✅ Connected to MongoDB");
 
