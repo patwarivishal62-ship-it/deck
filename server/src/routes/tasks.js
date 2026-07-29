@@ -89,7 +89,7 @@ async function notifyAssignee(project, task, assigneeUserId, actorUserId) {
     workspaceId: project.workspaceId,
     projectId: project.id,
     type: "task_assigned",
-    message: `${actor?.name || actor?.email} assigned you "${task.title}"`,
+    message: `${actor?.name || actor?.email} assigned you "${task.title}" in ${project.name}`,
     link: `/projects/${project.id}`,
   });
 }

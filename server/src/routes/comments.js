@@ -94,8 +94,8 @@ router.post("/:projectId/comments", async (req, res) => {
     projectId: project.id,
     actorUserId: req.userId,
     type: "comment_added",
-    message: taskId
-      ? `${author?.name || author?.email} commented on a task`
+    message: task
+      ? `${author?.name || author?.email} commented on "${task.title}"`
       : `${author?.name || author?.email} commented on the project`,
   });
 
@@ -112,7 +112,12 @@ router.post("/:projectId/comments", async (req, res) => {
   }
   recipientRoles.delete(req.userId);
 
-  const link = taskId ? `/projects/${project.id}` : `/projects/${project.id}`;
+  // Name the actual project (and task, if this is a task comment) directly
+  // in the message — "mentioned you in a comment" with no context forces
+  // someone to click through blind just to find out what it's about.
+  const authorName = author?.name || author?.email;
+  const where = task ? `"${task.title}" in ${project.name}` : project.name;
+  const link = `/projects/${project.id}`;
   const notifyList = Array.from(recipientRoles.entries()).map(([userId, type]) => ({
     userId,
     workspaceId: project.workspaceId,
@@ -120,8 +125,8 @@ router.post("/:projectId/comments", async (req, res) => {
     type,
     message:
       type === "mention"
-        ? `${author?.name || author?.email} mentioned you in a comment`
-        : `${author?.name || author?.email} commented on "${project.name}"`,
+        ? `${authorName} mentioned you in a comment on ${where}`
+        : `${authorName} commented on ${where}`,
     link,
   }));
   await notificationsDb.createMany(notifyList);
