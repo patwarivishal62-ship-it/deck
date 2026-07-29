@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { Field, TextInput, TextArea, Select, Button } from "./FormControls";
 import { STATUSES } from "@/lib/constants";
+import { api } from "@/lib/api";
 
-const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "" };
+const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "", assigneeId: "" };
 
 // Used as the date input's min= — stops the calendar picker from offering
 // past dates for a NEW selection. An already-stored past due date (a task
@@ -15,8 +16,9 @@ function todayISODate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function TaskFormModal({ open, onClose, onSubmit, initial, goals }) {
+export default function TaskFormModal({ open, onClose, onSubmit, initial, goals, projectId }) {
   const [form, setForm] = useState(EMPTY);
+  const [collaborators, setCollaborators] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -24,12 +26,22 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
     if (open) {
       setForm(
         initial
-          ? { ...EMPTY, ...initial, goalId: initial.goalId || "", dueDate: initial.dueDate || "" }
+          ? {
+              ...EMPTY,
+              ...initial,
+              goalId: initial.goalId || "",
+              dueDate: initial.dueDate || "",
+              assigneeId: initial.assigneeId || "",
+            }
           : EMPTY
       );
       setError("");
+      api
+        .listCollaborators(projectId)
+        .then((data) => setCollaborators(data.collaborators))
+        .catch(() => setCollaborators([]));
     }
-  }, [open, initial]);
+  }, [open, initial, projectId]);
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -54,6 +66,7 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
         notes: form.notes.trim(),
         goalId: form.goalId || null,
         dueDate: form.dueDate || null,
+        assigneeId: form.assigneeId || null,
       });
       onClose();
     } catch (err) {
@@ -83,6 +96,16 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
             {goals.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Assignee (optional)">
+          <Select value={form.assigneeId} onChange={(e) => set("assigneeId", e.target.value)}>
+            <option value="">Unassigned</option>
+            {collaborators.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.name || c.email}
               </option>
             ))}
           </Select>

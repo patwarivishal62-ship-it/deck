@@ -42,6 +42,7 @@ function ProjectDetail() {
   const [editingTask, setEditingTask] = useState(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
   const [commentTaskTarget, setCommentTaskTarget] = useState(null);
+  const [collaborators, setCollaborators] = useState([]);
 
   const [busy, setBusy] = useState(false);
 
@@ -61,7 +62,11 @@ function ProjectDetail() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    api
+      .listCollaborators(id)
+      .then((data) => setCollaborators(data.collaborators))
+      .catch(() => setCollaborators([]));
+  }, [load, id]);
 
   // --- Project itself ---
   async function handleProjectSubmit(values) {
@@ -191,6 +196,7 @@ function ProjectDetail() {
   }
 
   const goalById = Object.fromEntries(project.goals.map((g) => [g.id, g]));
+  const collaboratorById = Object.fromEntries(collaborators.map((c) => [c.userId, c]));
   // Same formula as ProjectCard on the projects list page — average of each
   // goal's currentValue/targetValue (capped at 100% per goal), not related
   // to task counts at all.
@@ -400,6 +406,11 @@ function ProjectDetail() {
                   key={task.id}
                   task={task}
                   goal={task.goalId ? goalById[task.goalId] : null}
+                  assigneeName={
+                    task.assigneeId
+                      ? collaboratorById[task.assigneeId]?.name || collaboratorById[task.assigneeId]?.email
+                      : null
+                  }
                   onCycleStatus={handleCycleStatus}
                   canDelete={canManage}
                   onEdit={(t) => {
@@ -476,6 +487,7 @@ function ProjectDetail() {
         onSubmit={handleTaskSubmit}
         initial={editingTask}
         goals={project.goals}
+        projectId={id}
       />
 
       <ConfirmModal

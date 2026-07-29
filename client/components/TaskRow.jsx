@@ -9,7 +9,7 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { todo: "To do", in_progress: "In progress", done: "Done" };
 
-export default function TaskRow({ task, goal, onCycleStatus, onEdit, onDelete, onComment, canDelete = true }) {
+export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdit, onDelete, onComment, canDelete = true }) {
   const meta = goal ? CATEGORIES[goal.category] || CATEGORIES.other : null;
 
   return (
@@ -36,6 +36,11 @@ export default function TaskRow({ task, goal, onCycleStatus, onEdit, onDelete, o
           )}
           {task.dueDate && (
             <span className="font-mono text-[10px] text-text-faint">due {task.dueDate}</span>
+          )}
+          {assigneeName && (
+            <span className="rounded-full bg-paper px-1.5 py-0.5 font-mono text-[10px] text-text-faint">
+              @{assigneeName}
+            </span>
           )}
         </div>
       </div>

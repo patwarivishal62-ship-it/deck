@@ -78,6 +78,11 @@ export const api = {
     request(`/projects/${projectId}/comments/${commentId}`, { method: "DELETE" }),
   listActivity: (projectId) => request(`/projects/${projectId}/activity`),
 
+  // notifications
+  listNotifications: () => request("/notifications"),
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
+
   // goals
   createGoal: (projectId, body) => request(`/projects/${projectId}/goals`, { method: "POST", body }),
   updateGoal: (projectId, goalId, body) =>

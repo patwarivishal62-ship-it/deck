@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import UserMenu from "./UserMenu";
+import NotificationBell from "./NotificationBell";
 
 export default function TopBar() {
   const { user } = useAuth();
@@ -18,7 +19,12 @@ export default function TopBar() {
           </span>
         </Link>
 
-        {user && <UserMenu />}
+        {user && (
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <UserMenu />
+          </div>
+        )}
       </div>
     </header>
   );
