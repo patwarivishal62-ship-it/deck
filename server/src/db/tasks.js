@@ -24,7 +24,7 @@ async function findByIdInProject(id, projectId) {
   return toTask(await collection().findOne({ id, projectId }));
 }
 
-async function create({ projectId, title, notes, goalId, status, dueDate, completedAt }) {
+async function create({ projectId, title, notes, goalId, status, dueDate, completedAt, assigneeId }) {
   const task = {
     id: nanoid(),
     projectId,
@@ -35,13 +35,14 @@ async function create({ projectId, title, notes, goalId, status, dueDate, comple
     dueDate: dueDate || null,
     createdAt: new Date().toISOString(),
     completedAt: completedAt || null,
+    assigneeId: assigneeId || null,
   };
   await collection().insertOne(task);
   return toTask(task);
 }
 
 async function update(id, fields) {
-  const allowed = ["title", "notes", "goalId", "status", "dueDate", "completedAt"];
+  const allowed = ["title", "notes", "goalId", "status", "dueDate", "completedAt", "assigneeId"];
   const keys = Object.keys(fields).filter((k) => allowed.includes(k));
   if (keys.length === 0) return findById(id);
 

@@ -5,6 +5,8 @@ const tasksDb = require("../db/tasks");
 const membershipsDb = require("../db/memberships");
 const usersDb = require("../db/users");
 const activityLogDb = require("../db/activityLog");
+const notificationsDb = require("../db/notifications");
+const { collaboratorsFor } = require("../lib/collaborators");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 const { STATUSES } = require("../constants");
@@ -60,11 +62,43 @@ async function logIfCompleted(req, project, task, oldStatus, newStatus) {
   });
 }
 
+// Validates assigneeId (if present) against who can actually see this
+// project, and — only when it's a genuinely NEW assignment, not a re-save
+// of the same value, and not someone assigning it to themselves — notifies
+// the new assignee.
+async function resolveAssignee(req, project, assigneeId, previousAssigneeId) {
+  if (!assigneeId) return { assigneeId: null, notify: null };
+
+  const collaborators = await collaboratorsFor(project);
+  if (!collaborators.some((c) => c.userId === assigneeId)) {
+    const err = new Error("That person doesn't have access to this project.");
+    err.status = 400;
+    throw err;
+  }
+
+  const isNewAssignment = assigneeId !== previousAssigneeId;
+  const notify = isNewAssignment && assigneeId !== req.userId ? assigneeId : null;
+  return { assigneeId, notify };
+}
+
+async function notifyAssignee(project, task, assigneeUserId, actorUserId) {
+  if (!assigneeUserId) return;
+  const actor = await usersDb.findById(actorUserId);
+  await notificationsDb.create({
+    userId: assigneeUserId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    type: "task_assigned",
+    message: `${actor?.name || actor?.email} assigned you "${task.title}"`,
+    link: `/projects/${project.id}`,
+  });
+}
+
 router.post("/:projectId/tasks", async (req, res) => {
   const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
-  const { title, notes, goalId, status, dueDate } = req.body || {};
+  const { title, notes, goalId, status, dueDate, assigneeId } = req.body || {};
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Task title is required." });
   }
@@ -82,6 +116,13 @@ router.post("/:projectId/tasks", async (req, res) => {
     if (!goal) return res.status(400).json({ error: "Linked goal not found in this project." });
   }
 
+  let assignee;
+  try {
+    assignee = await resolveAssignee(req, project, assigneeId, null);
+  } catch (err) {
+    return res.status(err.status || 400).json({ error: err.message });
+  }
+
   const task = await tasksDb.create({
     projectId: project.id,
     title: title.trim(),
@@ -90,6 +131,7 @@ router.post("/:projectId/tasks", async (req, res) => {
     status: finalStatus,
     dueDate: dueDate || null,
     completedAt: finalStatus === "done" ? new Date().toISOString() : null,
+    assigneeId: assignee.assigneeId,
   });
 
   if (finalStatus === "done" && goalId) {
@@ -105,6 +147,7 @@ router.post("/:projectId/tasks", async (req, res) => {
     message: `${actor?.name || actor?.email} added the task "${task.title}"`,
   });
   await logIfCompleted(req, project, task, "todo", finalStatus);
+  await notifyAssignee(project, task, assignee.notify, req.userId);
 
   res.status(201).json({ task });
 });
@@ -116,7 +159,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });
 
-  const { title, notes, goalId, status, dueDate } = req.body || {};
+  const { title, notes, goalId, status, dueDate, assigneeId } = req.body || {};
   if (title !== undefined && !title.trim()) {
     return res.status(400).json({ error: "Task title is required." });
   }
@@ -131,6 +174,15 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
     if (!goal) return res.status(400).json({ error: "Linked goal not found in this project." });
   }
 
+  let assignee = { assigneeId: task.assigneeId, notify: null };
+  if (assigneeId !== undefined) {
+    try {
+      assignee = await resolveAssignee(req, project, assigneeId, task.assigneeId);
+    } catch (err) {
+      return res.status(err.status || 400).json({ error: err.message });
+    }
+  }
+
   const oldStatus = task.status;
   const newStatus = status !== undefined ? (STATUSES.includes(status) ? status : task.status) : task.status;
 
@@ -139,6 +191,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
     ...(notes !== undefined ? { notes: notes.trim() } : {}),
     ...(goalId !== undefined ? { goalId: goalId || null } : {}),
     ...(dueDate !== undefined ? { dueDate: dueDate || null } : {}),
+    ...(assigneeId !== undefined ? { assigneeId: assignee.assigneeId } : {}),
     status: newStatus,
     completedAt: newStatus === "done" ? task.completedAt || new Date().toISOString() : null,
   });
@@ -147,6 +200,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
     await syncGoalOnStatusChange(updated.goalId, oldStatus, newStatus);
   }
   await logIfCompleted(req, project, updated, oldStatus, newStatus);
+  await notifyAssignee(project, updated, assignee.notify, req.userId);
 
   res.json({ task: updated });
 });
