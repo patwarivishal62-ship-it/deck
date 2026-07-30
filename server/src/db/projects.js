@@ -4,6 +4,7 @@ const goalsDb = require("./goals");
 const tasksDb = require("./tasks");
 const commentsDb = require("./comments");
 const activityLogDb = require("./activityLog");
+const filesDb = require("./files");
 
 const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
 
@@ -162,6 +163,7 @@ async function remove(id) {
   await tasksDb.removeByProject(id);
   await commentsDb.removeByProject(id);
   await activityLogDb.removeByProject(id);
+  await filesDb.removeByProject(id);
   await collection().deleteOne({ id });
 }
 
@@ -175,6 +177,7 @@ async function removeByWorkspace(workspaceId) {
     await tasksDb.removeByProject(doc.id);
     await commentsDb.removeByProject(doc.id);
     await activityLogDb.removeByProject(doc.id);
+    await filesDb.removeByProject(doc.id);
   }
   await collection().deleteMany({ workspaceId });
 }
