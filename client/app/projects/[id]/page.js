@@ -13,6 +13,7 @@ import TaskFormModal from "@/components/TaskFormModal";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ProjectAccessModal from "@/components/ProjectAccessModal";
 import CommentThread from "@/components/CommentThread";
+import FileManager from "@/components/FileManager";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -423,6 +424,16 @@ function ProjectDetail() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Files — documents, images, PDFs, presentations, videos */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Files
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <FileManager projectId={id} canManage={canManage} />
+          </div>
         </section>
 
         {/* Comments — project-level discussion thread */}

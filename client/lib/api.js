@@ -78,6 +78,34 @@ export const api = {
     request(`/projects/${projectId}/comments/${commentId}`, { method: "DELETE" }),
   listActivity: (projectId) => request(`/projects/${projectId}/activity`),
 
+  // files
+  listFiles: (projectId) => request(`/projects/${projectId}/files`),
+  deleteFile: (projectId, fileId) => request(`/projects/${projectId}/files/${fileId}`, { method: "DELETE" }),
+  // Uses a raw fetch instead of request() — file uploads are
+  // multipart/form-data, and the browser needs to set that Content-Type
+  // header itself (with its boundary string), not have it forced to JSON.
+  uploadFile: async (projectId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/api/projects/${projectId}/files`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      throw new Error(data?.error || `Upload failed (${res.status})`);
+    }
+    return data;
+  },
+
   // notifications
   listNotifications: () => request("/notifications"),
   markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: "PATCH" }),
