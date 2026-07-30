@@ -11,6 +11,7 @@ const projectRoutes = require("./routes/projects");
 const goalRoutes = require("./routes/goals");
 const taskRoutes = require("./routes/tasks");
 const commentRoutes = require("./routes/comments");
+const fileRoutes = require("./routes/files");
 const notificationRoutes = require("./routes/notifications");
 const workspaceRoutes = require("./routes/workspaces");
 
@@ -42,6 +43,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/projects", goalRoutes);
 app.use("/api/projects", taskRoutes);
 app.use("/api/projects", commentRoutes);
+app.use("/api/projects", fileRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use((err, req, res, next) => {
