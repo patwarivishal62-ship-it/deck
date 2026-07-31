@@ -12,7 +12,7 @@ export default function Footer() {
           <Link href="/terms" className="transition hover:text-white">
             Terms &amp; Conditions
           </Link>
-          <a href="mailto:support@deck.app" className="transition hover:text-white">
+          <a href="mailto:contact@planyourdeck.com" className="transition hover:text-white">
             Contact Support
           </a>
         </nav>

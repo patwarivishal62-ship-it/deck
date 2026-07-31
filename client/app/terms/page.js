@@ -83,8 +83,8 @@ export default function TermsPage() {
         <Section title="Contact Information">
           <p>
             Questions about these terms? Reach out at{" "}
-            <a href="mailto:support@deck.app" className="text-signal-deep underline">
-              support@deck.app
+            <a href="mailto:contact@planyourdeck.com" className="text-signal-deep underline">
+              contact@planyourdeck.com
             </a>
             .
           </p>
