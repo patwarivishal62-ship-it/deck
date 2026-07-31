@@ -5,9 +5,8 @@
 //   RESEND_API_KEY — from Resend dashboard > API Keys
 //   ADMIN_EMAIL    — where deletion-request notifications get sent
 //
-// Without a verified custom domain on Resend, emails can only be sent to the
-// address that owns the Resend account — which is fine here, since that's
-// the same address as ADMIN_EMAIL.
+// Sends from a verified domain (planyourdeck.com), so this can deliver to
+// any recipient — not just the address that owns the Resend account.
 async function sendEmail({ to, subject, html }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -22,7 +21,7 @@ async function sendEmail({ to, subject, html }) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Deck <onboarding@resend.dev>",
+      from: "Deck <hello@planyourdeck.com>",
       to: [to],
       subject,
       html,
@@ -60,10 +59,6 @@ async function sendAccountDeletedEmail({ fullName, email, reason, requestedAt })
   });
 }
 
-// NOTE: without a verified custom domain on Resend, this can only actually
-// deliver when `to` matches the email that owns the Resend account. Until a
-// domain is verified, password reset only works end-to-end for that one
-// address — every other signup's reset request will fail to send.
 async function sendPasswordResetEmail({ to, resetUrl }) {
   const html = `
     <h2>Reset your Deck password</h2>
@@ -79,8 +74,6 @@ async function sendPasswordResetEmail({ to, resetUrl }) {
   });
 }
 
-// NOTE: same Resend limitation as above — invites to anyone other than the
-// address on the Resend account won't actually deliver until a domain is verified.
 async function sendWorkspaceInviteEmail({ to, workspaceName, inviterName, inviteUrl }) {
   const html = `
     <h2>You've been invited to a Deck workspace</h2>
