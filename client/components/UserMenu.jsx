@@ -88,6 +88,13 @@ export default function UserMenu() {
               )}
             </Link>
             <Link
+              href="/calendar"
+              onClick={() => setOpen(false)}
+              className="block px-3.5 py-2 text-sm text-text transition hover:bg-paper"
+            >
+              Calendar
+            </Link>
+            <Link
               href="/settings"
               onClick={() => setOpen(false)}
               className="block px-3.5 py-2 text-sm text-text transition hover:bg-paper"
