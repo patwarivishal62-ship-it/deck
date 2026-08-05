@@ -78,6 +78,18 @@ export const api = {
     request(`/projects/${projectId}/comments/${commentId}`, { method: "DELETE" }),
   listActivity: (projectId) => request(`/projects/${projectId}/activity`),
 
+  // milestones
+  listMilestones: (projectId) => request(`/projects/${projectId}/milestones`),
+  createMilestone: (projectId, body) =>
+    request(`/projects/${projectId}/milestones`, { method: "POST", body }),
+  updateMilestone: (projectId, milestoneId, body) =>
+    request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "PATCH", body }),
+  deleteMilestone: (projectId, milestoneId) =>
+    request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" }),
+
+  // calendar
+  listCalendarEvents: () => request("/calendar"),
+
   // files
   listFiles: (projectId) => request(`/projects/${projectId}/files`),
   deleteFile: (projectId, fileId) => request(`/projects/${projectId}/files/${fileId}`, { method: "DELETE" }),

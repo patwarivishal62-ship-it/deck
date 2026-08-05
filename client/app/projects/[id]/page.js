@@ -9,6 +9,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
+import MilestoneFormModal from "@/components/MilestoneFormModal";
 import TaskFormModal from "@/components/TaskFormModal";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ProjectAccessModal from "@/components/ProjectAccessModal";
@@ -38,6 +39,10 @@ function ProjectDetail() {
   const [goalFormOpen, setGoalFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [deleteGoalTarget, setDeleteGoalTarget] = useState(null);
+
+  const [milestoneFormOpen, setMilestoneFormOpen] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+  const [deleteMilestoneTarget, setDeleteMilestoneTarget] = useState(null);
 
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -108,6 +113,37 @@ function ProjectDetail() {
         tasks: p.tasks.map((t) => (t.goalId === deleteGoalTarget.id ? { ...t, goalId: null } : t)),
       }));
       setDeleteGoalTarget(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // --- Milestones ---
+  async function handleMilestoneSubmit(values) {
+    if (editingMilestone) {
+      const data = await api.updateMilestone(id, editingMilestone.id, values);
+      setProject((p) => ({
+        ...p,
+        milestones: p.milestones.map((m) => (m.id === data.milestone.id ? data.milestone : m)),
+      }));
+    } else {
+      const data = await api.createMilestone(id, values);
+      setProject((p) => ({ ...p, milestones: [...(p.milestones || []), data.milestone] }));
+    }
+  }
+
+  async function handleDeleteMilestone() {
+    if (!deleteMilestoneTarget) return;
+    setBusy(true);
+    try {
+      await api.deleteMilestone(id, deleteMilestoneTarget.id);
+      setProject((p) => ({
+        ...p,
+        milestones: p.milestones.filter((m) => m.id !== deleteMilestoneTarget.id),
+      }));
+      setDeleteMilestoneTarget(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -379,6 +415,78 @@ function ProjectDetail() {
           )}
         </section>
 
+        {/* Milestones — named, dated events like a campaign launch */}
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+              Milestones
+            </h2>
+            {canManage && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingMilestone(null);
+                  setMilestoneFormOpen(true);
+                }}
+              >
+                + Add milestone
+              </Button>
+            )}
+          </div>
+
+          {(project.milestones || []).length === 0 ? (
+            <p className="rounded-card border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-text-soft">
+              No milestones yet. {canManage && "Add a launch date or key event to see it on the calendar."}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {project.milestones.map((milestone) => (
+                <div
+                  key={milestone.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-text">{milestone.title}</p>
+                    {milestone.notes && (
+                      <p className="truncate text-xs text-text-faint">{milestone.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="font-mono text-xs text-text-faint">{milestone.date}</span>
+                    {canManage && (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMilestone(milestone);
+                            setMilestoneFormOpen(true);
+                          }}
+                          aria-label="Edit milestone"
+                          className="rounded-md p-1 text-text-faint hover:bg-paper hover:text-text"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteMilestoneTarget(milestone)}
+                          aria-label="Delete milestone"
+                          className="rounded-md p-1 text-text-faint hover:bg-signal-tint hover:text-signal-deep"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Tasks */}
         <section className="mt-8">
           <div className="mb-3 flex items-center justify-between">
@@ -492,6 +600,12 @@ function ProjectDetail() {
         onSubmit={handleGoalSubmit}
         initial={editingGoal}
       />
+      <MilestoneFormModal
+        open={milestoneFormOpen}
+        onClose={() => setMilestoneFormOpen(false)}
+        onSubmit={handleMilestoneSubmit}
+        initial={editingMilestone}
+      />
       <TaskFormModal
         open={taskFormOpen}
         onClose={() => setTaskFormOpen(false)}
@@ -507,6 +621,14 @@ function ProjectDetail() {
         message={`This will permanently delete "${deleteGoalTarget?.label}". Linked tasks will be unlinked, not deleted.`}
         onConfirm={handleDeleteGoal}
         onCancel={() => setDeleteGoalTarget(null)}
+        busy={busy}
+      />
+      <ConfirmModal
+        open={!!deleteMilestoneTarget}
+        title="Delete milestone?"
+        message={`This will permanently delete "${deleteMilestoneTarget?.title}".`}
+        onConfirm={handleDeleteMilestone}
+        onCancel={() => setDeleteMilestoneTarget(null)}
         busy={busy}
       />
       <ConfirmModal
