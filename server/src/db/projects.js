@@ -5,6 +5,7 @@ const tasksDb = require("./tasks");
 const commentsDb = require("./comments");
 const activityLogDb = require("./activityLog");
 const filesDb = require("./files");
+const milestonesDb = require("./milestones");
 
 const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
 
@@ -20,11 +21,12 @@ function toProject(doc) {
 
 async function attachChildren(project) {
   if (!project) return null;
-  const [goals, tasks] = await Promise.all([
+  const [goals, tasks, milestones] = await Promise.all([
     goalsDb.listByProject(project.id),
     tasksDb.listByProject(project.id),
+    milestonesDb.listByProject(project.id),
   ]);
-  return { ...project, goals, tasks };
+  return { ...project, goals, tasks, milestones };
 }
 
 function sortProjects(projects, sort) {
@@ -164,6 +166,7 @@ async function remove(id) {
   await commentsDb.removeByProject(id);
   await activityLogDb.removeByProject(id);
   await filesDb.removeByProject(id);
+  await milestonesDb.removeByProject(id);
   await collection().deleteOne({ id });
 }
 
@@ -178,6 +181,7 @@ async function removeByWorkspace(workspaceId) {
     await commentsDb.removeByProject(doc.id);
     await activityLogDb.removeByProject(doc.id);
     await filesDb.removeByProject(doc.id);
+    await milestonesDb.removeByProject(doc.id);
   }
   await collection().deleteMany({ workspaceId });
 }
