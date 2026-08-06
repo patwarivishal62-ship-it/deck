@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 function buildActivity(projects) {
   const events = [];
 
@@ -24,7 +26,7 @@ function buildActivity(projects) {
   return events
     .filter((e) => e.at)
     .sort((a, b) => new Date(b.at) - new Date(a.at))
-    .slice(0, 6);
+    .slice(0, 15);
 }
 
 function timeAgo(iso) {
@@ -38,8 +40,13 @@ function timeAgo(iso) {
   return `${days}d ago`;
 }
 
+const COLLAPSED_COUNT = 4;
+
 export default function RecentActivity({ projects }) {
   const events = buildActivity(projects);
+  const [expanded, setExpanded] = useState(false);
+  const visibleEvents = expanded ? events : events.slice(0, COLLAPSED_COUNT);
+  const hasMore = events.length > COLLAPSED_COUNT;
 
   return (
     <div className="rounded-card border border-line bg-card p-5">
@@ -49,16 +56,38 @@ export default function RecentActivity({ projects }) {
           Nothing yet — create a project and complete a task to see activity here.
         </p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
-          {events.map((event) => (
-            <li key={event.id} className="flex items-center justify-between gap-3 text-sm">
-              <span className="text-text-soft">{event.text}</span>
-              <span className="whitespace-nowrap font-mono text-[11px] text-text-faint">
-                {timeAgo(event.at)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-3 flex flex-col gap-2">
+            {visibleEvents.map((event) => (
+              <li key={event.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-text-soft">{event.text}</span>
+                <span className="whitespace-nowrap font-mono text-[11px] text-text-faint">
+                  {timeAgo(event.at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-3 flex items-center gap-1 text-xs text-text-faint hover:text-signal-deep"
+            >
+              {expanded ? "Show less" : `Show ${events.length - COLLAPSED_COUNT} more`}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`transition ${expanded ? "rotate-180" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+        </>
       )}
     </div>
   );

@@ -179,24 +179,19 @@ function ProjectsDashboard() {
         {error && <p className="mb-4 text-sm text-signal-deep">{error}</p>}
 
         {!loading && archivedView === "active" && !hasActiveFilters && projects.length > 0 && (
-          <>
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {(() => {
-                const summary = summarizeProjectStatuses(projects);
-                return (
-                  <>
-                    <StatCard label="Total projects" value={summary.total} />
-                    <StatCard label="Completed" value={summary.completed} accent="good" />
-                    <StatCard label="In progress" value={summary.in_progress} accent="signal" />
-                    <StatCard label="Pending" value={summary.pending} accent="faint" />
-                  </>
-                );
-              })()}
-            </div>
-            <div className="mb-6">
-              <RecentActivity projects={projects} />
-            </div>
-          </>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(() => {
+              const summary = summarizeProjectStatuses(projects);
+              return (
+                <>
+                  <StatCard label="Total projects" value={summary.total} />
+                  <StatCard label="Completed" value={summary.completed} accent="good" />
+                  <StatCard label="In progress" value={summary.in_progress} accent="signal" />
+                  <StatCard label="Pending" value={summary.pending} accent="faint" />
+                </>
+              );
+            })()}
+          </div>
         )}
 
         {loading ? (
@@ -223,6 +218,12 @@ function ProjectsDashboard() {
                 showWorkspaceLabel={workspaces.length > 1}
               />
             ))}
+          </div>
+        )}
+
+        {!loading && archivedView === "active" && !hasActiveFilters && projects.length > 0 && (
+          <div className="mt-6">
+            <RecentActivity projects={projects} />
           </div>
         )}
       </main>
