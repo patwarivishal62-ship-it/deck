@@ -13,6 +13,7 @@ const taskRoutes = require("./routes/tasks");
 const commentRoutes = require("./routes/comments");
 const fileRoutes = require("./routes/files");
 const milestoneRoutes = require("./routes/milestones");
+const metricRoutes = require("./routes/metrics");
 const calendarRoutes = require("./routes/calendar");
 const notificationRoutes = require("./routes/notifications");
 const workspaceRoutes = require("./routes/workspaces");
@@ -47,6 +48,7 @@ app.use("/api/projects", taskRoutes);
 app.use("/api/projects", commentRoutes);
 app.use("/api/projects", fileRoutes);
 app.use("/api/projects", milestoneRoutes);
+app.use("/api/projects", metricRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/notifications", notificationRoutes);
 
