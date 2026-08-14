@@ -40,6 +40,59 @@ export const PROJECT_SORTS = [
   { value: "priority", label: "Priority" },
 ];
 
+// Suggested metrics per category — mirrors server/src/constants.js. "unit" is
+// a display hint (count/percent/currency/ratio), not enforced.
+export const METRIC_CATALOG = {
+  social: [
+    { key: "reach", label: "Reach", unit: "count" },
+    { key: "impressions", label: "Impressions", unit: "count" },
+    { key: "followers", label: "Followers", unit: "count" },
+    { key: "profile_visits", label: "Profile Visits", unit: "count" },
+    { key: "engagement_rate", label: "Engagement Rate", unit: "percent" },
+    { key: "shares", label: "Shares", unit: "count" },
+    { key: "saves", label: "Saves", unit: "count" },
+  ],
+  ads: [
+    { key: "spend", label: "Spend", unit: "currency" },
+    { key: "reach", label: "Reach", unit: "count" },
+    { key: "impressions", label: "Impressions", unit: "count" },
+    { key: "ctr", label: "CTR", unit: "percent" },
+    { key: "cpc", label: "CPC", unit: "currency" },
+    { key: "cpm", label: "CPM", unit: "currency" },
+    { key: "leads", label: "Leads", unit: "count" },
+    { key: "cpl", label: "Cost Per Lead", unit: "currency" },
+    { key: "conversions", label: "Conversions", unit: "count" },
+    { key: "roas", label: "ROAS", unit: "ratio" },
+  ],
+  seo: [
+    { key: "organic_traffic", label: "Organic Traffic", unit: "count" },
+    { key: "keyword_rankings", label: "Keywords Ranking", unit: "count" },
+    { key: "backlinks", label: "Backlinks", unit: "count" },
+    { key: "domain_authority", label: "Domain Authority", unit: "count" },
+  ],
+  content: [
+    { key: "views", label: "Views", unit: "count" },
+    { key: "engagement", label: "Engagement", unit: "count" },
+    { key: "avg_time_on_page", label: "Avg. Time on Page", unit: "count" },
+  ],
+  email: [
+    { key: "open_rate", label: "Open Rate", unit: "percent" },
+    { key: "click_rate", label: "Click Rate", unit: "percent" },
+    { key: "unsubscribe_rate", label: "Unsubscribe Rate", unit: "percent" },
+    { key: "list_growth", label: "List Growth", unit: "count" },
+  ],
+  other: [],
+};
+
+export const UNIT_SYMBOLS = { count: "", percent: "%", currency: "₹", ratio: "x" };
+
+export function formatMetricValue(value, unit) {
+  if (unit === "percent") return `${value}%`;
+  if (unit === "currency") return `₹${value}`;
+  if (unit === "ratio") return `${value}x`;
+  return String(value);
+}
+
 export function statusLabel(value) {
   return STATUSES.find((s) => s.value === value)?.label || value;
 }

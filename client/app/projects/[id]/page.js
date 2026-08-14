@@ -10,6 +10,7 @@ import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
 import MilestoneFormModal from "@/components/MilestoneFormModal";
+import MetricsPanel from "@/components/MetricsPanel";
 import TaskFormModal from "@/components/TaskFormModal";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ProjectAccessModal from "@/components/ProjectAccessModal";
@@ -485,6 +486,16 @@ function ProjectDetail() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Metrics — channel-specific numbers logged over time, distinct from Goals */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Metrics
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <MetricsPanel projectId={id} canManage={canManage} />
+          </div>
         </section>
 
         {/* Tasks */}

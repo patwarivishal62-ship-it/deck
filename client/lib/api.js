@@ -87,6 +87,18 @@ export const api = {
   deleteMilestone: (projectId, milestoneId) =>
     request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" }),
 
+  // metrics
+  listMetrics: (projectId) => request(`/projects/${projectId}/metrics`),
+  createMetric: (projectId, body) => request(`/projects/${projectId}/metrics`, { method: "POST", body }),
+  updateMetric: (projectId, metricId, body) =>
+    request(`/projects/${projectId}/metrics/${metricId}`, { method: "PATCH", body }),
+  deleteMetric: (projectId, metricId) =>
+    request(`/projects/${projectId}/metrics/${metricId}`, { method: "DELETE" }),
+  addMetricEntry: (projectId, metricId, body) =>
+    request(`/projects/${projectId}/metrics/${metricId}/entries`, { method: "POST", body }),
+  deleteMetricEntry: (projectId, metricId, entryId) =>
+    request(`/projects/${projectId}/metrics/${metricId}/entries/${entryId}`, { method: "DELETE" }),
+
   // calendar
   listCalendarEvents: () => request("/calendar"),
 
