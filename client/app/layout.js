@@ -41,9 +41,9 @@ export const metadata = {
     description: "Plan campaigns, track goals by channel, achieve outcomes. Minimal, confident, intelligent.",
     images: [
       {
-        url: "/icon.png",
-        width: 1024,
-        height: 1024,
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
         alt: "DECK — Plan. Track. Achieve.",
       },
     ],
@@ -53,7 +53,7 @@ export const metadata = {
     title: "DECK — Plan. Track. Achieve.",
     description: "The minimal control center for marketing teams.",
     creator: "@planyourdeck",
-    images: ["/icon.png"],
+    images: ["/opengraph-image.png"],
   },
   robots: {
     index: true,
@@ -68,10 +68,13 @@ export const metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/icon.png", sizes: "512x512", type: "image/png" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/icon.png", sizes: "180x180" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
   category: "productivity",
