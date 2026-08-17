@@ -39,16 +39,16 @@ function IconCheck() {
   );
 }
 
-function HowItWorksCard({ icon, title, children, delay = 0 }) {
+function HowItWorksCard({ icon, title, children, delay = 0, href = "/login?mode=signup#how-it-works" }) {
   return (
     <Reveal delay={delay}>
-      <div className="group rounded-2xl border border-line bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#7C5CFF]/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.55)] hover:shadow-glow/10">
+      <Link href={href} className="group block rounded-2xl border border-line bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#7C5CFF]/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.55)] hover:shadow-glow/10">
         <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E1C2E] text-[#7C5CFF] ring-1 ring-[#7C5CFF]/20 transition duration-300 group-hover:scale-105 group-hover:bg-[#7C5CFF] group-hover:text-text">
           {icon}
         </div>
-        <h3 className="font-display text-base font-semibold tracking-tight text-text">{title}</h3>
+        <h3 className="font-display text-base font-semibold tracking-tight text-text group-hover:text-signal">{title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-text-soft">{children}</p>
-      </div>
+      </Link>
     </Reveal>
   );
 }
@@ -222,7 +222,7 @@ function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="border-t border-line bg-ink-2 px-5 py-16 sm:py-20">
+      <section id="how-it-works" className="border-t border-line bg-ink-2 px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
