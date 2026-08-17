@@ -11,6 +11,45 @@ function formatTime() {
   if (h < 17) return "afternoon";
   return "evening";
 }
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+function addDaysISO(iso, days) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function parseAddTaskLocal(message) {
+  if (!/^(add|create)\s+task\s+/i.test(message)) return null;
+  let rest = message.replace(/^(add|create)\s+task\s+/i, "").trim();
+  if (!rest) return null;
+  let dueDate = null;
+  const dueRegex = /\s+due\s+(today|tomorrow|next week|on\s+(\d{4}-\d{2}-\d{2})|(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{4}))/i;
+  const m = rest.match(dueRegex);
+  if (m) {
+    const phrase = m[1].toLowerCase().trim();
+    if (phrase === "today") dueDate = todayISO();
+    else if (phrase === "tomorrow") dueDate = addDaysISO(todayISO(), 1);
+    else if (phrase === "next week") dueDate = addDaysISO(todayISO(), 7);
+    else if (m[2]) dueDate = m[2];
+    else if (m[3]) dueDate = m[3];
+    else if (m[4]) {
+      const [mm, dd, yyyy] = m[4].split("/");
+      dueDate = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+    }
+    rest = rest.replace(m[0], " ").trim();
+  }
+  let projectName = null;
+  const projM = rest.match(/\s+in\s+(.+)$/i);
+  if (projM) {
+    projectName = projM[1].trim();
+    rest = rest.replace(projM[0], " ").trim();
+  }
+  let title = rest.replace(/\s+/g, " ").trim().replace(/[.]+$/, "").trim();
+  if (!title) return null;
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+  return { title, dueDate, projectName };
+}
 
 export default function PersonalPA() {
   const { user } = useAuth();
@@ -22,18 +61,15 @@ export default function PersonalPA() {
   const [briefing, setBriefing] = useState(null);
   const listRef = useRef(null);
 
-  // Don't show on auth pages
   const hideOn = ["/login", "/forgot-password", "/reset-password", "/invite"];
   const shouldHide = !user || hideOn.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
     if (shouldHide) return;
-    // Fetch briefing once per session for morning prompt
     api
       .aiBriefing()
       .then((data) => {
         setBriefing(data);
-        // Auto-add morning greeting as first assistant message (once)
         const hour = new Date().getHours();
         const hasGreeted = sessionStorage.getItem("pa-greeted");
         if (!hasGreeted && hour < 12) {
@@ -45,12 +81,95 @@ export default function PersonalPA() {
           sessionStorage.setItem("pa-greeted", "1");
         }
       })
-      .catch(() => {});
+      .catch(async () => {
+        // Fallback: compute briefing client-side via projects
+        try {
+          const data = await api.listProjects({ archived: false });
+          const projects = data.projects || [];
+          const today = todayISO();
+          let pending = 0, dueToday = 0, overdue = 0;
+          for (const p of projects) for (const t of p.tasks || []) if (t.status !== "done") { pending++; if (t.dueDate === today) dueToday++; else if (t.dueDate && t.dueDate < today) overdue++; }
+          const hour = new Date().getHours();
+          let msg = hour < 12 ? "Good morning! " : hour < 17 ? "Good afternoon! " : "Good evening! ";
+          if (pending === 0) msg += "No tasks yet — what are we doing today?";
+          else if (dueToday || overdue) msg += `You have ${dueToday} due today${overdue ? ` and ${overdue} overdue` : ""}. What are we tackling first?`;
+          else msg += `No tasks due today, but ${pending} pending. Want to plan the day?`;
+          setBriefing({ message: msg, stats: { pending, dueToday, overdue } });
+        } catch {}
+      });
   }, [shouldHide]);
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages, busy]);
+
+  async function handleLocalFallback(text) {
+    // Try client-side handling when server AI is not yet deployed (502/503)
+    const add = parseAddTaskLocal(text);
+    if (add) {
+      const data = await api.listProjects({ archived: false });
+      const projects = data.projects || [];
+      if (projects.length === 0) return `You don't have a project yet. Create a project first, then I can add tasks.`;
+      let target = null;
+      if (add.projectName) {
+        const low = add.projectName.toLowerCase();
+        target = projects.find((p) => p.name.toLowerCase() === low) || projects.find((p) => p.name.toLowerCase().includes(low));
+      }
+      if (!target) target = projects[0];
+      await api.createTask(target.id, { title: add.title, dueDate: add.dueDate || null, status: "todo" });
+      let reply = `✅ Added "${add.title}" to ${target.name}`;
+      if (add.dueDate) reply += ` — due ${add.dueDate}`;
+      reply += `. I’ll remind you as the due date approaches.`;
+      return reply;
+    }
+    const low = text.toLowerCase();
+    const isOrganize = low.includes("organize") || low.includes("push pending") || low.includes("prioritize");
+    const isList = (low.includes("what") && (low.includes("task") || low.includes("doing today"))) || (low.includes("show") && low.includes("task")) || low.includes("pending") || low.includes("due today");
+
+    if (isOrganize) {
+      const data = await api.listProjects({ archived: false });
+      const projects = data.projects || [];
+      const pending = [];
+      for (const p of projects) for (const t of p.tasks || []) if (t.status !== "done") pending.push({ ...t, projectName: p.name, projectId: p.id });
+      if (pending.length === 0) return "🎉 No pending tasks — you’re all clear!";
+      const today = todayISO();
+      const overdue = pending.filter((t) => t.dueDate && t.dueDate < today);
+      let pushed = 0;
+      for (const t of overdue) {
+        try { await api.updateTask(t.projectId, t.id, { dueDate: today }); pushed++; } catch {}
+      }
+      pending.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      });
+      let reply = `📋 Organized ${pending.length} pending tasks\n\n`;
+      if (pushed) reply += `⚠️ Pushed ${pushed} overdue to today.\n`;
+      reply += `\nTop 5 to focus on:\n` + pending.slice(0, 5).map((t, i) => `${i + 1}. ${t.title} · ${t.projectName}${t.dueDate ? ` (due ${t.dueDate})` : ""}`).join("\n");
+      return reply;
+    }
+    if (isList) {
+      const data = await api.listProjects({ archived: false });
+      const projects = data.projects || [];
+      const today = todayISO();
+      const dueToday = [], overdue = [];
+      for (const p of projects) for (const t of p.tasks || []) if (t.status !== "done") {
+        if (t.dueDate === today) dueToday.push({ ...t, projectName: p.name });
+        else if (t.dueDate && t.dueDate < today) overdue.push({ ...t, projectName: p.name });
+      }
+      if (dueToday.length === 0 && overdue.length === 0) {
+        const total = projects.reduce((s, p) => s + (p.tasks || []).filter((x) => x.status !== "done").length, 0);
+        if (total === 0) return "Good morning! ☀️ No tasks pending. Tell me what you want to achieve today — e.g. `Add task Design review due today`.";
+        return `Good morning! ☀️ You have ${total} pending, none due today. What are we doing today?`;
+      }
+      let reply = "";
+      if (overdue.length) reply += `⚠️ Overdue (${overdue.length}):\n` + overdue.slice(0, 5).map((t) => `• ${t.title} · ${t.projectName}`).join("\n") + "\n\n";
+      if (dueToday.length) reply += `📌 Due today (${dueToday.length}):\n` + dueToday.slice(0, 5).map((t) => `• ${t.title} · ${t.projectName}`).join("\n");
+      return reply || "Here are your tasks — want me to organize them?";
+    }
+    return `I’m your Deck PA — try:\n• Add task Shoot reel due tomorrow in Acme Launch\n• What’s due today?\n• Organize my pending tasks`;
+  }
 
   async function send(text) {
     const trimmed = text.trim();
@@ -60,14 +179,20 @@ export default function PersonalPA() {
     setBusy(true);
     try {
       const data = await api.aiChat({ message: trimmed });
-      // Simple markdown-like bold handling
       setMessages((m) => [...m, { role: "assistant", text: data.reply }]);
-      // If task was created, we could trigger a global refresh — for now just notify
-      if (data.action === "task_created") {
-        // subtle in-chat success, no reload needed — tasks list will update on next navigation
-      }
     } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", text: `⚠️ ${err.message}` }]);
+      const msg = err.message || "";
+      const isDeployMissing = msg.includes("502") || msg.includes("503") || msg.includes("Failed to fetch") || msg.includes("Request failed");
+      if (isDeployMissing) {
+        try {
+          const fallbackReply = await handleLocalFallback(trimmed);
+          setMessages((m) => [...m, { role: "assistant", text: fallbackReply }]);
+        } catch (e2) {
+          setMessages((m) => [...m, { role: "assistant", text: `⚠️ ${e2.message}` }]);
+        }
+      } else {
+        setMessages((m) => [...m, { role: "assistant", text: `⚠️ ${err.message}` }]);
+      }
     } finally {
       setBusy(false);
     }
@@ -81,7 +206,6 @@ export default function PersonalPA() {
 
   return (
     <>
-      {/* Floating button */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -98,16 +222,14 @@ export default function PersonalPA() {
           </svg>
         )}
         {!open && briefing && briefing.stats?.dueToday > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#FF5D73] px-1 font-mono text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-error px-1 font-mono text-[10px] font-bold text-white">
             {briefing.stats.dueToday}
           </span>
         )}
       </button>
 
-      {/* Panel */}
       {open && (
         <div className="fixed bottom-20 right-5 z-40 flex h-[420px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-line bg-paper px-4 py-3">
             <div className="flex items-center gap-2.5">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-signal text-white">
@@ -128,7 +250,6 @@ export default function PersonalPA() {
             </button>
           </div>
 
-          {/* Messages */}
           <div ref={listRef} className="flex-1 overflow-y-auto bg-paper px-3 py-3">
             {messages.length === 0 ? (
               <div className="py-6 text-center">
@@ -176,7 +297,6 @@ export default function PersonalPA() {
             )}
           </div>
 
-          {/* Quick chips */}
           <div className="flex gap-1.5 overflow-x-auto border-t border-line bg-paper px-3 py-2 scrollbar-hide">
             {["Add task …", "Due today", "Organize"].map((label) => (
               <button
@@ -194,7 +314,6 @@ export default function PersonalPA() {
             ))}
           </div>
 
-          {/* Input */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
