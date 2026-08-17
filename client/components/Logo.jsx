@@ -1,5 +1,7 @@
 "use client";
 
+import { useBranding } from "@/lib/BrandingContext";
+
 export function DeckIcon({ size = 28, variant = "dark" }) {
   // variant: dark for use on light bg (charcoal D), light for use on dark bg (white D)
   const isDark = variant === "dark";
@@ -57,6 +59,28 @@ export function DeckMark({ size = 32, variant = "dark", withWordmark = true, com
 }
 
 export default function Logo({ variant = "dark", size = 28, showTagline = false }) {
+  // Try to use dynamic branding if available (safe if provider missing)
+  let branding = null;
+  try {
+    branding = useBranding()?.branding;
+  } catch {}
+  if (branding?.logoUrl) {
+    return (
+      <div className="flex items-center gap-2.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={branding.logoUrl} alt="DECK" width={size} height={size} className="shrink-0 rounded-lg object-contain" style={{ width: size, height: size }} />
+        <span className={`font-display font-bold tracking-[0.14em] ${variant === "dark" ? "text-[#0B0F14]" : "text-white"}`} style={{ fontSize: "17px" }}>
+          DECK
+        </span>
+        {showTagline && (
+          <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.16em] text-text-faint ml-1 border-l border-border pl-3">
+            Plan. Track. Achieve.
+          </span>
+        )}
+      </div>
+    );
+  }
+
   const isDark = variant === "dark";
   const dFill = isDark ? "#0B0F14" : "#FFFFFF";
   const bg = isDark ? "transparent" : "transparent";

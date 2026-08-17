@@ -77,7 +77,7 @@ export default function UserMenu() {
             <Link
               href="/team"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-sm text-text transition hover:bg-card"
+              className="flex items-center justify-between px-4 py-2 text-sm text-text transition hover:bg-ink-2"
             >
               <span>Workspaces</span>
               {workspaceCount !== null && (
@@ -87,16 +87,23 @@ export default function UserMenu() {
             <Link
               href="/calendar"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-text transition hover:bg-card"
+              className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
             >
               Calendar
             </Link>
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-text transition hover:bg-card"
+              className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
             >
               Settings
+            </Link>
+            <Link
+              href="/admin/branding"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
+            >
+              Branding
             </Link>
           </nav>
 
