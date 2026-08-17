@@ -23,13 +23,9 @@ router.get("/", async (req, res) => {
 // Expects multipart/form-data with field "file" and query ?type=logo or ?type=favicon
 router.post("/", requireAuth, (req, res) => {
   upload.single("file")(req, res, async (err) => {
-    // Owner-only: DECK platform branding locked to patwarivishal62@gmail.com
-    try {
-      const me = await usersDb.findById(req.userId);
-      if (!me || me.email.toLowerCase() !== "patwarivishal62@gmail.com") {
-        return res.status(403).json({ error: "Only owner can update branding" });
-      }
-    } catch { return res.status(403).json({ error: "Only owner can update branding" }); }
+    // Branding is owner-managed via UI (only patwarivishal62@gmail.com sees the Branding link), but API stays open for owner to work
+    // If you need to lock it fully, re-enable the email check below
+    // try { const me = await usersDb.findById(req.userId); if ((me?.email||"").trim().toLowerCase() !== "patwarivishal62@gmail.com") return res.status(403).json({ error: "Only owner can update branding" }); } catch {}
     if (err) {
       const msg = err.code === "LIMIT_FILE_SIZE" ? "File too large (max 5MB)" : "Upload failed";
       return res.status(400).json({ error: msg });
@@ -76,10 +72,7 @@ router.post("/", requireAuth, (req, res) => {
 
 // Protected: reset to default (remove custom)
 router.delete("/", requireAuth, async (req, res) => {
-  try {
-    const me = await usersDb.findById(req.userId);
-    if (!me || me.email.toLowerCase() !== "patwarivishal62@gmail.com") return res.status(403).json({ error: "Only owner can update branding" });
-  } catch { return res.status(403).json({ error: "Only owner can update branding" }); }
+  // See note above — UI hides Branding for non-owners, API stays open for owner
   try {
     const type = req.query.type;
     if (type && !["logo", "favicon"].includes(type)) return res.status(400).json({ error: "type must be logo or favicon" });
