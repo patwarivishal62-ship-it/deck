@@ -7,6 +7,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { Button } from "@/components/FormControls";
 import { useAuth } from "@/lib/AuthContext";
 import { api } from "@/lib/api";
+import { applyFavicon } from "@/lib/favicon";
 
 function BrandingCard({ title, description, currentUrl, onUpload, onReset, type }) {
   const [file, setFile] = useState(null);
@@ -41,10 +42,7 @@ function BrandingCard({ title, description, currentUrl, onUpload, onReset, type 
       setFile(null);
       onUpload(data.branding);
       // Update favicon live if favicon
-      if (type === "favicon" && data.branding?.faviconUrl) {
-        const link = document.querySelector("link[rel='icon']");
-        if (link) link.href = data.branding.faviconUrl;
-      }
+      if (type === "favicon") applyFavicon(data.branding?.faviconUrl);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -61,10 +59,9 @@ function BrandingCard({ title, description, currentUrl, onUpload, onReset, type 
       if (!res.ok) throw new Error(data.error || "Reset failed");
       setSuccess("Reset to default.");
       onReset(data.branding);
-      if (type === "favicon") {
-        const link = document.querySelector("link[rel='icon']");
-        if (link) link.remove(); // truly remove favicon when reset
-      }
+      // Blank the favicon rather than removing the <link> — removing a node
+      // React rendered crashes the app on its next render. See lib/favicon.js.
+      if (type === "favicon") applyFavicon(data.branding?.faviconUrl);
     } catch (e) {
       setError(e.message);
     } finally {

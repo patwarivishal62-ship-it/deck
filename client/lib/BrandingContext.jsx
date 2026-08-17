@@ -1,35 +1,41 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { applyFavicon } from "@/lib/favicon";
 
-const BrandingContext = createContext({ branding: null, loading: true });
+const BrandingContext = createContext({ branding: null, setBranding: () => {}, loading: true });
 
 export function BrandingProvider({ children }) {
   const [branding, setBranding] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/branding")
-      .then((r) => r.json())
+    let cancelled = false;
+
+    fetch("/api/branding", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        setBranding(d.branding || null);
-        // Update favicon live
-        const link2 = document.querySelector("link[rel='icon']");
-        if (link2) {
-          if (d.branding?.faviconUrl) link2.href = d.branding.faviconUrl;
-          else link2.remove();
-        }
+        if (cancelled) return;
+        setBranding(d?.branding || null);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {
+        // Branding is cosmetic — if the API is down or returns junk, the app
+        // must still render with its built-in logo and favicon.
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Also update favicon when branding changes (after upload)
+  // Keep the favicon in sync with branding (initial load and later uploads).
+  // applyFavicon only rewrites href on the existing React-rendered <link> tags;
+  // it never removes them, which used to crash the whole app. See lib/favicon.js.
   useEffect(() => {
-    const link = document.querySelector("link[rel='icon']");
-    if (!link) return;
-    if (branding?.faviconUrl) link.href = branding.faviconUrl;
-    else link.remove(); // truly no favicon when none set — tab will show no icon
+    applyFavicon(branding?.faviconUrl);
   }, [branding]);
 
   return (
