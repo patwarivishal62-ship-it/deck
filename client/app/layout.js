@@ -3,7 +3,6 @@ import { AuthProvider } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import Footer from "@/components/Footer";
 import PersonalPA from "@/components/PersonalPA";
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 export const metadata = {
   title: "DECK — Plan. Track. Achieve.",
@@ -34,9 +33,7 @@ export default function RootLayout({ children }) {
               <div className="flex-1">{children}</div>
               <Footer />
             </div>
-            <ErrorBoundary fallback={null}>
-              <PersonalPA />
-            </ErrorBoundary>
+            <PersonalPA />
           </AuthProvider>
         </ThemeProvider>
       </body>

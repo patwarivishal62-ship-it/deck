@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import ErrorBoundary from "./ErrorBoundary";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -274,6 +275,7 @@ export default function PersonalPA() {
         )}
       </button>
 
+      <ErrorBoundary>
       {open && (
         <div className="fixed bottom-20 right-5 z-40 flex h-[440px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_48px_rgba(0,0,0,0.6)] animate-[slideUp_0.3s_ease]">
           <div className="flex items-center justify-between border-b border-line bg-paper px-4 py-3">
@@ -336,6 +338,7 @@ export default function PersonalPA() {
           </div>
         </div>
       )}
+      </ErrorBoundary>
 
       <style>{`@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}} @keyframes slideIn{from{transform:translateY(8px) scale(0.98);opacity:0}to{transform:translateY(0) scale(1);opacity:1}} @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,255,0.4)}50%{box-shadow:0 0 0 8px rgba(124,92,255,0)}}`}</style>
     </>
