@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import CategoryMeters from "@/components/CategoryMeters";
 import Reveal from "@/components/Reveal";
 import Logo from "@/components/Logo";
+import { useTheme, ThemeToggle } from "@/lib/ThemeContext";
 
 function IconGrid() {
   return (
@@ -41,28 +42,31 @@ function IconCheck() {
 function HowItWorksCard({ icon, title, children, delay = 0 }) {
   return (
     <Reveal delay={delay}>
-      <div className="group rounded-2xl border border-[#232A36] bg-[#161B22] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#7C5CFF]/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.55)] hover:shadow-glow/10">
-        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E1C2E] text-[#7C5CFF] ring-1 ring-[#7C5CFF]/20 transition duration-300 group-hover:scale-105 group-hover:bg-[#7C5CFF] group-hover:text-white">
+      <div className="group rounded-2xl border border-line bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#7C5CFF]/30 hover:shadow-[0_16px_40px_rgba(0,0,0,0.55)] hover:shadow-glow/10">
+        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E1C2E] text-[#7C5CFF] ring-1 ring-[#7C5CFF]/20 transition duration-300 group-hover:scale-105 group-hover:bg-[#7C5CFF] group-hover:text-text">
           {icon}
         </div>
-        <h3 className="font-display text-base font-semibold tracking-tight text-white">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-[#B8C0CC]">{children}</p>
+        <h3 className="font-display text-base font-semibold tracking-tight text-text">{title}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-text-soft">{children}</p>
       </div>
     </Reveal>
   );
 }
 
 function LandingPage() {
+  const { theme } = useTheme();
+  const logoVariant = theme === "dark" ? "light" : "dark";
   return (
-    <div className="bg-[#0B0F14]">
+    <div className="bg-paper">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-[#232A36]/60 bg-[#0B0F14]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-line/60 bg-paper/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" className="flex items-center gap-2.5" aria-label="DECK home">
-            <Logo variant="light" size={32} />
+            <Logo variant={logoVariant} size={32} />
           </Link>
           <div className="flex items-center gap-2">
-            <Link href="/login" className="hidden sm:inline-flex rounded-full px-4 py-2 text-sm font-medium text-[#B8C0CC] transition hover:text-white">
+            <ThemeToggle />
+            <Link href="/login" className="hidden sm:inline-flex rounded-full px-4 py-2 text-sm font-medium text-text-soft transition hover:text-text">
               Sign in
             </Link>
             <Link
@@ -83,12 +87,12 @@ function LandingPage() {
 
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-16">
           <Reveal>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#232A36] bg-[#111827]/80 px-3 py-1.5 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-ink-2/80 px-3 py-1.5 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-[#7C5CFF] animate-pulse_dot" />
-              <span className="text-xs font-medium tracking-wide text-[#B8C0CC]">AI-first · Minimal · Confident</span>
+              <span className="text-xs font-medium tracking-wide text-text-soft">AI-first · Minimal · Confident</span>
             </div>
 
-            <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-[44px] lg:text-[52px]">
+            <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-text sm:text-[44px] lg:text-[52px]">
               Plan.
               <br />
               Track.
@@ -96,7 +100,7 @@ function LandingPage() {
               <span className="bg-gradient-to-r from-[#7C5CFF] to-[#4F7BFF] bg-clip-text text-transparent">Achieve.</span>
             </h1>
 
-            <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-[#B8C0CC]">
+            <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-text-soft">
               The minimal control center for marketing teams. One dark, focused workspace where every project, goal and task is visible — nothing slips, nothing extra.
             </p>
 
@@ -112,13 +116,13 @@ function LandingPage() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center rounded-full border border-[#232A36] bg-[#161B22] px-6 py-3 text-sm font-medium text-white transition hover:border-[#7C5CFF]/30 hover:bg-[#1A1F2A]"
+                className="inline-flex items-center rounded-full border border-line bg-card px-6 py-3 text-sm font-medium text-text transition hover:border-[#7C5CFF]/30 hover:bg-card"
               >
                 Sign in
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-6 text-xs text-[#7A8599]">
+            <div className="mt-8 flex flex-wrap items-center gap-6 text-xs text-text-faint">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-[#22D3A6]" /> No credit card
               </span>
@@ -134,22 +138,22 @@ function LandingPage() {
           <Reveal delay={140} className="flex justify-center lg:justify-end">
             <div className="w-full max-w-[440px]">
               <CategoryMeters />
-              <p className="mt-3 text-center text-xs text-[#7A8599]">Live preview — meters reflect real project progress</p>
+              <p className="mt-3 text-center text-xs text-text-faint">Live preview — meters reflect real project progress</p>
             </div>
           </Reveal>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="border-t border-[#232A36] bg-[#0F141C] px-5 py-16 sm:py-20">
+      <section className="border-t border-line bg-ink-2 px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
-              <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#7A8599]">How it works</p>
-              <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              <p className="font-mono text-xs uppercase tracking-[0.18em] text-text-faint">How it works</p>
+              <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-text sm:text-3xl">
                 Three layers. One clear picture.
               </h2>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#B8C0CC]">
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-text-soft">
                 No decoration. No dashboards for decoration&apos;s sake. Just the three things that actually move a campaign forward.
               </p>
             </div>
@@ -170,20 +174,20 @@ function LandingPage() {
       </section>
 
       {/* Social proof / minimal strip */}
-      <section className="border-y border-[#232A36] bg-[#111827]/50 px-5 py-10">
+      <section className="border-y border-line bg-ink-2/50 px-5 py-10">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">
-                <span className="h-8 w-8 rounded-full border-2 border-[#0B0F14] bg-[#1E1C2E] flex items-center justify-center text-xs font-semibold text-[#7C5CFF]">A</span>
-                <span className="h-8 w-8 rounded-full border-2 border-[#0B0F14] bg-[#1A2332] flex items-center justify-center text-xs font-semibold text-[#4F7BFF]">M</span>
-                <span className="h-8 w-8 rounded-full border-2 border-[#0B0F14] bg-[#132A24] flex items-center justify-center text-xs font-semibold text-[#22D3A6]">S</span>
+                <span className="h-8 w-8 rounded-full border-2 border-paper bg-[#1E1C2E] flex items-center justify-center text-xs font-semibold text-[#7C5CFF]">A</span>
+                <span className="h-8 w-8 rounded-full border-2 border-paper bg-[#1A2332] flex items-center justify-center text-xs font-semibold text-[#4F7BFF]">M</span>
+                <span className="h-8 w-8 rounded-full border-2 border-paper bg-[#132A24] flex items-center justify-center text-xs font-semibold text-[#22D3A6]">S</span>
               </div>
-              <p className="text-sm text-[#B8C0CC]">
-                <span className="font-semibold text-white">500+</span> teams plan with DECK
+              <p className="text-sm text-text-soft">
+                <span className="font-semibold text-text">500+</span> teams plan with DECK
               </p>
             </div>
-            <p className="max-w-md text-center text-sm italic text-[#7A8599] sm:text-right">
+            <p className="max-w-md text-center text-sm italic text-text-faint sm:text-right">
               “Finally a project tool that feels designed, not decorated. It just gets out of the way.”
             </p>
           </div>
@@ -195,19 +199,19 @@ function LandingPage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#7C5CFF]/[0.06] via-transparent to-transparent" />
         <Reveal>
           <div className="relative mx-auto max-w-2xl">
-            <h2 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h2 className="font-display text-2xl font-bold tracking-tight text-text sm:text-3xl">
               Ready to see campaigns clearly?
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#B8C0CC]">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-text-soft">
               Free to use. Minimal by design. Powerful where it counts. Create your first project in under a minute.
             </p>
             <Link
               href="/login?mode=signup"
-              className="mt-7 inline-flex items-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#0B0F14] shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition hover:scale-[1.02] hover:bg-[#F8FAFC] active:scale-[0.98]"
+              className="mt-7 inline-flex items-center rounded-full bg-text text-paper px-7 py-3 text-sm font-semibold shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition hover:scale-[1.02] active:scale-[0.98]"
             >
               Create free account
             </Link>
-            <p className="mt-3 text-xs text-[#7A8599]">No spam. No onboarding calls. Just DECK.</p>
+            <p className="mt-3 text-xs text-text-faint">No spam. No onboarding calls. Just DECK.</p>
           </div>
         </Reveal>
       </section>

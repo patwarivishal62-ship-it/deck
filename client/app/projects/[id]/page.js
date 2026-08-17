@@ -271,7 +271,7 @@ function ProjectDetail() {
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
-                className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-white"
+                className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text"
                 style={{ backgroundColor: (PRIORITIES[project.priority] || PRIORITIES.medium).color }}
               >
                 {(PRIORITIES[project.priority] || PRIORITIES.medium).label}

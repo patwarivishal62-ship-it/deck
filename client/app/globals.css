@@ -15,15 +15,70 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Theme variables — dark is default (premium) */
+:root {
+  --bg: #0B0F14;
+  --bg-sub: #111827;
+  --surface: #161B22;
+  --border: #232A36;
+  --text: #FFFFFF;
+  --text-soft: #B8C0CC;
+  --text-faint: #7A8599;
+  --text-muted: #6B7280;
+  --signal-tint: #1E1C2E;
+  --good-tint: #132A24;
+  --error-tint: #2E1A1E;
+  --scrollbar: #232A36;
+  --scrollbar-hover: #2A3447;
+  --meter-track: #232A36;
+}
+
+/* Light — clean, airy, premium light */
+[data-theme="light"] {
+  --bg: #F8FAFC;
+  --bg-sub: #F1F5F9;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #0B0F14;
+  --text-soft: #475569;
+  --text-faint: #94A3B8;
+  --text-muted: #64748B;
+  --signal-tint: #F5F3FF;
+  --good-tint: #ECFDF5;
+  --error-tint: #FFF1F2;
+  --scrollbar: #E2E8F0;
+  --scrollbar-hover: #CBD5E1;
+  --meter-track: #E2E8F0;
+}
+
+/* Eye — optimal for eyes: warm, low-blue, soft contrast (like paper under warm light) */
+[data-theme="eye"] {
+  --bg: #FDF6E3;
+  --bg-sub: #F5E6C8;
+  --surface: #FFFCF0;
+  --border: #E8DCC6;
+  --text: #3E3326;
+  --text-soft: #6B5E4A;
+  --text-faint: #9E9580;
+  --text-muted: #8A7F6A;
+  --signal-tint: #F3EFFF;
+  --good-tint: #E6F4EA;
+  --error-tint: #FCE8E8;
+  --scrollbar: #E8DCC6;
+  --scrollbar-hover: #D9C9A8;
+  --meter-track: #E8DCC6;
+}
+
 body {
-  background: #0B0F14;
-  color: #FFFFFF;
+  background: var(--bg);
+  color: var(--text);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
@@ -44,13 +99,14 @@ textarea {
   font-family: inherit;
 }
 
-/* Premium VU-meter / progress bar — minimal, no hatch, just clean fill */
+/* Meter — uses theme track */
 .meter {
   position: relative;
   height: 6px;
   border-radius: 9999px;
-  background: #232A36;
+  background: var(--meter-track);
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .meter-fill {
@@ -61,9 +117,8 @@ textarea {
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* For use when meters sit on dark surfaces — keep track subtle */
 .meter--subtle {
-  background: rgba(255,255,255,0.08);
+  background: color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 .project-desc {
@@ -73,7 +128,6 @@ textarea {
   overflow: hidden;
 }
 
-/* Subtle grain for hero — very restrained, not overpowering */
 .bg-grain {
   position: relative;
 }
@@ -88,26 +142,27 @@ textarea {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-/* Scrollbar — minimal, dark */
+[data-theme="light"] .bg-grain::before { opacity: 0.015; }
+[data-theme="eye"] .bg-grain::before { opacity: 0.02; }
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F14;
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #232A36;
+  background: var(--scrollbar);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2A3447;
+  background: var(--scrollbar-hover);
 }
 
-/* Hide scrollbar for clean UI where needed */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

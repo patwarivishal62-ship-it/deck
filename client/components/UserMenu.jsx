@@ -48,7 +48,7 @@ export default function UserMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full border border-[#232A36] bg-[#161B22] py-1 pl-1 pr-2.5 transition hover:border-[#7C5CFF]/40 hover:bg-[#1A1F2A]"
+        className="flex items-center gap-2 rounded-full border border-line bg-card py-1 pl-1 pr-2.5 transition hover:border-[#7C5CFF]/40 hover:bg-card"
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7C5CFF] font-mono text-[11px] font-semibold text-white">
           {initialsFor(user)}
@@ -60,47 +60,47 @@ export default function UserMenu() {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className={`text-white/60 transition ${open ? "rotate-180" : ""}`}
+          className={`text-text/60 transition ${open ? "rotate-180" : ""}`}
         >
           <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl border border-[#232A36] bg-[#161B22] shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
-          <div className="border-b border-[#232A36] px-4 py-3">
-            <p className="truncate text-sm font-semibold text-white">{user.name || "Your account"}</p>
-            <p className="truncate text-xs text-[#7A8599]">{user.email}</p>
+        <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+          <div className="border-b border-line px-4 py-3">
+            <p className="truncate text-sm font-semibold text-text">{user.name || "Your account"}</p>
+            <p className="truncate text-xs text-text-faint">{user.email}</p>
           </div>
 
           <nav className="py-1.5">
             <Link
               href="/team"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
+              className="flex items-center justify-between px-4 py-2 text-sm text-text transition hover:bg-card"
             >
               <span>Workspaces</span>
               {workspaceCount !== null && (
-                <span className="rounded-full bg-[#232A36] px-1.5 py-0.5 font-mono text-xs text-[#B8C0CC]">{workspaceCount}</span>
+                <span className="rounded-full bg-ink-2 px-1.5 py-0.5 font-mono text-xs text-text-soft">{workspaceCount}</span>
               )}
             </Link>
             <Link
               href="/calendar"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
+              className="block px-4 py-2 text-sm text-text transition hover:bg-card"
             >
               Calendar
             </Link>
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
+              className="block px-4 py-2 text-sm text-text transition hover:bg-card"
             >
               Settings
             </Link>
           </nav>
 
-          <div className="border-t border-[#232A36] py-1.5">
+          <div className="border-t border-line py-1.5">
             <button
               type="button"
               onClick={() => {

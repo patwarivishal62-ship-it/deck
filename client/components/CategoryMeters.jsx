@@ -33,10 +33,10 @@ export default function CategoryMeters() {
         style={{ backgroundColor: "#4F7BFF" }}
       />
 
-      <div className="relative w-full max-w-md rounded-2xl border border-[#232A36] bg-[#161B22]/80 p-5 shadow-[0_24px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+      <div className="relative w-full max-w-md rounded-2xl border border-line bg-card/80 p-5 shadow-[0_24px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         <div className="mb-4 flex items-center gap-2">
           <span className="h-1.5 w-1.5 animate-pulse_dot rounded-full bg-[#7C5CFF]" />
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#7A8599]">Live goal tracking</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-faint">Live goal tracking</span>
         </div>
         <div className="flex flex-col gap-3.5">
           {DEMO.map((item, i) => {
@@ -44,8 +44,8 @@ export default function CategoryMeters() {
             return (
               <div key={item.key}>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="font-mono text-[11px] uppercase tracking-wide text-[#7A8599]">{category.label}</span>
-                  <span className="font-mono text-[11px] font-medium text-white">{filled ? item.pct : 0}%</span>
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-text-faint">{category.label}</span>
+                  <span className="font-mono text-[11px] font-medium text-text">{filled ? item.pct : 0}%</span>
                 </div>
                 <div className="meter" style={{ background: "rgba(255,255,255,0.06)" }}>
                   <div

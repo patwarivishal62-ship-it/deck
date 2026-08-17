@@ -20,7 +20,7 @@ export default function ConfirmModal({ open, title, message, onConfirm, onCancel
         </>
       }
     >
-      <p className="text-sm leading-relaxed text-[#B8C0CC]">{message}</p>
+      <p className="text-sm leading-relaxed text-text-soft">{message}</p>
     </Modal>
   );
 }

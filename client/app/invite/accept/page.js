@@ -54,7 +54,7 @@ function AcceptInviteForm() {
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-6 flex items-center justify-center gap-2 transition hover:opacity-80">
           <span className="h-2 w-2 animate-pulse_dot rounded-full bg-signal" />
-          <span className="font-display text-xl font-semibold text-white">Deck</span>
+          <span className="font-display text-xl font-semibold text-text">Deck</span>
         </Link>
 
         <div className="rounded-card bg-card p-6 shadow-2xl">

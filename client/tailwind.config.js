@@ -7,33 +7,33 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Brand — Deep charcoal foundation
-        ink: "#0B0F14",
-        "ink-2": "#111827",
-        "ink-line": "#232A36",
-        paper: "#0B0F14",
-        "paper-2": "#111827",
-        card: "#161B22",
-        surface: "#161B22",
-        line: "#232A36",
-        border: "#232A36",
-        text: "#FFFFFF",
-        "text-soft": "#B8C0CC",
-        "text-faint": "#7A8599",
-        "text-muted": "#6B7280",
-        // Accents
+        // Theme-aware — values come from CSS variables in globals.css
+        ink: "var(--bg)",
+        "ink-2": "var(--bg-sub)",
+        "ink-line": "var(--border)",
+        paper: "var(--bg)",
+        "paper-2": "var(--bg-sub)",
+        card: "var(--surface)",
+        surface: "var(--surface)",
+        line: "var(--border)",
+        border: "var(--border)",
+        text: "var(--text)",
+        "text-soft": "var(--text-soft)",
+        "text-faint": "var(--text-faint)",
+        "text-muted": "var(--text-muted)",
+        // Accents stay constant per brand
         signal: "#7C5CFF",
         "signal-deep": "#5B43D6",
-        "signal-tint": "#1E1C2E",
+        "signal-tint": "var(--signal-tint)",
         "signal-soft": "#7C5CFF",
         violet: "#7C5CFF",
-        "royal": "#4F7BFF",
+        royal: "#4F7BFF",
         "royal-deep": "#3A5FDB",
         good: "#22D3A6",
-        "good-tint": "#132A24",
+        "good-tint": "var(--good-tint)",
         error: "#FF5D73",
-        "error-tint": "#2E1A1E",
-        // Category — keep but harmonized
+        "error-tint": "var(--error-tint)",
+        // Category
         "c-social": "#7C5CFF",
         "c-ads": "#4F7BFF",
         "c-seo": "#22D3A6",

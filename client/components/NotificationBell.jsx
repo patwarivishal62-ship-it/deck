@@ -79,7 +79,7 @@ export default function NotificationBell() {
         type="button"
         onClick={handleOpen}
         aria-label="Notifications"
-        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#232A36] bg-[#161B22] text-white/80 transition hover:border-[#7C5CFF]/40 hover:text-white hover:bg-[#1A1F2A]"
+        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text/80 transition hover:border-[#7C5CFF]/40 hover:text-text hover:bg-card"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
@@ -93,9 +93,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-80 overflow-hidden rounded-2xl border border-[#232A36] bg-[#161B22] shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
-          <div className="flex items-center justify-between border-b border-[#232A36] px-4 py-3">
-            <span className="text-sm font-semibold text-white">Notifications</span>
+        <div className="absolute right-0 top-[calc(100%+8px)] w-80 overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <span className="text-sm font-semibold text-text">Notifications</span>
             {unreadCount > 0 && (
               <button type="button" onClick={handleMarkAllRead} className="text-xs font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">
                 Mark all read
@@ -105,22 +105,22 @@ export default function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <p className="p-4 text-center font-mono text-xs uppercase tracking-wide text-[#7A8599]">Loading…</p>
+              <p className="p-4 text-center font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
             ) : notifications.length === 0 ? (
-              <p className="p-6 text-center text-sm text-[#B8C0CC]">You&apos;re all caught up.</p>
+              <p className="p-6 text-center text-sm text-text-soft">You&apos;re all caught up.</p>
             ) : (
               notifications.map((n) => (
                 <Link
                   key={n.id}
                   href={n.link || "/projects"}
                   onClick={() => handleItemClick(n)}
-                  className={`block border-b border-[#232A36] px-4 py-3 text-sm transition last:border-b-0 hover:bg-[#1F242F] ${n.read ? "text-[#B8C0CC]" : "text-white bg-[#1E1C2E]/50"}`}
+                  className={`block border-b border-line px-4 py-3 text-sm transition last:border-b-0 hover:bg-card ${n.read ? "text-text-soft" : "text-text bg-[#1E1C2E]/50"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className={n.read ? "" : "font-medium"}>{n.message}</span>
                     {!n.read && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#7C5CFF]" />}
                   </div>
-                  <span className="mt-1 block font-mono text-[11px] text-[#7A8599]">{timeAgo(n.createdAt)}</span>
+                  <span className="mt-1 block font-mono text-[11px] text-text-faint">{timeAgo(n.createdAt)}</span>
                 </Link>
               ))
             )}

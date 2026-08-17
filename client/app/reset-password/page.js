@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Field, TextInput, Button } from "@/components/FormControls";
 import Logo from "@/components/Logo";
+import { useTheme } from "@/lib/ThemeContext";
 import { api } from "@/lib/api";
 
 function ResetPasswordForm() {
+  const { theme } = useTheme();
+  const logoVariant = theme === "dark" ? "light" : "dark";
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
@@ -44,31 +47,31 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#0B0F14] px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center bg-paper px-4 py-12">
       <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[600px] rounded-full bg-[#7C5CFF]/[0.07] blur-[100px]" />
       <div className="w-full max-w-sm relative">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5 transition hover:opacity-90">
-          <Logo variant="light" size={32} />
+          <Logo variant={logoVariant} size={32} />
         </Link>
 
-        <div className="rounded-2xl border border-[#232A36] bg-[#161B22] p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+        <div className="rounded-2xl border border-line bg-card p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
           {!token ? (
             <>
-              <h1 className="font-display text-lg font-bold tracking-tight text-white">Invalid link</h1>
-              <p className="mt-2 text-sm leading-relaxed text-[#B8C0CC]">This reset link is missing its token. Request a new one from the sign-in page.</p>
-              <Link href="/forgot-password" className="mt-6 inline-flex w-full justify-center rounded-full bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#6A44FF]">
+              <h1 className="font-display text-lg font-bold tracking-tight text-text">Invalid link</h1>
+              <p className="mt-2 text-sm leading-relaxed text-text-soft">This reset link is missing its token. Request a new one from the sign-in page.</p>
+              <Link href="/forgot-password" className="mt-6 inline-flex w-full justify-center rounded-full bg-signal px-4 py-2.5 text-sm font-semibold text-white hover:bg-signal-deep">
                 Request a new link
               </Link>
             </>
           ) : done ? (
             <>
-              <h1 className="font-display text-lg font-bold tracking-tight text-white">Password updated</h1>
-              <p className="mt-2 text-sm text-[#B8C0CC]">Taking you to sign in…</p>
+              <h1 className="font-display text-lg font-bold tracking-tight text-text">Password updated</h1>
+              <p className="mt-2 text-sm text-text-soft">Taking you to sign in…</p>
             </>
           ) : (
             <>
-              <h1 className="font-display text-lg font-bold tracking-tight text-white">Choose a new password</h1>
-              <p className="mb-5 mt-1.5 text-sm text-[#B8C0CC]">Make it at least 6 characters.</p>
+              <h1 className="font-display text-lg font-bold tracking-tight text-text">Choose a new password</h1>
+              <p className="mb-5 mt-1.5 text-sm text-text-soft">Make it at least 6 characters.</p>
               <form onSubmit={handleSubmit}>
                 <Field label="New password">
                   <TextInput type="password" required autoFocus minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />

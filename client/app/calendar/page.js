@@ -95,19 +95,19 @@ function CalendarView() {
   const today = todayKey();
 
   return (
-    <div className="min-h-screen bg-[#0B0F14]">
+    <div className="min-h-screen bg-paper">
       <TopBar />
       <main className="mx-auto max-w-5xl px-5 py-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Calendar" }]} />
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Calendar</h1>
-            <p className="text-sm text-[#B8C0CC]">Deadlines, launch dates, and milestones across every project.</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-text">Calendar</h1>
+            <p className="text-sm text-text-soft">Deadlines, launch dates, and milestones across every project.</p>
           </div>
           <div className="flex items-center gap-3 text-xs">
             {Object.entries(EVENT_STYLES).map(([type, s]) => (
-              <span key={type} className="flex items-center gap-1.5 text-[#7A8599]">
+              <span key={type} className="flex items-center gap-1.5 text-text-faint">
                 <span className={`h-2 w-2 rounded-full ${s.dot}`} />
                 {s.label}
               </span>
@@ -123,20 +123,20 @@ function CalendarView() {
               type="button"
               onClick={() => goToMonth(-1)}
               aria-label="Previous month"
-              className="rounded-xl border border-[#232A36] bg-[#161B22] p-2 text-[#B8C0CC] transition hover:border-[#7C5CFF]/30 hover:text-white"
+              className="rounded-xl border border-line bg-card p-2 text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <h2 className="w-40 text-center font-display text-base font-semibold tracking-tight text-white">
+            <h2 className="w-40 text-center font-display text-base font-semibold tracking-tight text-text">
               {MONTH_NAMES[month]} {year}
             </h2>
             <button
               type="button"
               onClick={() => goToMonth(1)}
               aria-label="Next month"
-              className="rounded-xl border border-[#232A36] bg-[#161B22] p-2 text-[#B8C0CC] transition hover:border-[#7C5CFF]/30 hover:text-white"
+              className="rounded-xl border border-line bg-card p-2 text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -146,27 +146,27 @@ function CalendarView() {
           <button
             type="button"
             onClick={goToToday}
-            className="rounded-full border border-[#232A36] bg-[#161B22] px-4 py-1.5 text-xs font-medium text-[#B8C0CC] transition hover:border-[#7C5CFF]/30 hover:text-white"
+            className="rounded-full border border-line bg-card px-4 py-1.5 text-xs font-medium text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
           >
             Today
           </button>
         </div>
 
         {loading ? (
-          <p className="font-mono text-xs uppercase tracking-wide text-[#7A8599]">Loading…</p>
+          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
         ) : (
           <>
-            <div className="overflow-hidden rounded-2xl border border-[#232A36] bg-[#161B22]">
-              <div className="grid grid-cols-7 border-b border-[#232A36] bg-[#111827]">
+            <div className="overflow-hidden rounded-2xl border border-line bg-card">
+              <div className="grid grid-cols-7 border-b border-line bg-ink-2">
                 {WEEKDAYS.map((d) => (
-                  <div key={d} className="px-2 py-2.5 text-center font-mono text-[11px] font-medium uppercase tracking-wide text-[#7A8599]">
+                  <div key={d} className="px-2 py-2.5 text-center font-mono text-[11px] font-medium uppercase tracking-wide text-text-faint">
                     {d}
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-7">
                 {grid.map((day, i) => {
-                  if (day === null) return <div key={i} className="min-h-[84px] border-b border-r border-[#232A36] bg-[#0B0F14]/50" />;
+                  if (day === null) return <div key={i} className="min-h-[84px] border-b border-r border-line bg-paper/50" />;
                   const key = dateKey(year, month, day);
                   const dayEvents = eventsByDate[key] || [];
                   const isToday = key === today;
@@ -176,13 +176,13 @@ function CalendarView() {
                       key={i}
                       type="button"
                       onClick={() => setSelectedDate(key)}
-                      className={`min-h-[84px] border-b border-r border-[#232A36] p-2 text-left align-top transition ${
-                        isSelected ? "bg-[#7C5CFF]/15" : "bg-[#161B22] hover:bg-[#1A1F2A]"
+                      className={`min-h-[84px] border-b border-r border-line p-2 text-left align-top transition ${
+                        isSelected ? "bg-[#7C5CFF]/15" : "bg-card hover:bg-card"
                       }`}
                     >
                       <span
                         className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-medium ${
-                          isToday ? "bg-[#7C5CFF] text-white" : isSelected ? "bg-[#7C5CFF]/20 text-[#7C5CFF]" : "text-[#B8C0CC]"
+                          isToday ? "bg-[#7C5CFF] text-white" : isSelected ? "bg-[#7C5CFF]/20 text-[#7C5CFF]" : "text-text-soft"
                         }`}
                       >
                         {day}
@@ -198,28 +198,28 @@ function CalendarView() {
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-[#232A36] bg-[#161B22] p-5">
-              <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-[#7A8599]">{selectedDate}</h3>
+            <div className="mt-6 rounded-2xl border border-line bg-card p-5">
+              <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-text-faint">{selectedDate}</h3>
               {selectedEvents.length === 0 ? (
-                <p className="text-sm text-[#B8C0CC]">Nothing scheduled this day.</p>
+                <p className="text-sm text-text-soft">Nothing scheduled this day.</p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {selectedEvents.map((e) => (
                     <Link
                       key={e.id}
                       href={`/projects/${e.projectId}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[#232A36] bg-[#111827] px-4 py-3 transition hover:border-[#7C5CFF]/30"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-line bg-ink-2 px-4 py-3 transition hover:border-[#7C5CFF]/30"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${EVENT_STYLES[e.type]?.dot || "bg-[#7A8599]"}`} />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-white">{e.title}</p>
-                          <p className="truncate text-xs text-[#7A8599]">
+                          <p className="truncate text-sm font-medium text-text">{e.title}</p>
+                          <p className="truncate text-xs text-text-faint">
                             {EVENT_STYLES[e.type]?.label} · {e.projectName}
                           </p>
                         </div>
                       </div>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[#7A8599]">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-faint">
                         <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </Link>

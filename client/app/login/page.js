@@ -6,8 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { Field, TextInput, Button } from "@/components/FormControls";
 import Logo from "@/components/Logo";
+import { useTheme } from "@/lib/ThemeContext";
 
 function LoginForm() {
+  const { theme } = useTheme();
+  const logoVariant = theme === "dark" ? "light" : "dark";
   const { login, signup } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,21 +42,21 @@ function LoginForm() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#0B0F14] px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center bg-paper px-4 py-12">
       {/* subtle glows */}
       <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[600px] rounded-full bg-[#7C5CFF]/[0.07] blur-[100px]" />
       <div className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[600px] rounded-full bg-[#4F7BFF]/[0.05] blur-[100px]" />
 
       <div className="relative w-full max-w-[400px]">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5 transition hover:opacity-90" aria-label="DECK home">
-          <Logo variant="light" size={36} />
+          <Logo variant={logoVariant} size={36} />
         </Link>
 
-        <div className="rounded-2xl border border-[#232A36] bg-[#161B22] p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
-          <h1 className="font-display text-xl font-bold tracking-tight text-white">
+        <div className="rounded-2xl border border-line bg-card p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+          <h1 className="font-display text-xl font-bold tracking-tight text-text">
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-[#B8C0CC]">
+          <p className="mt-1.5 text-sm leading-relaxed text-text-soft">
             {mode === "login" ? "Sign in to your workspace." : "Start tracking your marketing projects."}
           </p>
 
@@ -89,7 +92,7 @@ function LoginForm() {
             {mode === "login" && (
               <Link
                 href="/forgot-password"
-                className="mb-4 mt-[-8px] inline-block text-xs font-medium text-[#B8C0CC] transition hover:text-[#7C5CFF]"
+                className="mb-4 mt-[-8px] inline-block text-xs font-medium text-text-soft transition hover:text-[#7C5CFF]"
               >
                 Forgot password?
               </Link>
@@ -108,7 +111,7 @@ function LoginForm() {
               setMode(mode === "login" ? "signup" : "login");
               setError("");
             }}
-            className="mt-5 w-full text-center text-sm text-[#B8C0CC] transition hover:text-white"
+            className="mt-5 w-full text-center text-sm text-text-soft transition hover:text-text"
           >
             {mode === "login" ? (
               <>
@@ -122,13 +125,13 @@ function LoginForm() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-xs text-[#7A8599]">
+        <p className="mt-6 text-center text-xs text-text-faint">
           By continuing you agree to our{" "}
-          <Link href="/terms" className="underline decoration-[#232A36] underline-offset-4 hover:text-[#B8C0CC]">
+          <Link href="/terms" className="underline decoration-[#232A36] underline-offset-4 hover:text-text-soft">
             Terms
           </Link>{" "}
           &{" "}
-          <Link href="/privacy-policy" className="underline decoration-[#232A36] underline-offset-4 hover:text-[#B8C0CC]">
+          <Link href="/privacy-policy" className="underline decoration-[#232A36] underline-offset-4 hover:text-text-soft">
             Privacy
           </Link>
           .

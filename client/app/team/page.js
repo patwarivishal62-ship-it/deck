@@ -12,7 +12,7 @@ const ROLE_LABELS = { owner: "Owner", admin: "Admin", member: "Member" };
 
 function RoleBadge({ role }) {
   const colors = {
-    owner: "bg-signal text-white",
+    owner: "bg-signal text-text",
     admin: "bg-signal-tint text-signal-deep",
     member: "bg-line text-text-soft",
   };

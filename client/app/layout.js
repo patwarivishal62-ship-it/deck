@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
+import { ThemeProvider } from "@/lib/ThemeContext";
 import Footer from "@/components/Footer";
 
 export const metadata = {
@@ -16,14 +17,23 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#0B0F14] antialiased">
-        <AuthProvider>
-          <div className="flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
-            <Footer />
-          </div>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('deck-theme');if(!t||['dark','light','eye'].indexOf(t)===-1) t='dark';document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','dark')}})();`,
+          }}
+        />
+      </head>
+      <body className="bg-paper antialiased">
+        <ThemeProvider>
+          <AuthProvider>
+            <div className="flex min-h-screen flex-col">
+              <div className="flex-1">{children}</div>
+              <Footer />
+            </div>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
