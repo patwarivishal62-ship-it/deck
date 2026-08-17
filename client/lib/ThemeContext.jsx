@@ -17,17 +17,17 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     setMounted(true);
-    const saved = typeof window !== "undefined" ? localStorage.getItem("deck-theme") : null;
-    const systemDark = typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    let saved = null;
+    try { saved = typeof window !== "undefined" ? localStorage.getItem("deck-theme") : null; } catch {}
     const initial = saved && THEMES.includes(saved) ? saved : "dark"; // default premium dark
     setTheme(initial);
-    document.documentElement.setAttribute("data-theme", initial);
+    try { document.documentElement.setAttribute("data-theme", initial); } catch {}
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("deck-theme", theme);
+    try { document.documentElement.setAttribute("data-theme", theme); } catch {}
+    try { localStorage.setItem("deck-theme", theme); } catch {}
   }, [theme, mounted]);
 
   function cycleTheme() {

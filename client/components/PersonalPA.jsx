@@ -84,15 +84,16 @@ export default function PersonalPA() {
   const shouldHide = !user || hideOn.some((p) => pathname?.startsWith(p));
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  // Proactive peek — lively pop after 2.5s once per session
+  // Proactive peek — lively pop after 2.5s once per session (guard storage)
   useEffect(() => {
     if (shouldHide || open) return;
-    const seen = sessionStorage.getItem("pa-peeked");
+    let seen = null;
+    try { seen = sessionStorage.getItem("pa-peeked"); } catch {}
     if (seen) return;
     const t = setTimeout(() => {
       setPeek(true);
       setTimeout(() => setPeek(false), 4000);
-      sessionStorage.setItem("pa-peeked", "1");
+      try { sessionStorage.setItem("pa-peeked", "1"); } catch {}
     }, 2800);
     return () => clearTimeout(t);
   }, [shouldHide, open]);
