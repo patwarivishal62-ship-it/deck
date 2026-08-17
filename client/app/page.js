@@ -170,7 +170,7 @@ function LandingPage() {
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-[500px] w-[600px] rounded-full bg-[#4F7BFF]/[0.06] blur-[120px]" />
 
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-16">
-          <Reveal>
+          <div>
 
             <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-text sm:text-[44px] lg:text-[52px]">
               Plan.
@@ -213,7 +213,7 @@ function LandingPage() {
                 <span className="h-1 w-1 rounded-full bg-[#7C5CFF]" /> Built for teams that ship
               </span>
             </div>
-          </Reveal>
+          </div>
 
           <Reveal delay={140} className="flex justify-center lg:justify-end">
             <HeroPreview />
