@@ -84,6 +84,7 @@ function isMorningPlanIntent(msg) {
 }
 
 router.post("/chat", async (req, res) => {
+  try {
   const { message } = req.body;
   if (!message || typeof message !== "string" || !message.trim()) {
     return res.status(400).json({ error: "Message is required" });
@@ -143,7 +144,7 @@ router.post("/chat", async (req, res) => {
     }
   }
 
-  // Intent: Organize / push pending — actually pushes overdue to today
+  // Intent: Organize / push pending — pushes overdue to today
   if (isOrganizeIntent(text)) {
     const pending = [];
     for (const p of projects) {
@@ -154,8 +155,13 @@ router.post("/chat", async (req, res) => {
     if (pending.length === 0) {
       return res.json({ reply: "🎉 No pending tasks — you’re all clear! Want me to help plan something new for tomorrow?", action: "organize_empty" });
     }
-    // Sort: overdue first, then due today, then soonest, then no date
     const today = todayISO();
+    // Push overdue to today (next-day behavior) — update DB
+    const overdueTasks = pending.filter((t) => t.dueDate && t.dueDate < today);
+    let pushed = 0;
+    for (const t of overdueTasks) {
+      try { await tasksDb.update(t.id, { dueDate: today }); pushed++; t.dueDate = today; } catch {}
+    }
     pending.sort((a, b) => {
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
@@ -164,16 +170,15 @@ router.post("/chat", async (req, res) => {
       if (b.dueDate < today && a.dueDate >= today) return 1;
       return a.dueDate.localeCompare(b.dueDate);
     });
-    const overdue = 0; // after push
     const dueToday = pending.filter((t) => t.dueDate === today).length;
     let reply = `📋 **Organized ${pending.length} pending tasks**\n\n`;
-    if (overdue) reply += `⚠️ ${overdue} overdue — I’ve pushed them to today.\n`;
+    if (pushed) reply += `⚠️ Pushed ${pushed} overdue to today so nothing slips.\n`;
     if (dueToday) reply += `📌 ${dueToday} due today.\n`;
     reply += `\n**Top 5 to focus on:**\n`;
     pending.slice(0, 5).forEach((t, i) => {
       reply += `${i + 1}. ${t.title} · *${t.projectName}*${t.dueDate ? ` (due ${t.dueDate})` : ""}\n`;
     });
-    reply += `\nWant me to move the overdue ones to today or reschedule?`;
+    reply += `\nI’ll check in at midday and evening. Want to add more?`;
     return res.json({ reply, action: "organized", tasks: pending.slice(0, 10), pushed });
   }
 
@@ -216,10 +221,12 @@ router.post("/chat", async (req, res) => {
     reply: `I’m your Deck PA — I keep it simple:\n\n• **Add task:** \`Add task Shoot reel #2 due tomorrow in Acme Launch\`\n• **Today:** \`What’s due today?\`\n• **Organize:** \`Organize my pending tasks\`\n\nTry one, or tell me what you’re working on today and I’ll add them.`,
     action: "help",
   });
+  } catch (err) { console.error("PA chat error", err); return res.status(500).json({ error: "PA temporarily unavailable" }); }
 });
 
 // Daily briefing - for notifications / morning check
 router.get("/briefing", async (req, res) => {
+  try {
   let projects = [];
   try {
     projects = await projectsDb.listForCaller(
@@ -264,6 +271,7 @@ router.get("/briefing", async (req, res) => {
     message += `Evening wrap — ${dueToday.length} were due today, ${overdue.length} overdue. Update your progress and I’ll push pending to tomorrow.`;
   }
   res.json({ message, stats: { pending: pending.length, dueToday: dueToday.length, overdue: overdue.length, dueTomorrow: dueTomorrow.length } });
+  } catch (err) { console.error("briefing error", err); res.status(500).json({ error: "Briefing unavailable" }); }
 });
 
 module.exports = router;

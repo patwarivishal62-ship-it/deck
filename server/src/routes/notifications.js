@@ -128,6 +128,7 @@ function computePANudges(projects) {
 }
 
 router.get("/", async (req, res) => {
+  try {
   const [stored, deadlineData] = await Promise.all([
     notificationsDb.listForUser(req.userId),
     computeDeadlineReminders(req),
@@ -142,6 +143,7 @@ router.get("/", async (req, res) => {
   const unreadCount = synthetic.length + stored.filter((n) => !n.read).length;
 
   res.json({ notifications, unreadCount });
+  } catch (err) { console.error("notifications error", err); res.status(500).json({ error: "Failed to load notifications" }); }
 });
 
 router.patch("/:id/read", async (req, res) => {
