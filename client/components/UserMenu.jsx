@@ -99,15 +99,6 @@ export default function UserMenu() {
             >
               Settings
             </Link>
-            {user?.email?.toLowerCase() === "patwarivishal62@gmail.com" && (
-              <Link
-                href="/admin/branding"
-                onClick={() => setOpen(false)}
-                className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
-              >
-                Branding
-              </Link>
-            )}
           </nav>
 
           <div className="border-t border-line px-4 py-3">
