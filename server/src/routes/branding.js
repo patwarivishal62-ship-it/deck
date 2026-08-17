@@ -21,6 +21,9 @@ router.get("/", async (req, res) => {
 // Protected: upload logo or favicon — any logged-in user for now (small team)
 // Expects multipart/form-data with field "file" and query ?type=logo or ?type=favicon
 router.post("/", requireAuth, (req, res) => {
+  return res.status(403).json({ error: "Branding is now fixed — updates are disabled. Contact owner." });
+  // Original upload logic disabled per request 2026-08-17
+  //
   upload.single("file")(req, res, async (err) => {
     if (err) {
       const msg = err.code === "LIMIT_FILE_SIZE" ? "File too large (max 5MB)" : "Upload failed";
@@ -68,6 +71,9 @@ router.post("/", requireAuth, (req, res) => {
 
 // Protected: reset to default (remove custom)
 router.delete("/", requireAuth, async (req, res) => {
+  return res.status(403).json({ error: "Branding is fixed" });
+  // Original reset disabled
+  //
   try {
     const type = req.query.type;
     if (type && !["logo", "favicon"].includes(type)) return res.status(400).json({ error: "type must be logo or favicon" });

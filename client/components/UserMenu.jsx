@@ -98,13 +98,6 @@ export default function UserMenu() {
             >
               Settings
             </Link>
-            <Link
-              href="/admin/branding"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
-            >
-              Branding
-            </Link>
           </nav>
 
           <div className="border-t border-line py-1.5">
