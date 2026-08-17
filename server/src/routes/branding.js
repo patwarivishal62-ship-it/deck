@@ -15,7 +15,8 @@ router.get("/", async (req, res) => {
     const branding = await brandingDb.get();
     res.json({ branding: branding || { logoUrl: null, faviconUrl: null } });
   } catch (err) {
-    res.status(500).json({ error: "Could not load branding" });
+    console.error("Branding GET failed, returning default", err.message);
+    res.json({ branding: { logoUrl: null, faviconUrl: null } });
   }
 });
 
