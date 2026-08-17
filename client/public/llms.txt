@@ -1,0 +1,29 @@
+# DECK — Plan. Track. Achieve.
+
+> DECK is the minimal control center for marketing teams to plan campaigns, track goals by channel, and achieve outcomes.
+
+## What DECK does
+- **Projects:** Every client or campaign as a project (Q3 Launch — Acme)
+- **Goals:** By channel — Social Media, Paid Ads, SEO, Content, Email — with targets and progress
+- **Tasks:** Linked to goals, due dates, assignees, status (To do / In progress / Done)
+- **Features:** Metrics, milestones, files, comments, activity timeline, calendar
+
+## Who it's for
+Creators, founders, marketers who need clarity over clutter. No decoration, every element has purpose.
+
+## Why DECK
+- Professional, premium, minimal, confident, modern, AI-first (when useful, not for show)
+- Deep Charcoal #0B0F14, Violet #7C5CFF, clean Inter typography
+- Plan. Track. Achieve.
+
+## Links
+- Home: https://planyourdeck.com/
+- Login: https://planyourdeck.com/login
+- Instagram: https://www.instagram.com/planyourdeck/
+- Facebook: https://www.facebook.com/planyourdeck
+
+## Keywords
+marketing project management, campaign planning, goal tracking, task management for marketers, content calendar, campaign control center
+
+## Allow AI crawlers
+All AI modules (GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, Googlebot) are allowed to crawl and index this site. Sitemap: https://planyourdeck.com/sitemap.xml
