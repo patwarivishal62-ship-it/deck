@@ -14,13 +14,13 @@ export default function ConfirmModal({ open, title, message, onConfirm, onCancel
           <Button variant="ghost" onClick={onCancel} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={busy}>
+          <Button variant="destructive" onClick={onConfirm} disabled={busy}>
             {busy ? "Deleting…" : "Delete"}
           </Button>
         </>
       }
     >
-      <p className="text-sm text-text-soft">{message}</p>
+      <p className="text-sm leading-relaxed text-[#B8C0CC]">{message}</p>
     </Modal>
   );
 }

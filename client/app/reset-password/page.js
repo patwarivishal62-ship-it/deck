@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Field, TextInput, Button } from "@/components/FormControls";
+import Logo from "@/components/Logo";
 import { api } from "@/lib/api";
 
 function ResetPasswordForm() {
@@ -43,60 +44,40 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink px-4">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="mb-6 flex items-center justify-center gap-2 transition hover:opacity-80">
-          <span className="h-2 w-2 animate-pulse_dot rounded-full bg-signal" />
-          <span className="font-display text-xl font-semibold text-white">Deck</span>
+    <div className="relative flex min-h-screen items-center justify-center bg-[#0B0F14] px-4 py-12">
+      <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[600px] rounded-full bg-[#7C5CFF]/[0.07] blur-[100px]" />
+      <div className="w-full max-w-sm relative">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2.5 transition hover:opacity-90">
+          <Logo variant="light" size={32} />
         </Link>
 
-        <div className="rounded-card bg-card p-6 shadow-2xl">
+        <div className="rounded-2xl border border-[#232A36] bg-[#161B22] p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
           {!token ? (
             <>
-              <h1 className="mb-1 font-display text-lg font-semibold text-text">Invalid link</h1>
-              <p className="text-sm text-text-soft">
-                This reset link is missing its token. Request a new one from the sign-in page.
-              </p>
-              <Link
-                href="/forgot-password"
-                className="mt-5 inline-block text-sm text-signal-deep underline underline-offset-2"
-              >
+              <h1 className="font-display text-lg font-bold tracking-tight text-white">Invalid link</h1>
+              <p className="mt-2 text-sm leading-relaxed text-[#B8C0CC]">This reset link is missing its token. Request a new one from the sign-in page.</p>
+              <Link href="/forgot-password" className="mt-6 inline-flex w-full justify-center rounded-full bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#6A44FF]">
                 Request a new link
               </Link>
             </>
           ) : done ? (
             <>
-              <h1 className="mb-1 font-display text-lg font-semibold text-text">Password updated</h1>
-              <p className="text-sm text-text-soft">Taking you to sign in…</p>
+              <h1 className="font-display text-lg font-bold tracking-tight text-white">Password updated</h1>
+              <p className="mt-2 text-sm text-[#B8C0CC]">Taking you to sign in…</p>
             </>
           ) : (
             <>
-              <h1 className="mb-1 font-display text-lg font-semibold text-text">Choose a new password</h1>
-              <p className="mb-5 text-sm text-text-soft">Make it at least 6 characters.</p>
+              <h1 className="font-display text-lg font-bold tracking-tight text-white">Choose a new password</h1>
+              <p className="mb-5 mt-1.5 text-sm text-[#B8C0CC]">Make it at least 6 characters.</p>
               <form onSubmit={handleSubmit}>
                 <Field label="New password">
-                  <TextInput
-                    type="password"
-                    required
-                    autoFocus
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                  />
+                  <TextInput type="password" required autoFocus minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
                 </Field>
                 <Field label="Confirm new password">
-                  <TextInput
-                    type="password"
-                    required
-                    minLength={6}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Password"
-                  />
+                  <TextInput type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Password" />
                 </Field>
-                {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}
-                <Button type="submit" disabled={busy} className="mt-2 w-full">
+                {error && <p className="mb-3 rounded-xl bg-[#2E1A1E] border border-[#FF5D73]/20 px-3 py-2 text-sm text-[#FF5D73]">{error}</p>}
+                <Button type="submit" disabled={busy} className="mt-2 w-full justify-center">
                   {busy ? "Saving…" : "Reset password"}
                 </Button>
               </form>

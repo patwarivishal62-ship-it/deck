@@ -31,9 +31,6 @@ export default function UserMenu() {
     };
   }, []);
 
-  // A small, quiet touch — shows how many workspaces you're part of next to
-  // the "Workspaces" item, without making workspace creation itself a
-  // spotlighted action anywhere in this menu.
   useEffect(() => {
     if (!open || workspaceCount !== null) return;
     api
@@ -51,9 +48,9 @@ export default function UserMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-full border border-ink-line py-1 pl-1 pr-2.5 transition hover:border-signal"
+        className="flex items-center gap-2 rounded-full border border-[#232A36] bg-[#161B22] py-1 pl-1 pr-2.5 transition hover:border-[#7C5CFF]/40 hover:bg-[#1A1F2A]"
       >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-signal font-mono text-[11px] font-semibold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#7C5CFF] font-mono text-[11px] font-semibold text-white">
           {initialsFor(user)}
         </span>
         <svg
@@ -70,47 +67,47 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-lg border border-line bg-card shadow-2xl">
-          <div className="border-b border-line px-3.5 py-3">
-            <p className="truncate text-sm font-medium text-text">{user.name || "Your account"}</p>
-            <p className="truncate text-xs text-text-faint">{user.email}</p>
+        <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl border border-[#232A36] bg-[#161B22] shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+          <div className="border-b border-[#232A36] px-4 py-3">
+            <p className="truncate text-sm font-semibold text-white">{user.name || "Your account"}</p>
+            <p className="truncate text-xs text-[#7A8599]">{user.email}</p>
           </div>
 
-          <nav className="py-1">
+          <nav className="py-1.5">
             <Link
               href="/team"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2 text-sm text-text transition hover:bg-paper"
+              className="flex items-center justify-between px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
             >
               <span>Workspaces</span>
               {workspaceCount !== null && (
-                <span className="font-mono text-xs text-text-faint">{workspaceCount}</span>
+                <span className="rounded-full bg-[#232A36] px-1.5 py-0.5 font-mono text-xs text-[#B8C0CC]">{workspaceCount}</span>
               )}
             </Link>
             <Link
               href="/calendar"
               onClick={() => setOpen(false)}
-              className="block px-3.5 py-2 text-sm text-text transition hover:bg-paper"
+              className="block px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
             >
               Calendar
             </Link>
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
-              className="block px-3.5 py-2 text-sm text-text transition hover:bg-paper"
+              className="block px-4 py-2 text-sm text-white transition hover:bg-[#1F242F]"
             >
               Settings
             </Link>
           </nav>
 
-          <div className="border-t border-line py-1">
+          <div className="border-t border-[#232A36] py-1.5">
             <button
               type="button"
               onClick={() => {
                 setOpen(false);
                 logout();
               }}
-              className="block w-full px-3.5 py-2 text-left text-sm text-signal-deep transition hover:bg-signal-tint"
+              className="block w-full px-4 py-2 text-left text-sm font-medium text-[#FF5D73] transition hover:bg-[#2E1A1E]"
             >
               Sign out
             </button>

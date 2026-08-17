@@ -35,8 +35,6 @@ export default function NotificationBell() {
     }
   }
 
-  // Poll lightly so the unread badge stays roughly current without needing
-  // a websocket/push setup — this is an in-app center, not a push system.
   useEffect(() => {
     load();
     const interval = setInterval(load, 60000);
@@ -62,9 +60,7 @@ export default function NotificationBell() {
       setUnreadCount((c) => Math.max(0, c - 1));
       try {
         await api.markNotificationRead(n.id);
-      } catch {
-        // Non-critical — worst case it just shows unread again next load.
-      }
+      } catch {}
     }
     setOpen(false);
   }
@@ -74,9 +70,7 @@ export default function NotificationBell() {
     setUnreadCount(0);
     try {
       await api.markAllNotificationsRead();
-    } catch {
-      // Non-critical.
-    }
+    } catch {}
   }
 
   return (
@@ -85,29 +79,25 @@ export default function NotificationBell() {
         type="button"
         onClick={handleOpen}
         aria-label="Notifications"
-        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-ink-line text-white/80 transition hover:border-signal hover:text-white"
+        className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#232A36] bg-[#161B22] text-white/80 transition hover:border-[#7C5CFF]/40 hover:text-white hover:bg-[#1A1F2A]"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-signal px-1 font-mono text-[9px] font-semibold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#7C5CFF] px-1 font-mono text-[9px] font-bold text-white shadow-[0_2px_8px_rgba(124,92,255,0.5)]">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] w-80 overflow-hidden rounded-lg border border-line bg-card shadow-2xl">
-          <div className="flex items-center justify-between border-b border-line px-3.5 py-2.5">
-            <span className="text-sm font-medium text-text">Notifications</span>
+        <div className="absolute right-0 top-[calc(100%+8px)] w-80 overflow-hidden rounded-2xl border border-[#232A36] bg-[#161B22] shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between border-b border-[#232A36] px-4 py-3">
+            <span className="text-sm font-semibold text-white">Notifications</span>
             {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllRead}
-                className="text-xs text-text-faint hover:text-signal-deep"
-              >
+              <button type="button" onClick={handleMarkAllRead} className="text-xs font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">
                 Mark all read
               </button>
             )}
@@ -115,28 +105,22 @@ export default function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <p className="p-4 text-center font-mono text-xs uppercase tracking-wide text-text-faint">
-                Loading…
-              </p>
+              <p className="p-4 text-center font-mono text-xs uppercase tracking-wide text-[#7A8599]">Loading…</p>
             ) : notifications.length === 0 ? (
-              <p className="p-4 text-center text-sm text-text-soft">You're all caught up.</p>
+              <p className="p-6 text-center text-sm text-[#B8C0CC]">You&apos;re all caught up.</p>
             ) : (
               notifications.map((n) => (
                 <Link
                   key={n.id}
                   href={n.link || "/projects"}
                   onClick={() => handleItemClick(n)}
-                  className={`block border-b border-line px-3.5 py-2.5 text-sm transition last:border-b-0 hover:bg-paper ${
-                    n.read ? "text-text-soft" : "text-text"
-                  }`}
+                  className={`block border-b border-[#232A36] px-4 py-3 text-sm transition last:border-b-0 hover:bg-[#1F242F] ${n.read ? "text-[#B8C0CC]" : "text-white bg-[#1E1C2E]/50"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className={n.read ? "" : "font-medium"}>{n.message}</span>
-                    {!n.read && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" />}
+                    {!n.read && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#7C5CFF]" />}
                   </div>
-                  <span className="mt-0.5 block font-mono text-[11px] text-text-faint">
-                    {timeAgo(n.createdAt)}
-                  </span>
+                  <span className="mt-1 block font-mono text-[11px] text-[#7A8599]">{timeAgo(n.createdAt)}</span>
                 </Link>
               ))
             )}

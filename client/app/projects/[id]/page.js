@@ -330,7 +330,7 @@ function ProjectDetail() {
             <div className="rounded-card border border-line bg-card p-4">
               <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Overall Progress</p>
               <div className="mt-3">
-                <Meter value={avgGoalProgressPct} target={100} color="#ff5a38" />
+                <Meter value={avgGoalProgressPct} target={100} color="#7C5CFF" />
               </div>
               <p className="mt-2 text-sm text-text">
                 {avgGoalProgressPct}%

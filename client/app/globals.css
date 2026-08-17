@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,23 +12,27 @@ html,
 body {
   margin: 0;
   padding: 0;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: #14161f;
-  color: #1b1e2a;
-  font-family: "Inter", system-ui, sans-serif;
+  background: #0B0F14;
+  color: #FFFFFF;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
+  line-height: 1.6;
 }
 
 ::selection {
-  background: #ff5a38;
+  background: #7C5CFF;
   color: #fff;
 }
 
 *:focus-visible {
-  outline: 2px solid #ff5a38;
+  outline: 2px solid #7C5CFF;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -40,12 +44,12 @@ textarea {
   font-family: inherit;
 }
 
-/* VU-meter style progress bar: dashed track, hatched fill */
+/* Premium VU-meter / progress bar — minimal, no hatch, just clean fill */
 .meter {
   position: relative;
-  height: 7px;
-  border-radius: 3px;
-  background: repeating-linear-gradient(90deg, #e3e5ed 0 6px, #f1f2f7 6px 8px);
+  height: 6px;
+  border-radius: 9999px;
+  background: #232A36;
   overflow: hidden;
 }
 
@@ -53,13 +57,13 @@ textarea {
   position: absolute;
   inset: 0 auto 0 0;
   height: 100%;
-  border-radius: 3px;
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.16) 0 1px,
-    transparent 1px 7px
-  );
-  transition: width 0.3s ease;
+  border-radius: 9999px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* For use when meters sit on dark surfaces — keep track subtle */
+.meter--subtle {
+  background: rgba(255,255,255,0.08);
 }
 
 .project-desc {
@@ -69,7 +73,7 @@ textarea {
   overflow: hidden;
 }
 
-/* Faint grain texture for dark sections — adds tactile depth instead of a flat gradient fill. */
+/* Subtle grain for hero — very restrained, not overpowering */
 .bg-grain {
   position: relative;
 }
@@ -79,15 +83,45 @@ textarea {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.025;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Scrollbar — minimal, dark */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232A36;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2A3447;
+}
+
+/* Hide scrollbar for clean UI where needed */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse_dot,
   .animate-float,
-  .animate-float_alt {
+  .animate-float_alt,
+  .animate-shimmer {
     animation: none !important;
   }
 }

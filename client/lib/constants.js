@@ -1,12 +1,12 @@
 // Mirrors server/src/constants.js — keep both in sync.
 
 export const CATEGORIES = {
-  social: { label: "Social Media", color: "#7c5cfc" },
-  ads: { label: "Paid Ads", color: "#1e88e5" },
-  seo: { label: "SEO", color: "#1fa67a" },
-  content: { label: "Content", color: "#e8a23d" },
-  email: { label: "Email", color: "#14b8a6" },
-  other: { label: "Other", color: "#8a8fa3" },
+  social: { label: "Social Media", color: "#7C5CFF" },
+  ads: { label: "Paid Ads", color: "#4F7BFF" },
+  seo: { label: "SEO", color: "#22D3A6" },
+  content: { label: "Content", color: "#E8A23D" },
+  email: { label: "Email", color: "#14B8A6" },
+  other: { label: "Other", color: "#8A94A8" },
 };
 
 export const CATEGORY_KEYS = Object.keys(CATEGORIES);
@@ -25,9 +25,9 @@ export const STATUSES = [
 ];
 
 export const PRIORITIES = {
-  low: { label: "Low", color: "#8a8fa3" },
-  medium: { label: "Medium", color: "#e8a23d" },
-  high: { label: "High", color: "#ff5a38" },
+  low: { label: "Low", color: "#7A8599" },
+  medium: { label: "Medium", color: "#E8A23D" },
+  high: { label: "High", color: "#FF5D73" },
 };
 
 export const PRIORITY_KEYS = Object.keys(PRIORITIES);
@@ -60,8 +60,8 @@ export const METRIC_CATALOG = {
     { key: "cpc", label: "CPC", unit: "currency" },
     { key: "cpm", label: "CPM", unit: "currency" },
     { key: "leads", label: "Leads", unit: "count" },
-    { key: "cpl", label: "Cost Per Lead", unit: "currency" },
     { key: "conversions", label: "Conversions", unit: "count" },
+    { key: "cpl", label: "Cost Per Lead", unit: "currency" },
     { key: "roas", label: "ROAS", unit: "ratio" },
   ],
   seo: [
