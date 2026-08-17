@@ -110,9 +110,39 @@ function LandingPage() {
       },
     ],
   };
+  const howToJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "How to organize marketing projects with DECK",
+    description: "Organize any marketing campaign in three layers — Projects, Goals, Tasks — to keep every channel and deadline visible.",
+    totalTime: "PT5M",
+    supply: [{ "@type": "HowToSupply", name: "DECK account (free)" }],
+    tool: [{ "@type": "HowToTool", name: "DECK — Plan. Track. Achieve." }],
+    step: [
+      {
+        "@type": "HowToStep",
+        name: "Create a Project",
+        text: "Create a project for every client or campaign (e.g., Q3 Launch — Acme). It becomes the single board for all goals and tasks.",
+        url: "https://planyourdeck.com/#how-it-works",
+      },
+      {
+        "@type": "HowToStep",
+        name: "Set channel Goals",
+        text: "Add goals by channel — Social Media, Paid Ads, SEO, Content, Email — set a target (e.g., 20 Reels, 500 leads) and watch the meter fill as work completes.",
+        url: "https://planyourdeck.com/#how-it-works",
+      },
+      {
+        "@type": "HowToStep",
+        name: "Break into linked Tasks",
+        text: "Break goals into tasks, link each task to its goal, assign and set due dates. Completing a task advances its goal, so progress is always tied to real, accountable work.",
+        url: "https://planyourdeck.com/#how-it-works",
+      },
+    ],
+  };
   return (
     <div className="bg-paper">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line/60 bg-paper/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
