@@ -56,8 +56,63 @@ function HowItWorksCard({ icon, title, children, delay = 0 }) {
 function LandingPage() {
   const { theme } = useTheme();
   const logoVariant = theme === "dark" ? "light" : "dark";
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is DECK?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "DECK is the minimal control center for marketing teams to plan campaigns, track goals by channel (Social, Paid Ads, SEO, Content, Email), and achieve outcomes — without the noise.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How does DECK help plan marketing campaigns?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Every client or campaign lives as a project in DECK. You create projects, set channel goals with targets, and break them into tasks linked to those goals. Progress, due dates, and ownership stay visible on one board.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How does goal tracking work in DECK?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Pick a channel, set a target (e.g., 20 Reels, 500 leads), and watch the meter fill as linked tasks are completed. Each task completion moves its goal by the goal's step, so progress is always tied to real work.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How are tasks linked to goals in DECK?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "When you create a task you can link it to a goal. Completing the task advances the goal. This creates accountability and shows which work actually moved the metric.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Who is DECK for?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "DECK is for creators, founders, and marketers who need clarity over clutter. It is designed for busy teams that run multiple campaigns across multiple clients.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is DECK free to use?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, DECK is free to start. Create your first project in under a minute, no credit card required.",
+        },
+      },
+    ],
+  };
   return (
     <div className="bg-paper">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line/60 bg-paper/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
