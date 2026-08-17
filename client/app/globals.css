@@ -31,9 +31,12 @@ body {
   --scrollbar: #232A36;
   --scrollbar-hover: #2A3447;
   --meter-track: #232A36;
+  --shadow: 0 8px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-strong: 0 16px 48px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 24px rgba(124,92,255,0.35);
 }
 
-/* Light — clean, airy, premium light */
+/* Light — clean, airy, premium light — tighter shadows */
 [data-theme="light"] {
   --bg: #F8FAFC;
   --bg-sub: #F1F5F9;
@@ -49,6 +52,9 @@ body {
   --scrollbar: #E2E8F0;
   --scrollbar-hover: #CBD5E1;
   --meter-track: #E2E8F0;
+  --shadow: 0 8px 24px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.06);
+  --shadow-strong: 0 16px 32px rgba(15,23,42,0.12);
+  --shadow-glow: 0 0 20px rgba(124,92,255,0.18);
 }
 
 /* Eye — optimal for eyes: warm, low-blue, soft contrast (like paper under warm light) */
@@ -59,7 +65,7 @@ body {
   --border: #E8DCC6;
   --text: #3E3326;
   --text-soft: #6B5E4A;
-  --text-faint: #9E9580;
+  --text-faint: #8A7F6A; /* darkened from #9E9580 for AA */
   --text-muted: #8A7F6A;
   --signal-tint: #F3EFFF;
   --good-tint: #E6F4EA;
@@ -67,6 +73,9 @@ body {
   --scrollbar: #E8DCC6;
   --scrollbar-hover: #D9C9A8;
   --meter-track: #E8DCC6;
+  --shadow: 0 8px 24px rgba(62,51,38,0.08), 0 1px 3px rgba(62,51,38,0.06);
+  --shadow-strong: 0 16px 32px rgba(62,51,38,0.12);
+  --shadow-glow: 0 0 20px rgba(124,92,255,0.15);
 }
 
 body {

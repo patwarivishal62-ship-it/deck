@@ -53,8 +53,9 @@ module.exports = {
         xl: "16px",
       },
       boxShadow: {
-        card: "0 8px 30px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.4)",
-        glow: "0 0 24px rgba(124,92,255,0.35)",
+        card: "var(--shadow)",
+        "card-strong": "var(--shadow-strong)",
+        glow: "var(--shadow-glow)",
         "glow-strong": "0 0 40px rgba(124,92,255,0.5)",
       },
       keyframes: {

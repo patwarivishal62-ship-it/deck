@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import CategoryMeters from "@/components/CategoryMeters";
+import HeroPreview from "@/components/HeroPreview";
 import Reveal from "@/components/Reveal";
 import Logo from "@/components/Logo";
 import { useTheme, ThemeToggle } from "@/lib/ThemeContext";
@@ -136,10 +136,7 @@ function LandingPage() {
           </Reveal>
 
           <Reveal delay={140} className="flex justify-center lg:justify-end">
-            <div className="w-full max-w-[440px]">
-              <CategoryMeters />
-              <p className="mt-3 text-center text-xs text-text-faint">Live preview — meters reflect real project progress</p>
-            </div>
+            <HeroPreview />
           </Reveal>
         </div>
       </section>
