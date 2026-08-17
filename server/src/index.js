@@ -17,7 +17,6 @@ const metricRoutes = require("./routes/metrics");
 const calendarRoutes = require("./routes/calendar");
 const notificationRoutes = require("./routes/notifications");
 const workspaceRoutes = require("./routes/workspaces");
-const aiRoutes = require("./routes/ai");
 
 const app = express();
 
@@ -52,7 +51,6 @@ app.use("/api/projects", milestoneRoutes);
 app.use("/api/projects", metricRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/ai", aiRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
