@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import HeroPreview from "@/components/HeroPreview";
 import Reveal from "@/components/Reveal";
 import Logo from "@/components/Logo";
-import { useTheme, ThemeToggle } from "@/lib/ThemeContext";
+import { useTheme } from "@/lib/ThemeContext";
 
 function IconGrid() {
   return (
@@ -65,7 +65,6 @@ function LandingPage() {
             <Logo variant={logoVariant} size={32} />
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Link href="/login" className="hidden sm:inline-flex rounded-full px-4 py-2 text-sm font-medium text-text-soft transition hover:text-text">
               Sign in
             </Link>

@@ -27,55 +27,44 @@ export default function Footer() {
   const logoVariant = theme === "dark" ? "light" : "dark";
   return (
     <footer className="border-t border-line bg-paper">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-8 sm:py-10">
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="flex flex-col gap-3">
-            <Logo variant={logoVariant} size={28} />
-            <p className="max-w-sm text-sm leading-relaxed text-text-soft">
-              Professional, minimal work control. Plan campaigns, track goals, achieve outcomes — without the noise.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-4 sm:items-end">
-            <nav className="flex items-center gap-6 text-sm text-text-soft">
-              <Link href="/privacy-policy" className="transition hover:text-text">
-                Privacy
-              </Link>
-              <Link href="/terms" className="transition hover:text-text">
-                Terms
-              </Link>
-              <a href="mailto:contact@planyourdeck.com" className="transition hover:text-text">
-                Support
-              </a>
-            </nav>
-            <div className="flex items-center gap-2">
-              <a
-                href="https://www.instagram.com/planyourdeck/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="DECK on Instagram"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-faint transition hover:border-signal/30 hover:text-signal hover:bg-signal-tint"
-              >
-                <InstagramIcon width={16} height={16} />
-              </a>
-              <a
-                href="https://www.facebook.com/planyourdeck"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="DECK on Facebook"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-faint transition hover:border-signal/30 hover:text-signal hover:bg-signal-tint"
-              >
-                <FacebookIcon width={16} height={16} />
-              </a>
-            </div>
-          </div>
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-6 sm:py-7">
+        <div className="flex items-center gap-3">
+          <Logo variant={logoVariant} size={22} />
+          <span className="hidden sm:inline h-4 w-px bg-line" />
+          <span className="text-xs text-text-faint">© 2026 DECK</span>
         </div>
-        <div className="flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-text-faint">© 2026 DECK — Plan. Track. Achieve. All rights reserved.</p>
-          <div className="flex items-center gap-3 text-xs text-text-faint">
-            <span>Built for teams that ship — quietly powerful.</span>
-            <span className="hidden sm:inline h-1 w-1 rounded-full bg-line" />
-            <span className="hidden sm:inline">Follow us on Instagram & Facebook</span>
-          </div>
+
+        <nav className="flex items-center gap-5 text-xs font-medium text-text-soft">
+          <Link href="/privacy-policy" className="transition hover:text-text">
+            Privacy
+          </Link>
+          <Link href="/terms" className="transition hover:text-text">
+            Terms
+          </Link>
+          <a href="mailto:contact@planyourdeck.com" className="transition hover:text-text">
+            Support
+          </a>
+        </nav>
+
+        <div className="flex items-center gap-2">
+          <a
+            href="https://www.instagram.com/planyourdeck/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="DECK on Instagram"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-text-faint transition hover:border-signal/30 hover:text-signal hover:bg-signal-tint"
+          >
+            <InstagramIcon width={14} height={14} />
+          </a>
+          <a
+            href="https://www.facebook.com/planyourdeck"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="DECK on Facebook"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-card text-text-faint transition hover:border-signal/30 hover:text-signal hover:bg-signal-tint"
+          >
+            <FacebookIcon width={14} height={14} />
+          </a>
         </div>
       </div>
     </footer>
