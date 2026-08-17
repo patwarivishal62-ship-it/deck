@@ -132,6 +132,21 @@ npm run dev:client   # just Next.js, on :3000
 - Deleting a **goal** doesn't delete tasks linked to it — it just unlinks them.
 - Deleting a **project** cascades: all of its goals and tasks are deleted too.
 
+## Feature flags (client)
+
+| Flag | Default | What it does |
+|------|---------|--------------|
+| `NEXT_PUBLIC_ENABLE_BRANDING` | *unset* (off) | Custom logo/favicon uploads at `/admin/branding`. |
+
+**Custom branding is currently disabled.** The app always renders the built-in DECK logo and the static
+icons declared in `client/app/layout.js`, and the client never calls `GET /api/branding`. The owner-only
+**Branding** link is hidden from the account menu, and `/admin/branding` shows a "turned off" notice.
+
+Nothing was deleted to disable it — the server routes (`/api/branding`), the `branding` collection, and the
+admin UI are all still in place, just gated. To turn it back on, set `NEXT_PUBLIC_ENABLE_BRANDING=true` in
+the client environment and rebuild (the flag is inlined at build time, so a rebuild is required — setting it
+only at runtime has no effect).
+
 ## Before deploying anywhere public
 
 - `npm audit` flags some advisories against Next.js 14.x's package range generally; this build pins

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { ThemeToggle } from "@/lib/ThemeContext";
 import { api } from "@/lib/api";
+import { BRANDING_ENABLED } from "@/lib/featureFlags";
 
 function initialsFor(user) {
   const source = user.name || user.email || "?";
@@ -99,7 +100,7 @@ export default function UserMenu() {
             >
               Settings
             </Link>
-            {user?.email?.toLowerCase() === "patwarivishal62@gmail.com" && (
+            {BRANDING_ENABLED && user?.email?.toLowerCase() === "patwarivishal62@gmail.com" && (
               <Link
                 href="/admin/branding"
                 onClick={() => setOpen(false)}

@@ -8,6 +8,7 @@ import { Button } from "@/components/FormControls";
 import { useAuth } from "@/lib/AuthContext";
 import { api } from "@/lib/api";
 import { applyFavicon } from "@/lib/favicon";
+import { BRANDING_ENABLED } from "@/lib/featureFlags";
 
 function BrandingCard({ title, description, currentUrl, onUpload, onReset, type }) {
   const [file, setFile] = useState(null);
@@ -111,14 +112,36 @@ function BrandingCard({ title, description, currentUrl, onUpload, onReset, type 
   );
 }
 
+function BrandingDisabledNotice() {
+  return (
+    <div className="min-h-screen bg-paper">
+      <TopBar />
+      <main className="mx-auto max-w-3xl px-5 py-8">
+        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Admin" }, { label: "Branding" }]} />
+        <div className="rounded-2xl border border-line bg-card p-6 text-center">
+          <p className="font-display text-base font-semibold text-text">Branding is turned off</p>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-text-soft">
+            Custom logo and favicon uploads are currently disabled. DECK is using its built-in logo and
+            icon everywhere. Nothing you previously uploaded has been deleted.
+          </p>
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-text-faint">
+            Re-enable with NEXT_PUBLIC_ENABLE_BRANDING=true
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 function BrandingDashboard() {
   const { user } = useAuth();
   const isOwner = user?.email?.toLowerCase() === "patwarivishal62@gmail.com";
   const [branding, setBranding] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(BRANDING_ENABLED);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!BRANDING_ENABLED) return;
     fetch("/api/branding", { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
@@ -130,6 +153,9 @@ function BrandingDashboard() {
         setLoading(false);
       });
   }, []);
+
+  // Feature flag wins over everything, including the owner check.
+  if (!BRANDING_ENABLED) return <BrandingDisabledNotice />;
 
   if (loading) return <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>;
   if (!isOwner) {

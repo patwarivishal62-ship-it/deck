@@ -1,6 +1,7 @@
 "use client";
 
 import { useBranding } from "@/lib/BrandingContext";
+import { BRANDING_ENABLED } from "@/lib/featureFlags";
 
 export function DeckIcon({ size = 28, variant = "dark" }) {
   // variant: dark for use on light bg (charcoal D), light for use on dark bg (white D)
@@ -59,10 +60,13 @@ export function DeckMark({ size = 32, variant = "dark", withWordmark = true, com
 }
 
 export default function Logo({ variant = "dark", size = 28, showTagline = false }) {
-  // Try to use dynamic branding if available (safe if provider missing)
+  // Try to use dynamic branding if available (safe if provider missing).
+  // While the branding feature is disabled the context never holds a logo,
+  // so this always falls through to the built-in DECK mark below.
   let branding = null;
   try {
-    branding = useBranding()?.branding;
+    const ctx = useBranding();
+    if (BRANDING_ENABLED && ctx?.enabled) branding = ctx.branding;
   } catch {}
   if (branding?.logoUrl) {
     return (
