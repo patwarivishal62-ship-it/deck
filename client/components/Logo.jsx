@@ -1,33 +1,19 @@
 "use client";
 
+// Now uses the uploaded favicon.png (/icon.png) as the brand mark.
+// Keeps same API (size, variant, etc.) so TopBar/Footer/page.js require no changes.
 
-
-export function DeckIcon({ size = 28, variant = "dark" }) {
-  // variant: dark for use on light bg (charcoal D), light for use on dark bg (white D)
-  const isDark = variant === "dark";
-  const dFill = isDark ? "#0B0F14" : "#FFFFFF";
-  const bg = isDark ? "#FFFFFF" : "#0B0F14";
-  const wedge = "#7C5CFF";
-
+export function DeckIcon({ size = 28 }) {
   return (
-    <svg
+    <img
+      src="/favicon.png"
+      alt="DECK"
       width={size}
       height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      {/* Rounded container */}
-      <rect width="100" height="100" rx="22" fill={bg} />
-      {/* D */}
-      <path fill={dFill} d="M 22 16 H 52.5 C 70.2 16 84.5 28.2 84.5 50 C 84.5 71.8 70.2 84 52.5 84 H 34.2 V 56.2 H 52.5 C 60.8 56.2 66.5 52.1 66.5 49.9 C 66.5 47.7 60.8 43.6 52.5 43.6 H 40.2 V 16 H 22 Z" />
-      <rect x="22" y="16" width="18" height="42" fill={dFill} />
-      {/* diagonal gap */}
-      <path d="M 22 68.5 L 35.2 54.2 L 37.8 54.2 L 24.6 68.8 Z" fill={bg} />
-      {/* wedge */}
-      <path fill={wedge} d="M 24.2 76.2 L 39.2 60.2 L 56.2 60.2 L 56.2 84 L 26.2 84 C 23.2 84 22 82.5 22 79.2 L 24.2 76.2 Z" />
-    </svg>
+      className="shrink-0 object-contain select-none"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.22) }}
+      draggable={false}
+    />
   );
 }
 
@@ -38,7 +24,7 @@ export function DeckMark({ size = 32, variant = "dark", withWordmark = true, com
 
   return (
     <div className="flex items-center gap-3">
-      <DeckIcon size={size} variant={variant} />
+      <DeckIcon size={size} />
       {withWordmark && (
         <div className="flex flex-col leading-none">
           <span
@@ -60,20 +46,22 @@ export function DeckMark({ size = 32, variant = "dark", withWordmark = true, com
 
 export default function Logo({ variant = "dark", size = 28, showTagline = false }) {
   const isDark = variant === "dark";
-  const dFill = isDark ? "#0B0F14" : "#FFFFFF";
-  const bg = isDark ? "transparent" : "transparent";
 
-  // Minimal header logo: just geometric D + DECK wordmark, no tagline in nav
   return (
     <div className="flex items-center gap-2.5">
-      <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="shrink-0">
-        {bg !== "transparent" && <rect width="100" height="100" rx="20" fill={bg} />}
-        <path fill={dFill} d="M 22 16 H 52.5 C 70.2 16 84.5 28.2 84.5 50 C 84.5 71.8 70.2 84 52.5 84 H 34.2 V 56.2 H 52.5 C 60.8 56.2 66.5 52.1 66.5 49.9 C 66.5 47.7 60.8 43.6 52.5 43.6 H 40.2 V 16 H 22 Z" />
-        <rect x="22" y="16" width="18" height="42" fill={dFill} />
-        <path d="M 22 68.5 L 35.2 54.2 L 37.8 54.2 L 24.6 68.8 Z" fill={isDark ? "#FFFFFF" : "#0B0F14"} />
-        <path fill="#7C5CFF" d="M 24.2 76.2 L 39.2 60.2 L 56.2 60.2 L 56.2 84 L 26.2 84 C 23.2 84 22 82.5 22 79.2 L 24.2 76.2 Z" />
-      </svg>
-      <span className={`font-display font-bold tracking-[0.14em] ${isDark ? "text-[#0B0F14]" : "text-white"}`} style={{ fontSize: "17px" }}>
+      <img
+        src="/favicon.png"
+        alt="DECK"
+        width={size}
+        height={size}
+        className="shrink-0 object-contain select-none"
+        style={{ width: size, height: size, borderRadius: Math.round(size * 0.22) }}
+        draggable={false}
+      />
+      <span
+        className={`font-display font-bold tracking-[0.14em] ${isDark ? "text-[#0B0F14]" : "text-white"}`}
+        style={{ fontSize: "17px" }}
+      >
         DECK
       </span>
       {showTagline && (
