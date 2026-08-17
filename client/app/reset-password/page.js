@@ -82,7 +82,7 @@ function ResetPasswordForm() {
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Password"
                   />
                 </Field>
                 <Field label="Confirm new password">
@@ -92,7 +92,7 @@ function ResetPasswordForm() {
                     minLength={6}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Password"
                   />
                 </Field>
                 {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}

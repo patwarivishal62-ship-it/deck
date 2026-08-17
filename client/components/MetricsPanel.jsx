@@ -153,13 +153,13 @@ function MetricRow({ metric, canManage, onDelete, onEntryAdded, onEntryRemoved }
                     step="any"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
-                    placeholder="0"
+                    placeholder="Value"
                   />
                 </Field>
               </div>
               <div className="min-w-[140px] flex-1">
                 <Field label="Note (optional)">
-                  <TextInput value={note} onChange={(e) => setNote(e.target.value)} placeholder="Context…" />
+                  <TextInput value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note" />
                 </Field>
               </div>
               <Button type="submit" disabled={busy} className="mb-3">

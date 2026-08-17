@@ -104,7 +104,7 @@ export default function MetricFormModal({ open, onClose, onSubmit }) {
               autoFocus
               value={customLabel}
               onChange={(e) => setCustomLabel(e.target.value)}
-              placeholder="e.g. Video Completion Rate"
+              placeholder="Name"
             />
           </Field>
         )}

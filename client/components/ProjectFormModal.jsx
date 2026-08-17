@@ -78,7 +78,7 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial, wor
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Project Name"
+            placeholder="Name"
           />
         </Field>
         <Field label="Description">
@@ -86,7 +86,7 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial, wor
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What's this project about?"
+            placeholder="Description"
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -107,7 +107,7 @@ export default function ProjectFormModal({ open, onClose, onSubmit, initial, wor
           <TextInput
             value={tagsText}
             onChange={(e) => setTagsText(e.target.value)}
-            placeholder="client-a, launch, q3"
+            placeholder="Tags"
           />
         </Field>
         {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}

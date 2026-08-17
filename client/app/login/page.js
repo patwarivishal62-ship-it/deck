@@ -59,7 +59,7 @@ function LoginForm() {
           <form onSubmit={handleSubmit}>
             {mode === "signup" && (
               <Field label="Name (optional)">
-                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Vishal" />
+                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
               </Field>
             )}
             <Field label="Email">
@@ -69,7 +69,7 @@ function LoginForm() {
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="Email"
               />
             </Field>
             <Field label="Password">
@@ -79,7 +79,7 @@ function LoginForm() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Password"
               />
             </Field>
             {mode === "login" && (

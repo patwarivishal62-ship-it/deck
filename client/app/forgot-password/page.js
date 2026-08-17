@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
                     autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="Email"
                   />
                 </Field>
                 {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}

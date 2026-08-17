@@ -136,14 +136,14 @@ function ProjectsDashboard() {
             <TextInput
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search projects…"
+              placeholder="Search"
             />
           </div>
           <div className="w-40">
             <TextInput
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="Filter by tag…"
+              placeholder="Tag"
             />
           </div>
           <Select

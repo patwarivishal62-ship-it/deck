@@ -37,7 +37,7 @@ function ProfileSection() {
     <SettingsCard title="Profile" description="Your name is shown in the top bar.">
       <form onSubmit={handleSave}>
         <Field label="Full name">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
         </Field>
         <Field label="Email">
           <TextInput value={user?.email || ""} disabled className="cursor-not-allowed opacity-70" />

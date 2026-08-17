@@ -109,8 +109,8 @@ export default function CommentThread({ projectId, taskId = null }) {
 
   function toWireFormat(displayText) {
     // Reconstruct @[Name](userId) tokens from plain "@Name" text, longest
-    // names first so e.g. "Vishal Patwari" doesn't get partially matched by
-    // a shorter "Vishal" also present in this comment.
+    // names first so e.g. "John Doe" doesn't get partially matched by
+    // a shorter "John" also present in this comment.
     const sorted = [...insertedMentions].sort((a, b) => b.name.length - a.name.length);
     let result = displayText;
     for (const { name, userId } of sorted) {
@@ -189,7 +189,7 @@ export default function CommentThread({ projectId, taskId = null }) {
           value={text}
           onChange={handleTextChange}
           rows={2}
-          placeholder="Write a comment… type @ to mention someone"
+          placeholder="Comment"
           className="w-full resize-none rounded-lg border border-line bg-paper px-3 py-2 text-sm text-text outline-none transition focus:border-signal focus:bg-card"
         />
 

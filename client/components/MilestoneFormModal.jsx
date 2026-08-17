@@ -52,7 +52,7 @@ export default function MilestoneFormModal({ open, onClose, onSubmit, initial })
             autoFocus
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="Campaign launch"
+            placeholder="Task"
           />
         </Field>
         <Field label="Date">

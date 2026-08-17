@@ -56,7 +56,7 @@ function InviteForm({ workspaceId, onInvited }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="teammate@example.com"
+            placeholder="Email"
           />
         </Field>
       </div>
@@ -187,7 +187,7 @@ function CreateWorkspaceForm({ onCreated }) {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Acme Marketing"
+            placeholder="Company Name"
           />
         </Field>
       </div>

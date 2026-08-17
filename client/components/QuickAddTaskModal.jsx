@@ -77,7 +77,7 @@ export default function QuickAddTaskModal({ open, onClose, projects, onCreated }
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Shoot reel #1"
+            placeholder="Task"
           />
         </Field>
         <Field label="Due date (optional)">

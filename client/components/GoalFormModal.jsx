@@ -74,7 +74,7 @@ export default function GoalFormModal({ open, onClose, onSubmit, initial }) {
           <TextInput
             value={form.platform}
             onChange={(e) => set("platform", e.target.value)}
-            placeholder="Instagram, Google Ads, etc."
+            placeholder="Company Name"
           />
         </Field>
         <Field label="Goal label">
@@ -82,7 +82,7 @@ export default function GoalFormModal({ open, onClose, onSubmit, initial }) {
             autoFocus
             value={form.label}
             onChange={(e) => set("label", e.target.value)}
-            placeholder="Post Reels"
+            placeholder="Task"
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -103,7 +103,7 @@ export default function GoalFormModal({ open, onClose, onSubmit, initial }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Unit (optional)">
-            <TextInput value={form.unit} onChange={(e) => set("unit", e.target.value)} placeholder="reels" />
+            <TextInput value={form.unit} onChange={(e) => set("unit", e.target.value)} placeholder="Name" />
           </Field>
           <Field label="Step size">
             <TextInput type="number" value={form.step} onChange={(e) => set("step", e.target.value)} />

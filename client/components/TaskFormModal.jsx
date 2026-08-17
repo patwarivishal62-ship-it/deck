@@ -84,7 +84,7 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
             autoFocus
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="Shoot reel #1"
+            placeholder="Task"
           />
         </Field>
         <Field label="Notes (optional)">
