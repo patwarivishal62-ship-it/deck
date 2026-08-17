@@ -1,7 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
-import { BrandingProvider } from "@/lib/BrandingContext";
 import Footer from "@/components/Footer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorFallback from "@/components/ErrorFallback";
@@ -131,16 +130,14 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-paper antialiased">
         <ThemeProvider>
-          <BrandingProvider>
-            <AuthProvider>
-              <ErrorBoundary fallback={<ErrorFallback />}>
-                <div className="flex min-h-screen flex-col">
-                  <div className="flex-1">{children}</div>
-                  <Footer />
-                </div>
-              </ErrorBoundary>
-            </AuthProvider>
-          </BrandingProvider>
+          <AuthProvider>
+            <ErrorBoundary fallback={<ErrorFallback />}>
+              <div className="flex min-h-screen flex-col">
+                <div className="flex-1">{children}</div>
+                <Footer />
+              </div>
+            </ErrorBoundary>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
