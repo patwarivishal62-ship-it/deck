@@ -184,7 +184,7 @@ function LandingPage() {
                 <span className="h-8 w-8 rounded-full border-2 border-paper bg-[#132A24] flex items-center justify-center text-xs font-semibold text-[#22D3A6]">S</span>
               </div>
               <p className="text-sm text-text-soft">
-                <span className="font-semibold text-text">500+</span> teams plan with DECK
+                <span className="font-semibold text-text">For creators, founders, marketers</span> — clarity over clutter
               </p>
             </div>
             <p className="max-w-md text-center text-sm italic text-text-faint sm:text-right">

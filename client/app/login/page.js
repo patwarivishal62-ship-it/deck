@@ -63,7 +63,7 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="mt-6">
             {mode === "signup" && (
               <Field label="Name (optional)">
-                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" autoComplete="name" />
+                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" autoComplete="name" />
               </Field>
             )}
             <Field label="Email">

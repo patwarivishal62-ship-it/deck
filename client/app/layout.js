@@ -2,6 +2,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import Footer from "@/components/Footer";
+import PersonalPA from "@/components/PersonalPA";
 
 export const metadata = {
   title: "DECK — Plan. Track. Achieve.",
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
               <div className="flex-1">{children}</div>
               <Footer />
             </div>
+            <PersonalPA />
           </AuthProvider>
         </ThemeProvider>
       </body>
