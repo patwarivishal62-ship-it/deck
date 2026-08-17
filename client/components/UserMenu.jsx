@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
+import { ThemeToggle } from "@/lib/ThemeContext";
 import { api } from "@/lib/api";
 
 function initialsFor(user) {
@@ -99,6 +100,11 @@ export default function UserMenu() {
               Settings
             </Link>
           </nav>
+
+          <div className="border-t border-line px-4 py-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-faint">Theme</p>
+            <ThemeToggle variant="menu" />
+          </div>
 
           <div className="border-t border-line py-1.5">
             <button

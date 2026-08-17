@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { useTheme, ThemeToggle } from "@/lib/ThemeContext";
+import { useTheme } from "@/lib/ThemeContext";
 import UserMenu from "./UserMenu";
 import NotificationBell from "./NotificationBell";
 import Logo from "./Logo";
@@ -49,7 +49,6 @@ export default function TopBar() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <ThemeToggle />
           {user ? (
             <>
               <NotificationBell />
