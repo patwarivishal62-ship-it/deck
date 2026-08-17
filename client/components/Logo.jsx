@@ -6,7 +6,7 @@
 export function DeckIcon({ size = 28 }) {
   return (
     <img
-      src="/icon.png"
+      src="/favicon.png"
       alt="DECK"
       width={size}
       height={size}
@@ -50,7 +50,7 @@ export default function Logo({ variant = "dark", size = 28, showTagline = false 
   return (
     <div className="flex items-center gap-2.5">
       <img
-        src="/icon.png"
+        src="/favicon.png"
         alt="DECK"
         width={size}
         height={size}
