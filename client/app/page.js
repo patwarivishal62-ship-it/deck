@@ -171,10 +171,6 @@ function LandingPage() {
 
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-16">
           <Reveal>
-            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-ink-2/80 px-3 py-1.5 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#7C5CFF] animate-pulse_dot" />
-              <span className="text-xs font-medium tracking-wide text-text-soft">AI-first · Minimal · Confident</span>
-            </div>
 
             <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-text sm:text-[44px] lg:text-[52px]">
               Plan.
