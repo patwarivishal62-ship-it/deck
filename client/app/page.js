@@ -271,6 +271,31 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ — visible for SEO + humans, matches JSON-LD */}
+      <section className="border-t border-line bg-paper px-5 py-16 sm:py-20">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="font-display text-xl font-bold tracking-tight text-text sm:text-2xl text-center">Frequently asked questions</h2>
+          <div className="mt-8 divide-y divide-line rounded-2xl border border-line bg-card">
+            {[
+              { q: "What is DECK?", a: "DECK is the minimal control center for marketing teams to plan campaigns, track goals by channel (Social, Paid Ads, SEO, Content, Email), and achieve outcomes — without the noise." },
+              { q: "How does DECK help plan marketing campaigns?", a: "Every client or campaign lives as a project in DECK. You create projects, set channel goals with targets, and break them into tasks linked to those goals. Progress, due dates, and ownership stay visible on one board." },
+              { q: "How does goal tracking work in DECK?", a: "Pick a channel, set a target (e.g., 20 Reels, 500 leads), and watch the meter fill as linked tasks are completed. Each task completion moves its goal by the goal's step, so progress is always tied to real work." },
+              { q: "How are tasks linked to goals in DECK?", a: "When you create a task you can link it to a goal. Completing the task advances the goal. This creates accountability and shows which work actually moved the metric." },
+              { q: "Who is DECK for?", a: "DECK is for creators, founders, and marketers who need clarity over clutter. It is designed for busy teams that run multiple campaigns across multiple clients." },
+              { q: "Is DECK free to use?", a: "Yes, DECK is free to start. Create your first project in under a minute, no credit card required." },
+            ].map((item) => (
+              <details key={item.q} className="group px-5 py-4 open:bg-ink-2/50">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-sm font-semibold text-text">
+                  {item.q}
+                  <span className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line bg-paper text-text-faint transition group-open:rotate-45 group-open:bg-signal group-open:text-white group-open:border-signal">+</span>
+                </summary>
+                <p className="mt-2 text-sm leading-relaxed text-text-soft">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="relative overflow-hidden px-5 py-16 text-center sm:py-20">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#7C5CFF]/[0.06] via-transparent to-transparent" />
