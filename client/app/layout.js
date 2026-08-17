@@ -41,9 +41,9 @@ export const metadata = {
     description: "Plan campaigns, track goals by channel, achieve outcomes. Minimal, confident, intelligent.",
     images: [
       {
-        url: "/opengraph-image.png",
-        width: 1200,
-        height: 630,
+        url: "/favicon.png",
+        width: 2000,
+        height: 2000,
         alt: "DECK — Plan. Track. Achieve.",
       },
     ],
@@ -53,7 +53,7 @@ export const metadata = {
     title: "DECK — Plan. Track. Achieve.",
     description: "The minimal control center for marketing teams.",
     creator: "@planyourdeck",
-    images: ["/opengraph-image.png"],
+    images: ["/favicon.png"],
   },
   robots: {
     index: true,
@@ -67,14 +67,9 @@ export const metadata = {
     },
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", sizes: "512x512", type: "image/png" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: "/favicon.ico",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
   },
   manifest: "/manifest.json",
   category: "productivity",
@@ -88,7 +83,7 @@ const jsonLd = {
       "@id": "https://planyourdeck.com/#organization",
       name: "DECK",
       url: "https://planyourdeck.com",
-      logo: "https://planyourdeck.com/icon.png",
+      logo: "https://planyourdeck.com/favicon.png",
       sameAs: ["https://www.instagram.com/planyourdeck/", "https://www.facebook.com/planyourdeck"],
       slogan: "Plan. Track. Achieve.",
     },
