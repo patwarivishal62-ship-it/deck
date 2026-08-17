@@ -11,3 +11,6 @@ client/out/
 
 # Build artifacts
 server/dist/
+deck-rebrand.bundle
+deck-rebrand-patches.zip
+push-*.ps1
