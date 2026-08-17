@@ -150,8 +150,4 @@ export const api = {
     request(`/projects/${projectId}/tasks/${taskId}/cycle-status`, { method: "PATCH" }),
   deleteTask: (projectId, taskId) =>
     request(`/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
-
-  // AI PA
-  aiChat: (body) => request("/ai/chat", { method: "POST", body }),
-  aiBriefing: () => request("/ai/briefing"),
 };
