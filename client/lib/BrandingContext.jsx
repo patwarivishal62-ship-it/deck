@@ -13,13 +13,11 @@ export function BrandingProvider({ children }) {
       .then((r) => r.json())
       .then((d) => {
         setBranding(d.branding || null);
-        // Update favicon live if custom
-        if (d.branding?.faviconUrl) {
-          const link = document.querySelector("link[rel='icon']");
-          if (link) link.href = d.branding.faviconUrl;
-          // Also handle apple touch icon if present
-          const apple = document.querySelector("link[rel='apple-touch-icon']");
-          if (apple) apple.href = d.branding.faviconUrl;
+        // Update favicon live
+        const link2 = document.querySelector("link[rel='icon']");
+        if (link2) {
+          if (d.branding?.faviconUrl) link2.href = d.branding.faviconUrl;
+          else link2.remove();
         }
       })
       .catch(() => {})
@@ -28,10 +26,10 @@ export function BrandingProvider({ children }) {
 
   // Also update favicon when branding changes (after upload)
   useEffect(() => {
-    if (branding?.faviconUrl) {
-      const link = document.querySelector("link[rel='icon']");
-      if (link) link.href = branding.faviconUrl;
-    }
+    const link = document.querySelector("link[rel='icon']");
+    if (!link) return;
+    if (branding?.faviconUrl) link.href = branding.faviconUrl;
+    else link.remove(); // truly no favicon when none set — tab will show no icon
   }, [branding]);
 
   return (

@@ -63,7 +63,7 @@ function BrandingCard({ title, description, currentUrl, onUpload, onReset, type 
       onReset(data.branding);
       if (type === "favicon") {
         const link = document.querySelector("link[rel='icon']");
-        if (link) link.href = "/icon.png";
+        if (link) link.remove(); // truly remove favicon when reset
       }
     } catch (e) {
       setError(e.message);
@@ -153,7 +153,8 @@ function BrandingDashboard() {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto max-w-3xl px-5 py-8">
+      <div className="h-6" aria-hidden="true" />
+      <main className="mx-auto max-w-3xl px-5 py-8 relative z-0">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Admin" }, { label: "Branding" }]} />
         <div className="mb-6">
           <h1 className="font-display text-2xl font-bold tracking-tight text-text">Branding</h1>
