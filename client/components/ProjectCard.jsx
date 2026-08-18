@@ -98,7 +98,7 @@ export default function ProjectCard({ project, onDelete, onArchiveToggle, showWo
         </div>
       </Link>
 
-      <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition group-hover:opacity-100">
+      <div className="absolute right-3 top-3 flex gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
         <button
           type="button"
           onClick={(e) => {

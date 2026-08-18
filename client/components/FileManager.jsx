@@ -77,7 +77,7 @@ function FileCard({ file, onDelete, canDelete }) {
           type="button"
           onClick={() => onDelete(file)}
           aria-label="Delete file"
-          className="absolute right-2 top-2 rounded-md bg-card/90 p-1 text-text-faint opacity-0 backdrop-blur transition hover:bg-signal-tint hover:text-signal-deep group-hover:opacity-100"
+          className="absolute right-2 top-2 rounded-md bg-card/90 p-1.5 text-text-faint opacity-100 backdrop-blur transition hover:bg-signal-tint hover:text-signal-deep sm:opacity-0 sm:group-hover:opacity-100"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
@@ -157,7 +157,7 @@ export default function FileManager({ projectId, canManage }) {
           onChange={(e) => handleFiles(e.target.files)}
         />
         <p className="text-sm text-text-soft">
-          {uploading ? "Uploading…" : "Drag and drop a file here, or click to browse"}
+          {uploading ? "Uploading…" : <><span className="sm:hidden">Tap to upload a file</span><span className="hidden sm:inline">Drag and drop a file here, or click to browse</span></>}
         </p>
         <p className="mt-1 text-xs text-text-faint">Documents, images, PDFs, presentations, videos · up to 20 MB</p>
       </div>

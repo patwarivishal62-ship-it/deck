@@ -21,8 +21,8 @@ export default function TopBar() {
   const logoVariant = theme === "dark" ? "light" : "dark";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/70">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
+    <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-xl supports-[backdrop-filter]:bg-paper/70 pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="flex items-center gap-8">
           <Link href="/projects" className="flex items-center gap-2.5 transition opacity-100 hover:opacity-90" aria-label="DECK — Home">
             <Logo variant={logoVariant} size={32} />

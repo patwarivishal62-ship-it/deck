@@ -73,7 +73,7 @@ function MetricRow({ metric, canManage, onDelete, onEntryAdded, onEntryRemoved }
 
   return (
     <div className="rounded-lg border border-line bg-paper p-3">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -87,7 +87,7 @@ function MetricRow({ metric, canManage, onDelete, onEntryAdded, onEntryRemoved }
         </button>
 
         <div className="flex shrink-0 items-center gap-3">
-          <Sparkline entries={entries} color={color} />
+          <span className="hidden sm:inline-flex"><Sparkline entries={entries} color={color} /></span>
           {latest ? (
             <span className="flex items-center gap-1 font-mono text-sm text-text">
               {formatMetricValue(latest.value, metric.unit)}
@@ -219,9 +219,9 @@ export default function MetricsPanel({ projectId, canManage }) {
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-text-soft">Track channel-specific numbers over time — not a target, just what's happening.</p>
-        {canManage && <Button variant="ghost" onClick={() => setFormOpen(true)}>+ Track metric</Button>}
+        {canManage && <Button variant="ghost" onClick={() => setFormOpen(true)} className="self-start">+ Track metric</Button>}
       </div>
 
       {error && <p className="mb-3 text-sm text-signal-deep">{error}</p>}

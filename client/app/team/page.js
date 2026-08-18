@@ -100,7 +100,7 @@ function MembersList({ workspace, members, currentUserRole, onChanged }) {
       {members.map((m) => (
         <div
           key={m.id}
-          className="flex items-center justify-between gap-3 rounded-lg border border-line bg-paper px-3 py-2"
+          className="flex flex-col gap-2 rounded-lg border border-line bg-paper px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
         >
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-text">
@@ -179,8 +179,8 @@ function CreateWorkspaceForm({ onCreated }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2">
-      <div className="min-w-[200px] flex-1">
+    <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
+      <div className="min-w-0 flex-1 sm:min-w-[200px]">
         <Field label="New workspace name">
           <TextInput
             autoFocus
@@ -250,7 +250,7 @@ function TeamPageContent() {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto max-w-3xl px-5 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Team" }]} />
         <div className="mb-6">
           <h1 className="font-display text-2xl font-semibold text-text">Team</h1>

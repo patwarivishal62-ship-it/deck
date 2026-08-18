@@ -16,12 +16,15 @@ export default function Modal({ open, onClose, title, children, footer }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-paper/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-paper/80 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-line bg-card shadow-[0_16px_48px_rgba(0,0,0,0.7)]">
+      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-[0_16px_48px_rgba(0,0,0,0.7)] sm:rounded-2xl">
+        <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
+          <span className="h-1 w-10 rounded-full bg-line" />
+        </div>
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 className="font-display text-base font-semibold tracking-tight text-text">{title}</h2>
           <button
@@ -35,8 +38,8 @@ export default function Modal({ open, onClose, title, children, footer }) {
             </svg>
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-line px-5 py-4">{footer}</div>}
+        <div className="overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+        {footer && <div className="flex shrink-0 justify-end gap-2 border-t border-line px-5 py-4">{footer}</div>}
       </div>
     </div>
   );

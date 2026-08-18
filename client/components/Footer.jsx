@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import { useTheme } from "@/lib/ThemeContext";
+import { useAuth } from "@/lib/AuthContext";
 
 function InstagramIcon(props) {
   return (
@@ -24,10 +25,11 @@ function FacebookIcon(props) {
 
 export default function Footer() {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const logoVariant = theme === "dark" ? "light" : "dark";
   return (
-    <footer className="border-t border-line bg-paper">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-6">
+    <footer className={`border-t border-line bg-paper ${user ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-6" : ""}`}>
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-5">
         <div className="flex items-center gap-3">
           <Logo variant={logoVariant} size={22} />
           <span className="hidden sm:inline h-4 w-px bg-line" />

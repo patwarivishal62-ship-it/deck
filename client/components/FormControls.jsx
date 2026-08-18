@@ -34,7 +34,7 @@ export function Select({ children, ...props }) {
 }
 
 export function Button({ variant = "primary", className = "", ...props }) {
-  const base = "inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]";
+  const base = "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] sm:px-5";
   const variants = {
     primary:
       "bg-[#7C5CFF] text-text shadow-[0_0_20px_rgba(124,92,255,0.35)] hover:bg-[#6A44FF] hover:shadow-[0_0_28px_rgba(124,92,255,0.45)] hover:scale-[1.01]",

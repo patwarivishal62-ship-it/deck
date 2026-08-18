@@ -5,6 +5,13 @@ import Footer from "@/components/Footer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorFallback from "@/components/ErrorFallback";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0B0F14",
+};
+
 export const metadata = {
   metadataBase: new URL("https://planyourdeck.com"),
   title: {

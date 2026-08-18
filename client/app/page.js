@@ -145,7 +145,7 @@ function LandingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-line/60 bg-paper/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-5 sm:py-4">
           <Link href="/" className="flex items-center gap-2.5" aria-label="DECK home">
             <Logo variant={logoVariant} size={32} />
           </Link>
@@ -169,10 +169,10 @@ function LandingPage() {
         <div className="pointer-events-none absolute -top-24 right-0 h-[600px] w-[700px] rounded-full bg-[#7C5CFF]/[0.08] blur-[120px]" />
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-[500px] w-[600px] rounded-full bg-[#4F7BFF]/[0.06] blur-[120px]" />
 
-        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-16">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-8 sm:px-5 sm:pb-16 sm:pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-24 lg:pt-16">
           <div>
 
-            <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-text sm:text-[44px] lg:text-[52px]">
+            <h1 className="mt-4 font-display text-[2.15rem] font-bold leading-[1.08] tracking-tight text-text sm:mt-6 sm:text-[44px] lg:text-[52px]">
               Plan.
               <br />
               Track.
@@ -184,10 +184,10 @@ function LandingPage() {
               The minimal control center for marketing teams. One dark, focused workspace where every project, goal and task is visible — nothing slips, nothing extra.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href="/login?mode=signup"
-                className="inline-flex items-center rounded-full bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(124,92,255,0.4)] transition hover:bg-[#6A44FF] hover:shadow-[0_0_32px_rgba(124,92,255,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(124,92,255,0.4)] transition hover:bg-[#6A44FF] hover:shadow-[0_0_32px_rgba(124,92,255,0.5)] hover:scale-[1.02] active:scale-[0.98]"
               >
                 Create free account
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-2">
