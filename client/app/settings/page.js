@@ -152,24 +152,24 @@ function AccountActionsSection() {
 
   return (
     <SettingsCard title="Account" danger>
-      <div className="mb-4 flex items-center justify-between rounded-lg border border-line bg-paper px-4 py-3">
+      <div className="mb-4 flex flex-col gap-3 rounded-lg border border-line bg-paper px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-text">Log out</p>
           <p className="text-xs text-text-soft">Sign out of Deck on this device.</p>
         </div>
-        <Button variant="ghost" onClick={logout}>
+        <Button variant="ghost" onClick={logout} className="w-full sm:w-auto">
           Log out
         </Button>
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border border-signal-tint bg-signal-tint/40 px-4 py-3">
+      <div className="flex flex-col gap-3 rounded-lg border border-signal-tint bg-signal-tint/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-signal-deep">Delete account</p>
           <p className="text-xs text-text-soft">
             Permanently deletes your account and all of its projects, goals, and tasks — right away.
           </p>
         </div>
-        <Button variant="danger" onClick={() => setConfirmOpen(true)}>
+        <Button variant="danger" onClick={() => setConfirmOpen(true)} className="w-full sm:w-auto">
           Delete account
         </Button>
       </div>
@@ -217,7 +217,7 @@ function SettingsPageContent() {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto max-w-2xl px-5 py-8">
+      <main className="mx-auto max-w-2xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Settings" }]} />
         <div className="mb-6">
           <h1 className="font-display text-2xl font-semibold text-text">Settings</h1>

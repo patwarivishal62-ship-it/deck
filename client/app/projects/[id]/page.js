@@ -212,7 +212,7 @@ function ProjectDetail() {
     return (
       <div className="min-h-screen bg-paper">
         <TopBar />
-        <main className="mx-auto max-w-6xl px-5 py-8">
+        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
           <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
         </main>
       </div>
@@ -223,7 +223,7 @@ function ProjectDetail() {
     return (
       <div className="min-h-screen bg-paper">
         <TopBar />
-        <main className="mx-auto max-w-6xl px-5 py-8">
+        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
           <p className="text-sm text-signal-deep">{error || "Project not found."}</p>
           <Link href="/projects" className="mt-3 inline-block text-sm text-signal-deep underline">
             Back to projects
@@ -256,7 +256,7 @@ function ProjectDetail() {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto max-w-6xl px-5 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs
           items={[
             { label: "Home", href: "/projects" },
@@ -265,8 +265,8 @@ function ProjectDetail() {
           ]}
         />
 
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="font-display text-2xl font-semibold text-text">{project.name}</h1>
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -444,7 +444,7 @@ function ProjectDetail() {
               {project.milestones.map((milestone) => (
                 <div
                   key={milestone.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-2.5"
+                  className="flex flex-col gap-2 rounded-lg border border-line bg-card px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-text">{milestone.title}</p>
@@ -520,7 +520,7 @@ function ProjectDetail() {
               No tasks yet.
             </p>
           ) : (
-            <div className="rounded-card border border-line bg-card px-4">
+            <div className="rounded-card border border-line bg-card px-3 sm:px-4">
               {project.tasks.map((task) => (
                 <TaskRow
                   key={task.id}

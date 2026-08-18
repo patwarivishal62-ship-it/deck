@@ -110,36 +110,38 @@ function ProjectsDashboard() {
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
-      <main className="mx-auto max-w-6xl px-5 py-8">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold text-text">Projects</h1>
             <p className="text-sm text-text-soft">Track goals and tasks across every campaign.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button
               onClick={() => setQuickAddOpen(true)}
               disabled={projects.length === 0}
               title={projects.length === 0 ? "Create a project first" : undefined}
+              className="w-full sm:w-auto"
             >
-              + Quick add task
+              <span className="sm:hidden">+ Task</span>
+              <span className="hidden sm:inline">+ Quick add task</span>
             </Button>
-            <Button variant="secondary" onClick={() => setFormOpen(true)}>
+            <Button variant="secondary" onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
               + New project
             </Button>
           </div>
         </div>
 
         {/* Search, filters, sort */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <div className="min-w-[180px] flex-1">
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="min-w-0 flex-1 sm:min-w-[180px]">
             <TextInput
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search"
             />
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <TextInput
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
@@ -149,7 +151,7 @@ function ProjectsDashboard() {
           <Select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="w-40 shrink-0"
+            className="w-full sm:w-40 sm:shrink-0"
           >
             <option value="">All priorities</option>
             {PRIORITY_KEYS.map((key) => (
@@ -158,7 +160,7 @@ function ProjectsDashboard() {
               </option>
             ))}
           </Select>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-40 shrink-0">
+          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full sm:w-40 sm:shrink-0">
             {PROJECT_SORTS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
@@ -168,7 +170,7 @@ function ProjectsDashboard() {
           <Select
             value={archivedView}
             onChange={(e) => setArchivedView(e.target.value)}
-            className="w-32 shrink-0"
+            className="w-full sm:w-32 sm:shrink-0"
           >
             <option value="active">Active</option>
             <option value="archived">Archived</option>

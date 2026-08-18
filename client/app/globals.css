@@ -13,6 +13,8 @@ body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 /* Theme variables — dark is default (premium) */
@@ -106,6 +108,15 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+/* iOS zooms inputs under 16px — keep fields readable without pinch-zoom */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Meter — uses theme track */

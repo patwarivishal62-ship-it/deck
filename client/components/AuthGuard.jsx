@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import MobileBottomNav from "./MobileBottomNav";
 
 export default function AuthGuard({ children }) {
   const { user, loading } = useAuth();
@@ -20,5 +21,10 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <MobileBottomNav />
+    </>
+  );
 }
