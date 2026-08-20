@@ -130,6 +130,12 @@ export const api = {
     return data;
   },
 
+  // personal notes & to-dos (private to the signed-in user)
+  listEntries: () => request("/personal"),
+  createEntry: (body) => request("/personal", { method: "POST", body }),
+  updateEntry: (id, body) => request(`/personal/${id}`, { method: "PATCH", body }),
+  deleteEntry: (id) => request(`/personal/${id}`, { method: "DELETE" }),
+
   // notifications
   listNotifications: () => request("/notifications"),
   markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: "PATCH" }),
