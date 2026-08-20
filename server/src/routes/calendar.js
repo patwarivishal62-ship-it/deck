@@ -1,5 +1,6 @@
 const express = require("express");
 const projectsDb = require("../db/projects");
+const entriesDb = require("../db/personalEntries");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 
@@ -61,6 +62,22 @@ router.get("/", async (req, res) => {
         projectName: project.name,
       });
     }
+  }
+
+  // Personal notes & to-dos — private to the caller, attached to the day they
+  // were logged. Surfacing them here turns the calendar into a record of what
+  // the user noted down and completed on each day.
+  const entries = await entriesDb.listForUser(req.userId);
+  for (const entry of entries) {
+    events.push({
+      id: `personal-${entry.id}`,
+      type: entry.kind, // "note" | "todo"
+      date: entry.date,
+      title: entry.text,
+      done: entry.done,
+      personal: true,
+      entryId: entry.id,
+    });
   }
 
   res.json({ events });

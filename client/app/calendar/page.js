@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
@@ -17,6 +17,8 @@ const EVENT_STYLES = {
   deadline: { label: "Deadline", color: "#FF5D73", dot: "bg-[#FF5D73]" },
   launch: { label: "Launch date", color: "#4F7BFF", dot: "bg-[#4F7BFF]" },
   milestone: { label: "Milestone", color: "#7C5CFF", dot: "bg-[#7C5CFF]" },
+  todo: { label: "To-do", color: "#22D3A6", dot: "bg-[#22D3A6]" },
+  note: { label: "Note", color: "#E8A23D", dot: "bg-[#E8A23D]" },
 };
 
 function pad(n) {
@@ -37,18 +39,68 @@ function CalendarView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Quick-add a personal note/to-do for the selected day.
+  const [quickText, setQuickText] = useState("");
+  const [quickKind, setQuickKind] = useState("todo");
+  const [quickDue, setQuickDue] = useState("");
+  const [quickBusy, setQuickBusy] = useState(false);
+
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState(todayKey());
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api
       .listCalendarEvents()
       .then((data) => setEvents(data.events))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleQuickAdd(e) {
+    e.preventDefault();
+    if (!quickText.trim()) return;
+    setQuickBusy(true);
+    setError("");
+    try {
+      await api.createEntry({
+        kind: quickKind,
+        text: quickText.trim(),
+        date: selectedDate,
+        dueDate: quickKind === "todo" && quickDue ? quickDue : null,
+      });
+      setQuickText("");
+      setQuickDue("");
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setQuickBusy(false);
+    }
+  }
+
+  async function togglePersonal(e) {
+    try {
+      await api.updateEntry(e.entryId, { done: !e.done });
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function deletePersonal(e) {
+    try {
+      await api.deleteEntry(e.entryId);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
   const eventsByDate = useMemo(() => {
     const map = {};
@@ -92,6 +144,8 @@ function CalendarView() {
   const selectedEvents = (eventsByDate[selectedDate] || []).sort((a, b) =>
     a.type.localeCompare(b.type)
   );
+  const projectEvents = selectedEvents.filter((e) => !e.personal);
+  const personalEvents = selectedEvents.filter((e) => e.personal);
   const today = todayKey();
 
   return (
@@ -201,11 +255,12 @@ function CalendarView() {
 
             <div className="mt-6 rounded-2xl border border-line bg-card p-5">
               <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-text-faint">{selectedDate}</h3>
-              {selectedEvents.length === 0 ? (
+
+              {projectEvents.length === 0 ? (
                 <p className="text-sm text-text-soft">Nothing scheduled this day.</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {selectedEvents.map((e) => (
+                  {projectEvents.map((e) => (
                     <Link
                       key={e.id}
                       href={`/projects/${e.projectId}`}
@@ -227,6 +282,114 @@ function CalendarView() {
                   ))}
                 </div>
               )}
+
+              {/* Personal notes & to-dos for this day — private to the user */}
+              <div className="mt-5 border-t border-line pt-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-text-faint">
+                    Your notes &amp; to-dos
+                  </span>
+                  <Link href="/personal" className="text-xs font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">
+                    Open
+                  </Link>
+                </div>
+
+                {personalEvents.length === 0 ? (
+                  <p className="text-xs text-text-faint">Nothing logged for this day yet.</p>
+                ) : (
+                  <ul className="mb-3 flex flex-col gap-2">
+                    {personalEvents.map((e) => (
+                      <li key={e.id} className="flex items-center gap-3 rounded-xl border border-line bg-ink-2 px-3 py-2.5">
+                        {e.type === "todo" ? (
+                          <button
+                            type="button"
+                            onClick={() => togglePersonal(e)}
+                            aria-label={e.done ? "Mark not done" : "Mark done"}
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                              e.done
+                                ? "border-[#22D3A6] bg-[#22D3A6] text-[#0B0F14]"
+                                : "border-line bg-card text-transparent hover:border-[#22D3A6]"
+                            }`}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${EVENT_STYLES[e.type].dot}`} />
+                        )}
+                        <p className={`min-w-0 flex-1 text-sm ${e.type === "todo" && e.done ? "text-text-faint line-through" : "text-text"}`}>
+                          {e.title}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => deletePersonal(e)}
+                          aria-label="Delete"
+                          className="rounded-lg p-1.5 text-text-faint transition hover:bg-[#2E1A1E] hover:text-[#FF5D73]"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <form onSubmit={handleQuickAdd} className="flex flex-col gap-2 sm:flex-row">
+                  <div className="flex gap-1 rounded-full bg-paper p-1 sm:hidden">
+                    {[
+                      { value: "todo", label: "To-do" },
+                      { value: "note", label: "Note" },
+                    ].map((k) => (
+                      <button
+                        key={k.value}
+                        type="button"
+                        onClick={() => setQuickKind(k.value)}
+                        className={`flex-1 rounded-full px-3 py-1 text-xs font-medium transition ${
+                          quickKind === k.value ? "bg-card text-text border border-line" : "text-text-soft"
+                        }`}
+                      >
+                        {k.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    value={quickText}
+                    onChange={(e) => setQuickText(e.target.value)}
+                    placeholder={quickKind === "todo" ? "Add a to-do for this day…" : "Add a note for this day…"}
+                    className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-faint outline-none transition focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+                  />
+                  <div className="hidden sm:flex items-center gap-1">
+                    <select
+                      value={quickKind}
+                      onChange={(e) => setQuickKind(e.target.value)}
+                      className="rounded-xl border border-line bg-ink-2 px-2.5 py-2.5 text-xs text-text outline-none"
+                    >
+                      <option value="todo">To-do</option>
+                      <option value="note">Note</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={quickBusy || !quickText.trim()}
+                    className="shrink-0 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6A44FF] disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </form>
+                {quickKind === "todo" && (
+                  <label className="mt-2 flex items-center gap-2 text-xs text-text-faint">
+                    <span>Due (optional):</span>
+                    <input
+                      type="date"
+                      value={quickDue}
+                      onChange={(e) => setQuickDue(e.target.value)}
+                      className="rounded-lg border border-line bg-ink-2 px-2 py-1 text-xs text-text outline-none focus:border-[#7C5CFF]"
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           </>
         )}

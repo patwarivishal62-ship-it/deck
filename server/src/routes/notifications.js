@@ -1,5 +1,6 @@
 const express = require("express");
 const projectsDb = require("../db/projects");
+const entriesDb = require("../db/personalEntries");
 const notificationsDb = require("../db/notifications");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
@@ -62,12 +63,42 @@ async function computeDeadlineReminders(req) {
   return reminders;
 }
 
+// Personal to-dos work the same way: no cron needed — every check of the
+// notification center recomputes which of the user's to-dos are still open and
+// due today (or overdue), so the user gets nudged on what they completed or not.
+async function computePersonalTodoReminders(req) {
+  const entries = await entriesDb.listForUser(req.userId);
+  const today = todayISODate();
+
+  const reminders = [];
+  for (const entry of entries) {
+    if (entry.kind !== "todo" || entry.done) continue;
+    if (!entry.dueDate || entry.dueDate > today) continue;
+
+    const overdue = entry.dueDate < today;
+    reminders.push({
+      id: `todo-${entry.id}`,
+      type: "personal_todo_due",
+      message: overdue
+        ? `Personal to-do "${entry.text}" is overdue — due ${entry.dueDate}`
+        : `Personal to-do "${entry.text}" is due today`,
+      link: "/personal",
+      read: false,
+      synthetic: true,
+      createdAt: new Date().toISOString(),
+    });
+  }
+  return reminders;
+}
+
 router.get("/", async (req, res) => {
-  const [stored, reminders] = await Promise.all([
+  const [stored, deadlineReminders, todoReminders] = await Promise.all([
     notificationsDb.listForUser(req.userId),
     computeDeadlineReminders(req),
+    computePersonalTodoReminders(req),
   ]);
 
+  const reminders = [...deadlineReminders, ...todoReminders];
   const notifications = [...reminders, ...stored].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
@@ -77,10 +108,12 @@ router.get("/", async (req, res) => {
 });
 
 router.patch("/:id/read", async (req, res) => {
-  // Synthetic deadline reminders have no stored record to mark — they just
-  // keep reappearing until the task is done or its date passes, which is
-  // the point of a deadline reminder.
-  if (req.params.id.startsWith("deadline-")) return res.json({ ok: true });
+  // Synthetic reminders (deadline-… and todo-…) have no stored record to mark —
+  // they just keep reappearing until the task/to-do is done or its date passes,
+  // which is the point of a reminder.
+  if (req.params.id.startsWith("deadline-") || req.params.id.startsWith("todo-")) {
+    return res.json({ ok: true });
+  }
 
   await notificationsDb.markRead(req.params.id, req.userId);
   res.json({ ok: true });
