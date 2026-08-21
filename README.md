@@ -1,5 +1,9 @@
 # Deck — Project Control Center
 
+> **Proprietary & confidential.** This repository is **not open source**.
+> All rights reserved. See [`LICENSE`](./LICENSE). Do not copy, share, or
+> republish this code.
+
 A marketing project tracker: **projects → goals (by channel/category) → tasks (optionally linked to a goal)**.
 This is a full rewrite of the original single-file `deck.html` app into a proper full-stack project.
 
@@ -145,3 +149,9 @@ npm run dev:client   # just Next.js, on :3000
   access to the `deck` database.
 - Add HTTPS and set the auth cookie's `secure` flag accordingly (it already auto-enables when
   `NODE_ENV=production`).
+
+## License
+
+This project is **proprietary software**. It is not licensed for public use,
+redistribution, or contribution. Copyright (c) 2026 DECK / PlanYourDeck.
+All rights reserved. See [`LICENSE`](./LICENSE).
