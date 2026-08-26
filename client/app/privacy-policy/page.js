@@ -2,7 +2,16 @@ import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata = {
-  title: "Privacy Policy — Deck",
+  title: "Privacy Policy",
+  description:
+    "DECK's privacy policy. Learn how we collect, use, and protect your personal information and marketing project data.",
+  alternates: {
+    canonical: "/privacy-policy",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 function Section({ title, children }) {

@@ -2,7 +2,16 @@ import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const metadata = {
-  title: "Terms & Conditions — Deck",
+  title: "Terms & Conditions",
+  description:
+    "DECK's terms and conditions. Review the rules and guidelines for using our marketing project management platform.",
+  alternates: {
+    canonical: "/terms",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 function Section({ title, children }) {
