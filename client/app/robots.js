@@ -4,12 +4,12 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/projects/", "/calendar", "/team", "/settings", "/admin"],
+        disallow: ["/api/", "/projects/", "/calendar", "/team", "/settings", "/personal", "/invite/", "/admin"],
       },
       {
         userAgent: "GPTBot",
         allow: "/",
-        disallow: ["/api/", "/projects/", "/calendar", "/team", "/settings", "/admin"],
+        disallow: ["/api/", "/projects/", "/calendar", "/team", "/settings", "/personal", "/invite/", "/admin"],
       },
       {
         userAgent: "ChatGPT-User",
