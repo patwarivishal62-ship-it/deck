@@ -1,9 +1,11 @@
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { PWAProvider } from "@/lib/PWAContext";
 import Footer from "@/components/Footer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorFallback from "@/components/ErrorFallback";
+import InstallBanner from "@/components/InstallBanner";
 
 export const viewport = {
   width: "device-width",
@@ -79,6 +81,11 @@ export const metadata = {
     shortcut: "/favicon.png",
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "DECK",
+    statusBarStyle: "black-translucent",
+  },
   category: "productivity",
 };
 
@@ -135,14 +142,17 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-paper antialiased">
         <ThemeProvider>
-          <AuthProvider>
-            <ErrorBoundary fallback={<ErrorFallback />}>
-              <div className="flex min-h-screen flex-col">
-                <div className="flex-1">{children}</div>
-                <Footer />
-              </div>
-            </ErrorBoundary>
-          </AuthProvider>
+          <PWAProvider>
+            <AuthProvider>
+              <ErrorBoundary fallback={<ErrorFallback />}>
+                <div className="flex min-h-screen flex-col">
+                  <div className="flex-1">{children}</div>
+                  <Footer />
+                </div>
+                <InstallBanner />
+              </ErrorBoundary>
+            </AuthProvider>
+          </PWAProvider>
         </ThemeProvider>
       </body>
     </html>

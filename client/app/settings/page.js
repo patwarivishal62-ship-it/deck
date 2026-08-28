@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import TopBar from "@/components/TopBar";
 import SettingsCard from "@/components/SettingsCard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Modal from "@/components/Modal";
+import InstallButton from "@/components/InstallButton";
+import { InstallSteps } from "@/components/InstallSteps";
 import { Field, TextInput, TextArea, Button } from "@/components/FormControls";
 import { useAuth } from "@/lib/AuthContext";
+import { usePWA } from "@/lib/PWAContext";
 import { api } from "@/lib/api";
 
 function ProfileSection() {
@@ -213,6 +217,52 @@ function AccountActionsSection() {
   );
 }
 
+function AppSection() {
+  const { installed, platform, canInstall } = usePWA();
+
+  return (
+    <SettingsCard
+      title="Get DECK on your devices"
+      description="Install DECK as an app on desktop and mobile — full-screen, offline-ready, one tap away."
+    >
+      {installed ? (
+        <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-good-tint px-3 py-1.5 text-sm font-medium text-good">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          DECK is installed on this device
+        </p>
+      ) : (
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-sm text-sm text-text-soft">
+            {canInstall
+              ? "Your browser supports one-tap install — grab it now, or see manual steps below."
+              : "Add DECK to your home screen or dock:"}
+          </p>
+          <InstallButton variant="secondary" label="Install DECK" className="shrink-0" />
+        </div>
+      )}
+      {!installed && !canInstall && (
+        <details className="rounded-xl border border-line bg-paper px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium text-text">
+            How to install on this device
+          </summary>
+          <div className="mt-4">
+            <InstallSteps platform={platform === "android" ? "android" : platform === "ios" ? "ios" : "desktop"} />
+          </div>
+        </details>
+      )}
+      <p className="mt-4 text-xs text-text-faint">
+        Works on every device you use —{" "}
+        <Link href="/download" className="underline underline-offset-2 hover:text-text">
+          see all platforms
+        </Link>
+        .
+      </p>
+    </SettingsCard>
+  );
+}
+
 function SettingsPageContent() {
   return (
     <div className="min-h-screen bg-paper">
@@ -221,11 +271,12 @@ function SettingsPageContent() {
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Settings" }]} />
         <div className="mb-6">
           <h1 className="font-display text-2xl font-semibold text-text">Settings</h1>
-          <p className="text-sm text-text-soft">Manage your profile, security, and account.</p>
+          <p className="text-sm text-text-soft">Manage your profile, security, devices, and account.</p>
         </div>
         <div className="flex flex-col gap-5">
           <ProfileSection />
           <SecuritySection />
+          <AppSection />
           <AccountActionsSection />
         </div>
       </main>

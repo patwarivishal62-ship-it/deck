@@ -43,6 +43,9 @@ export default function Footer() {
           <Link href="/terms" className="transition hover:text-text">
             Terms
           </Link>
+          <Link href="/download" className="transition hover:text-text">
+            Get the app
+          </Link>
           <a href="mailto:contact@planyourdeck.com" className="transition hover:text-text">
             Support
           </a>

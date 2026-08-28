@@ -15,6 +15,12 @@ export default function sitemap() {
       priority: 0.8,
     },
     {
+      url: `${base}/download`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${base}/forgot-password`,
       lastModified: now,
       changeFrequency: "yearly",

@@ -45,21 +45,28 @@ deck-app/
 │   └── .env                # local config (MONGODB_URI, JWT_SECRET, PORT)
 └── client/
     ├── app/
-    │   ├── layout.js              # wraps everything in AuthProvider
+    │   ├── layout.js              # wraps everything in AuthProvider + PWAProvider
     │   ├── page.js                 # redirects to /login or /projects
     │   ├── login/page.js           # login + signup (toggle)
+    │   ├── download/page.js        # "Get the app" landing page (per-platform install steps)
+    │   ├── offline/page.js         # offline fallback served by the service worker
     │   └── projects/
     │       ├── page.js             # dashboard: grid of project cards
     │       └── [id]/page.js        # single project: goals grid + tasks list
     ├── components/
     │   ├── TopBar.jsx, AuthGuard.jsx
+    │   ├── InstallButton.jsx, InstallBanner.jsx, InstallSteps.jsx  # PWA install UI
     │   ├── ProjectCard.jsx, GoalCard.jsx, TaskRow.jsx, Meter.jsx
     │   ├── ProjectFormModal.jsx, GoalFormModal.jsx, TaskFormModal.jsx
     │   ├── ConfirmModal.jsx, Modal.jsx, FormControls.jsx
     ├── lib/
     │   ├── api.js          # fetch wrapper, one function per API endpoint
     │   ├── AuthContext.jsx # React context: user, login, signup, logout
+    │   ├── PWAContext.jsx  # service-worker registration, install prompt, platform detection
     │   └── constants.js    # mirrors server/src/constants.js
+    ├── public/
+    │   ├── sw.js           # service worker (app-shell caching + offline support)
+    │   └── icons/          # PWA icon set (192/512 px, any + maskable)
     ├── next.config.js      # rewrites /api/* → http://localhost:4000/api/*
     └── tailwind.config.js  # design tokens carried over from the original HTML
 ```
@@ -122,6 +129,32 @@ npm run dev:client   # just Next.js, on :3000
    this means there's no CORS friction in dev and cookies travel naturally between the two.
 3. Express verifies the `deck_token` httpOnly cookie on every protected route, attaches `req.userId`, and
    every query is scoped to that user (`{ userId }`), so users never see each other's projects.
+
+## Installable app (PWA) — "Download DECK"
+
+Users can install DECK as a real app on desktop and mobile. It's a Progressive Web App, so there's
+no App Store submission, no installer download — the browser installs it in one tap.
+
+How it fits together:
+
+| Piece | Where | What it does |
+|-------|-------|--------------|
+| Web manifest | `client/app/manifest.js` | App name, `standalone` display, 192/512 px icons (`any` + `maskable`), app shortcuts (Projects / Calendar / Personal) |
+| Service worker | `client/public/sw.js` | Registered in production by `PWAProvider`. Caches the app shell and static assets, serves pages network-first with an offline fallback, and **never** caches `/api/*` |
+| Install state | `client/lib/PWAContext.jsx` | Captures `beforeinstallprompt`, detects platform (iOS / Android / desktop) and "already installed", persists banner dismissal for 14 days |
+| Install entry points | `InstallButton`, `InstallBanner`, `InstallSteps` | Native install prompt on Chromium; step-by-step fallback instructions (Share → Add to Home Screen) on iOS Safari |
+| Landing page | `client/app/download/page.js` | `/download` — public, indexed, per-platform install guides; linked from the footer, user menu, and Settings |
+| Offline page | `client/app/offline/page.js` | What the service worker serves when a navigation fails with no cached copy |
+
+Notes:
+
+- The service worker only registers when `NODE_ENV === "production"` — dev-server assets aren't
+  cache-stable. To test installs locally: `npm --prefix client run build && npm --prefix client run start`,
+  then use Chrome's install icon in the address bar (or DevTools → Application → Manifest →
+  "Install"). Browsers additionally require HTTPS (or `localhost`) for install prompts.
+- After a deploy, bump `VERSION` in `sw.js` so clients pick up the new shell.
+- iOS uses `apple-mobile-web-app-*` metadata (set in `app/layout.js`) plus the manual
+  "Add to Home Screen" flow — iOS Safari does not fire `beforeinstallprompt`.
 
 ## Business rules preserved from the original app
 

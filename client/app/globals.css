@@ -148,6 +148,28 @@ textarea {
   overflow: hidden;
 }
 
+/* Install banner — slides up above the mobile bottom nav */
+@keyframes install-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.install-banner {
+  animation: install-banner-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-banner {
+    animation: none;
+  }
+}
+
 .bg-grain {
   position: relative;
 }
