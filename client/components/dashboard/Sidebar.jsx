@@ -9,47 +9,30 @@ import {
   CalendarDays,
   BarChart3,
   FileText,
-  Blocks,
   Settings,
   CircleHelp,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 
-// Primary + bottom navigation for the post-login dashboard shell.
-// Items without a live screen yet stay visible (to match the reference) but
-// are inert — no fake destinations.
+// Primary + bottom navigation for the signed-in app shell. Every item links
+// to a live screen.
 const PRIMARY_NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/personal", label: "Tasks", icon: ListTodo },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: null, label: "Analytics", icon: BarChart3 },
-  { href: null, label: "Reports", icon: FileText },
-  { href: null, label: "Integrations", icon: Blocks },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/reports", label: "Reports", icon: FileText },
 ];
 
 const BOTTOM_NAV = [
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: null, label: "Help", icon: CircleHelp },
+  { href: "/help", label: "Help", icon: CircleHelp },
 ];
 
 function NavItem({ item, pathname, onNavigate }) {
-  const icon = <item.icon size={18} strokeWidth={1.8} className="shrink-0" />;
-
-  if (!item.href) {
-    return (
-      <span
-        aria-disabled="true"
-        title="Coming soon"
-        className="flex cursor-default select-none items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-slate-500"
-      >
-        {icon}
-        {item.label}
-      </span>
-    );
-  }
-
   const active = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
+  const icon = <item.icon size={18} strokeWidth={1.8} className="shrink-0" />;
 
   return (
     <Link
@@ -70,7 +53,7 @@ function NavItem({ item, pathname, onNavigate }) {
 
 // Deep-navy sidebar from the reference. Rendered fixed on desktop (lg+) and
 // inside a slide-in drawer on smaller screens (the drawer wrapper lives in
-// the dashboard page; `onNavigate` lets it close after a tap).
+// the app shell; `onNavigate` lets it close after a tap).
 export default function Sidebar({ onNavigate }) {
   const pathname = usePathname();
 

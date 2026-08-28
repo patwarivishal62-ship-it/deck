@@ -1,105 +1,134 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Pencil, Trash2, StickyNote, ListTodo, AlertTriangle, CheckCircle2, Plus } from "lucide-react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
-import Breadcrumbs from "@/components/Breadcrumbs";
-import { Button, TextInput } from "@/components/FormControls";
+import AppShell from "@/components/app/AppShell";
+import PageHeading from "@/components/app/PageHeading";
+import { SegmentedControl } from "@/components/app/Pills";
+import { EmptyState, ErrorBanner, PrimaryButton } from "@/components/app/UI";
+import { Chip } from "@/components/app/Pills";
+import SummaryCard from "@/components/dashboard/SummaryCard";
 import { api } from "@/lib/api";
+import { todayISO } from "@/lib/dashboard";
 
 const KINDS = [
   { value: "todo", label: "To-do" },
   { value: "note", label: "Note" },
 ];
 
-function pad(n) {
-  return String(n).padStart(2, "0");
-}
-
-function localISODate(d) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function todayISODate() {
-  return localISODate(new Date());
-}
-
 function addDaysISO(iso, days) {
   const [y, m, d] = iso.split("-").map(Number);
   const date = new Date(y, m - 1, d + days);
-  return localISODate(date);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function dateLabel(iso) {
-  if (iso === todayISODate()) return "Today";
-  if (iso === addDaysISO(todayISODate(), -1)) return "Yesterday";
+  const today = todayISO();
+  if (iso === today) return "Today";
+  if (iso === addDaysISO(today, -1)) return "Yesterday";
+  if (iso === addDaysISO(today, 1)) return "Tomorrow";
   const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 }
 
-function PersonalView() {
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
+const inputClass =
+  "h-10 w-full rounded-xl border border-[#E4E9F1] bg-white px-3.5 text-sm text-[#0F172A] outline-none transition placeholder:text-[#9AA5B5] hover:border-[#D6DEE9] focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
+
+function TasksView() {
+  const [entries, setEntries] = useState(null); // null = loading
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all"); // all | todo | note
+  const [search, setSearch] = useState("");
 
-  // Add form state
+  // Add form
   const [kind, setKind] = useState("todo");
   const [text, setText] = useState("");
-  const [date, setDate] = useState(todayISODate());
+  const [date, setDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Inline edit state
+  // Inline edit
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [editDue, setEditDue] = useState("");
 
-  const load = useCallback(() => {
-    api
-      .listEntries()
-      .then((data) => setEntries(data.entries))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      const data = await api.listEntries();
+      setEntries(data.entries);
+    } catch (err) {
+      setError(err.message);
+      setEntries((prev) => prev ?? []);
+    }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // Support /personal?date=YYYY-MM-DD (e.g. linked from the calendar) to
-  // pre-fill the add form's date.
+  // Default the add-form date to today once, after mount (avoids a
+  // server/client hydration mismatch on the date input).
+  useEffect(() => {
+    setDate((d) => d || todayISO());
+  }, []);
+
+  // Support /personal?date=YYYY-MM-DD (linked from the calendar) to pre-fill
+  // the add form's date.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const d = params.get("date");
     if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d);
   }, []);
 
+  const today = todayISO();
+
+  const stats = useMemo(() => {
+    const list = entries || [];
+    const todos = list.filter((e) => e.kind === "todo");
+    return {
+      open: todos.filter((e) => !e.done).length,
+      done: todos.filter((e) => e.done).length,
+      overdue: todos.filter((e) => !e.done && e.dueDate && e.dueDate < today).length,
+      notes: list.filter((e) => e.kind === "note").length,
+    };
+  }, [entries, today]);
+
+  const q = search.trim().toLowerCase();
+
   const groups = useMemo(() => {
-    const filtered = entries.filter((e) => (filter === "all" ? true : e.kind === filter));
+    const list = (entries || []).filter((e) => (filter === "all" ? true : e.kind === filter));
+    const filtered = q
+      ? list.filter((e) => e.text.toLowerCase().includes(q))
+      : list;
     const map = {};
     for (const e of filtered) {
       (map[e.date] ||= []).push(e);
     }
     return Object.keys(map)
       .sort((a, b) => (a < b ? 1 : -1))
-      .map((date) => ({ date, items: map[date] }));
-  }, [entries, filter]);
+      .map((d) => ({
+        date: d,
+        items: map[d].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "todo" ? -1 : 1)),
+      }));
+  }, [entries, filter, q]);
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!text.trim()) {
-      setError("Write something first.");
-      return;
-    }
+    if (!text.trim()) return;
     setBusy(true);
     setError("");
     try {
       await api.createEntry({
         kind,
         text: text.trim(),
-        date,
+        date: date || today,
         dueDate: kind === "todo" && dueDate ? dueDate : null,
       });
       setText("");
@@ -113,11 +142,14 @@ function PersonalView() {
   }
 
   async function toggleDone(entry) {
+    setError("");
+    const next = { ...entry, done: !entry.done };
+    setEntries((prev) => (prev || []).map((e) => (e.id === entry.id ? next : e)));
     try {
       await api.updateEntry(entry.id, { done: !entry.done });
-      await load();
     } catch (err) {
       setError(err.message);
+      setEntries((prev) => (prev || []).map((e) => (e.id === entry.id ? entry : e)));
     }
   }
 
@@ -129,6 +161,7 @@ function PersonalView() {
 
   async function saveEdit(entry) {
     if (!editText.trim()) return;
+    setError("");
     try {
       await api.updateEntry(entry.id, {
         text: editText.trim(),
@@ -142,235 +175,277 @@ function PersonalView() {
   }
 
   async function removeEntry(entry) {
+    setError("");
+    setEntries((prev) => (prev || []).filter((e) => e.id !== entry.id));
     try {
       await api.deleteEntry(entry.id);
-      await load();
     } catch (err) {
       setError(err.message);
+      load();
     }
   }
 
-  const overdue = (e) => e.kind === "todo" && !e.done && e.dueDate && e.dueDate < todayISODate();
+  const loading = entries === null;
+  const overdue = (e) => e.kind === "todo" && !e.done && e.dueDate && e.dueDate < today;
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Personal" }]} />
+    <AppShell search={search} onSearchChange={setSearch} searchPlaceholder="Search tasks & notes…">
+      <PageHeading
+        title="Tasks"
+        subtitle="Your private to-dos and notes — only you can see these. Everything is dated, so it doubles as a work journal."
+      />
 
-        <div className="mb-6">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-text">Personal</h1>
-          <p className="text-sm text-text-soft">
-            Private notes &amp; to-dos — only you can see these. Everything is dated, so the
-            calendar becomes a record of what you logged and completed each day.
-          </p>
-        </div>
+      <ErrorBanner message={error} onRetry={load} />
 
-        {error && (
-          <p className="mb-4 rounded-xl border border-[#FF5D73]/20 bg-[#2E1A1E] px-3 py-2 text-sm text-[#FF5D73]">
-            {error}
-          </p>
-        )}
+      {/* Summary cards */}
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SummaryCard
+          label="Open to-dos"
+          value={loading ? "—" : stats.open}
+          info={stats.open > 0 ? "waiting to be checked off" : "all clear"}
+          infoTone={stats.open > 0 ? "accent" : "positive"}
+          icon={ListTodo}
+          iconBg="#F1EDFF"
+          iconColor="#7C5CFF"
+        />
+        <SummaryCard
+          label="Completed"
+          value={loading ? "—" : stats.done}
+          info={stats.notes > 0 ? `plus ${stats.notes} note${stats.notes !== 1 ? "s" : ""} logged` : "keep going"}
+          infoTone="positive"
+          icon={CheckCircle2}
+          iconBg="#E7F6EF"
+          iconColor="#12B76A"
+        />
+        <SummaryCard
+          label="Overdue"
+          value={loading ? "—" : stats.overdue}
+          info={stats.overdue > 0 ? "past their due date" : "nothing overdue"}
+          infoTone={stats.overdue > 0 ? "danger" : "positive"}
+          icon={AlertTriangle}
+          iconBg={stats.overdue > 0 ? "#FDEEEF" : "#E7F6EF"}
+          iconColor={stats.overdue > 0 ? "#DC3D43" : "#12B76A"}
+        />
+      </div>
 
-        {/* Add form */}
-        <form onSubmit={handleAdd} className="mb-6 rounded-2xl border border-line bg-card p-4">
-          <div className="mb-3 flex gap-1 rounded-full bg-ink-2 p-1">
-            {KINDS.map((k) => (
-              <button
-                key={k.value}
-                type="button"
-                onClick={() => setKind(k.value)}
-                className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                  kind === k.value ? "bg-card text-text border border-line" : "text-text-soft hover:text-text"
-                }`}
-              >
-                {k.label}
-              </button>
-            ))}
+      {/* Quick add */}
+      <form
+        onSubmit={handleAdd}
+        className="mt-6 rounded-2xl border border-[#E9EDF3] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_12px_28px_-16px_rgba(16,24,40,0.10)] sm:p-5"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="w-full sm:max-w-[220px]">
+            <SegmentedControl ariaLabel="Entry type" value={kind} onChange={setKind} options={KINDS} />
           </div>
-
-          <TextInput
-            autoFocus
+          <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={kind === "todo" ? "Add a to-do…" : "Write a note…"}
-            className="mb-3"
+            placeholder={kind === "todo" ? "Add a to-do… e.g. Draft launch announcement" : "Write a note… e.g. Client prefers teal"}
+            aria-label={kind === "todo" ? "New to-do" : "New note"}
+            className={inputClass}
           />
-
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row">
-            <label className="flex-1">
-              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-text-soft">
-                On day
-              </span>
-              <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+              On day
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                aria-label="Day for this entry"
+                className={`${inputClass} h-9 w-[150px]`}
+              />
             </label>
             {kind === "todo" && (
-              <label className="flex-1">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-text-soft">
-                  Due (optional — reminder)
-                </span>
-                <TextInput type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+                Due
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  aria-label="Due date (optional)"
+                  className={`${inputClass} h-9 w-[150px]`}
+                />
               </label>
             )}
           </div>
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={busy || !text.trim()}>
-              {busy ? "Adding…" : "Add"}
-            </Button>
-          </div>
-        </form>
-
-        {/* Filters */}
-        <div className="mb-4 flex items-center gap-1">
-          {[
-            { value: "all", label: "All" },
-            { value: "todo", label: "To-dos" },
-            { value: "note", label: "Notes" },
-          ].map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setFilter(f.value)}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                filter === f.value
-                  ? "bg-card text-text border border-line"
-                  : "text-text-soft hover:text-text"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          <PrimaryButton type="submit" disabled={busy || !text.trim()} className="self-end sm:self-auto">
+            <Plus size={15} strokeWidth={2.2} />
+            {busy ? "Adding…" : "Add"}
+          </PrimaryButton>
         </div>
+      </form>
 
+      {/* Filters */}
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <SegmentedControl
+          ariaLabel="Filter entries"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "all", label: "All", count: (entries || []).length },
+            { value: "todo", label: "To-dos", count: (entries || []).filter((e) => e.kind === "todo").length },
+            { value: "note", label: "Notes", count: (entries || []).filter((e) => e.kind === "note").length },
+          ]}
+        />
+      </div>
+
+      {/* Groups */}
+      <div className="mt-5 space-y-6">
         {loading ? (
-          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
-        ) : groups.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line bg-card p-8 text-center">
-            <p className="text-sm text-text-soft">Nothing here yet.</p>
-            <p className="mt-1 text-xs text-text-faint">
-              Add a note or to-do above and it&apos;ll show up on its day.
-            </p>
+          <div className="space-y-3">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-24 animate-pulse rounded-2xl border border-[#E9EDF3] bg-white" />
+            ))}
           </div>
+        ) : groups.length === 0 ? (
+          <EmptyState icon={StickyNote} title={q || filter !== "all" ? "Nothing matches" : "Nothing here yet"}>
+            {q || filter !== "all" ? (
+              <p>Try a different search or filter.</p>
+            ) : (
+              <p>Add a to-do or note above — it will show up on its day, here and on the calendar.</p>
+            )}
+          </EmptyState>
         ) : (
-          <div className="flex flex-col gap-5">
-            {groups.map((group) => (
-              <section key={group.date}>
-                <h2 className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-text-faint">
-                  {dateLabel(group.date)} · {group.date}
-                </h2>
-                <ul className="flex flex-col gap-2">
-                  {group.items.map((e) => (
+          groups.map((group) => (
+            <section key={group.date} aria-label={group.date}>
+              <div className="mb-2.5 flex items-center gap-2.5">
+                <h2 className="text-[13px] font-bold tracking-tight text-[#0F172A]">{dateLabel(group.date)}</h2>
+                <span className="font-mono text-[11px] text-[#9AA5B5]">{group.date}</span>
+                <span className="h-px flex-1 bg-[#E9EDF3]" />
+              </div>
+              <ul className="overflow-hidden rounded-2xl border border-[#E9EDF3] bg-white p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-16px_rgba(16,24,40,0.10)] sm:p-2">
+                {group.items.map((e) => {
+                  const isOverdue = overdue(e);
+                  return (
                     <li
                       key={e.id}
-                      className="flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3"
+                      className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-[#E9EDF3] hover:bg-[#F8FAFD]"
                     >
                       {e.kind === "todo" ? (
                         <button
                           type="button"
                           onClick={() => toggleDone(e)}
-                          aria-label={e.done ? "Mark not done" : "Mark done"}
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                          disabled={editingId === e.id}
+                          aria-label={e.done ? `Mark "${e.text}" as not done` : `Mark "${e.text}" as done`}
+                          aria-pressed={e.done}
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
                             e.done
-                              ? "border-[#22D3A6] bg-[#22D3A6] text-[#0B0F14]"
-                              : "border-line bg-ink-2 text-transparent hover:border-[#22D3A6]"
+                              ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
+                              : "border-[#C9D3E0] bg-white hover:border-[#7C5CFF] hover:bg-[#F7F5FF]"
                           }`}
                         >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          {e.done && <Check size={12} strokeWidth={3} />}
                         </button>
                       ) : (
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#E8A23D]" />
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+                          <span className="h-2 w-2 rounded-full bg-[#E8A23D]" />
+                        </span>
                       )}
 
                       {editingId === e.id ? (
                         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                          <TextInput
+                          <input
                             autoFocus
                             value={editText}
                             onChange={(ev) => setEditText(ev.target.value)}
-                            className="flex-1"
+                            onKeyDown={(ev) => {
+                              if (ev.key === "Enter") saveEdit(e);
+                              if (ev.key === "Escape") setEditingId(null);
+                            }}
+                            aria-label="Edit entry"
+                            className={inputClass}
                           />
                           {e.kind === "todo" && (
-                            <TextInput
+                            <input
                               type="date"
                               value={editDue}
                               onChange={(ev) => setEditDue(ev.target.value)}
-                              className="sm:w-44"
+                              aria-label="Edit due date"
+                              className={`${inputClass} sm:w-[150px]`}
                             />
                           )}
                           <div className="flex gap-1.5">
-                            <Button variant="secondary" onClick={() => saveEdit(e)} className="min-h-9 px-3 py-1.5 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => saveEdit(e)}
+                              className="rounded-full bg-[#7C5CFF] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#6A4AF0]"
+                            >
                               Save
-                            </Button>
-                            <Button variant="ghost" onClick={() => setEditingId(null)} className="min-h-9 px-3 py-1.5 text-xs">
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="rounded-full border border-[#E4E9F1] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5B6B7F] transition hover:bg-[#F8FAFD]"
+                            >
                               Cancel
-                            </Button>
+                            </button>
                           </div>
                         </div>
                       ) : (
                         <>
                           <div className="min-w-0 flex-1">
                             <p
-                              className={`text-sm ${
-                                e.kind === "todo" && e.done ? "text-text-faint line-through" : "text-text"
+                              className={`truncate text-sm font-medium ${
+                                e.kind === "todo" && e.done ? "text-[#9AA5B5] line-through" : "text-[#0F172A]"
                               }`}
                             >
                               {e.text}
                             </p>
-                            <p className="mt-0.5 text-xs text-text-faint">
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#8A94A6]">
                               {e.kind === "todo" ? "To-do" : "Note"}
                               {e.dueDate && (
-                                <span className={overdue(e) ? "text-[#FF5D73]" : ""}>
-                                  {" "}
+                                <span className={isOverdue ? "font-semibold text-[#DC3D43]" : ""}>
                                   · due {e.dueDate}
-                                  {overdue(e) ? " (overdue)" : ""}
+                                  {isOverdue ? " (overdue)" : ""}
                                 </span>
                               )}
                               {e.kind === "todo" && e.done && e.completedAt && (
-                                <> · done {new Date(e.completedAt).toLocaleDateString()}</>
+                                <span>· done {new Date(e.completedAt).toLocaleDateString()}</span>
                               )}
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => startEdit(e)}
-                            aria-label="Edit"
-                            className="rounded-lg p-1.5 text-text-faint transition hover:bg-ink-2 hover:text-text"
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeEntry(e)}
-                            aria-label="Delete"
-                            className="rounded-lg p-1.5 text-text-faint transition hover:bg-[#2E1A1E] hover:text-[#FF5D73]"
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
+
+                          {e.kind === "todo" && !e.done && isOverdue && <Chip tone="danger">Overdue</Chip>}
+                          {e.kind === "todo" && e.done && <Chip tone="positive">Done</Chip>}
+
+                          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => startEdit(e)}
+                              aria-label={`Edit "${e.text}"`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+                            >
+                              <Pencil size={15} strokeWidth={1.8} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeEntry(e)}
+                              aria-label={`Delete "${e.text}"`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#FDEEEF] hover:text-[#DC3D43]"
+                            >
+                              <Trash2 size={15} strokeWidth={1.8} />
+                            </button>
+                          </div>
                         </>
                       )}
                     </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+                  );
+                })}
+              </ul>
+            </section>
+          ))
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
 export default function PersonalPage() {
   return (
     <AuthGuard>
-      <PersonalView />
+      <TasksView />
     </AuthGuard>
   );
 }

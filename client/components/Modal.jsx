@@ -21,7 +21,7 @@ export default function Modal({ open, onClose, title, children, footer }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-[0_16px_48px_rgba(0,0,0,0.7)] sm:rounded-2xl">
+      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-[0_16px_48px_-12px_rgba(16,24,40,0.35)] sm:rounded-2xl">
         <div className="flex justify-center pt-2 sm:hidden" aria-hidden="true">
           <span className="h-1 w-10 rounded-full bg-line" />
         </div>

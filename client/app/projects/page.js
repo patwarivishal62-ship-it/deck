@@ -1,81 +1,137 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
-import ProjectCard from "@/components/ProjectCard";
+import AppShell from "@/components/app/AppShell";
+import PageHeading from "@/components/app/PageHeading";
+import Card, { CardHeading } from "@/components/app/Card";
+import { SegmentedControl, LightSelect } from "@/components/app/Pills";
+import { EmptyState, ErrorBanner, PrimaryButton } from "@/components/app/UI";
+import SummaryCard from "@/components/dashboard/SummaryCard";
+import DashboardProjectCard from "@/components/dashboard/DashboardProjectCard";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import QuickAddTaskModal from "@/components/QuickAddTaskModal";
 import ConfirmModal from "@/components/ConfirmModal";
-import StatCard from "@/components/StatCard";
-import RecentActivity from "@/components/RecentActivity";
-import { Button, TextInput, Select } from "@/components/FormControls";
+import { FolderKanban, ListTodo, Plus, Zap, CheckCircle2, CalendarClock } from "lucide-react";
 import { api } from "@/lib/api";
-import { summarizeProjectStatuses } from "@/lib/projectStatus";
-import { PRIORITIES, PRIORITY_KEYS, PROJECT_SORTS } from "@/lib/constants";
+import { getProjectStatus } from "@/lib/projectStatus";
+import { todayISO } from "@/lib/dashboard";
+import { PROJECT_SORTS } from "@/lib/constants";
 
-function ProjectsDashboard() {
-  const [projects, setProjects] = useState([]);
+const PRIORITY_RANK = { low: 0, medium: 1, high: 2 };
+
+function sortProjects(list, sort) {
+  const sorted = [...list];
+  switch (sort) {
+    case "oldest":
+      return sorted.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+    case "name":
+      return sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    case "dueDate":
+      return sorted.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      });
+    case "priority":
+      return sorted.sort(
+        (a, b) => (PRIORITY_RANK[b.priority] ?? 1) - (PRIORITY_RANK[a.priority] ?? 1)
+      );
+    case "newest":
+    default:
+      return sorted.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  }
+}
+
+function ProjectsView() {
+  const [projects, setProjects] = useState(null); // null = loading
   const [workspaces, setWorkspaces] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // all | in_progress | pending | completed
+  const [priority, setPriority] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [view, setView] = useState("active"); // active | archived | all
 
   const [formOpen, setFormOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
-  const [tags, setTags] = useState("");
-  const [priority, setPriority] = useState("");
-  const [sort, setSort] = useState("newest");
-  const [archivedView, setArchivedView] = useState("active"); // "active" | "archived" | "all"
-
-  // Debounce free-text search/tags input so we're not firing a request on
-  // every keystroke.
-  const debounceRef = useRef(null);
-  useEffect(() => {
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearch(searchInput);
-      setTags(tagsInput);
-    }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [searchInput, tagsInput]);
-
   const load = useCallback(async () => {
-    setLoading(true);
+    setError("");
     try {
-      const archived = archivedView === "active" ? false : archivedView === "archived" ? true : "all";
-      const data = await api.listProjects({
-        search: search || undefined,
-        tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
-        priority: priority || undefined,
-        archived,
-        sort,
-      });
+      const archived = view === "active" ? false : view === "archived" ? true : "all";
+      const data = await api.listProjects({ archived });
       setProjects(data.projects);
       setWorkspaces(data.workspaces || []);
-      setError("");
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
+      setProjects((prev) => prev ?? []);
     }
-  }, [search, tags, priority, sort, archivedView]);
+  }, [view]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  async function handleCreate(values) {
+  const loading = projects === null;
+  const list = projects || [];
+
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    let out = list;
+    if (q) {
+      out = out.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          (p.tags || []).some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    if (statusFilter !== "all") {
+      out = out.filter((p) => getProjectStatus(p) === statusFilter);
+    }
+    if (priority) {
+      out = out.filter((p) => (p.priority || "medium") === priority);
+    }
+    return sortProjects(out, sort);
+  }, [list, q, statusFilter, priority, sort]);
+
+  const summary = useMemo(() => {
+    const active = list.filter((p) => !p.archived);
+    const allTasks = active.flatMap((p) => p.tasks || []);
+    const today = todayISO();
+    const overdue = allTasks.filter((t) => t.status !== "done" && t.dueDate && t.dueDate < today).length;
+    return {
+      total: active.length,
+      inProgress: active.filter((p) => getProjectStatus(p) === "in_progress").length,
+      completed: active.filter((p) => getProjectStatus(p) === "completed").length,
+      doneTasks: allTasks.filter((t) => t.status === "done").length,
+      totalTasks: allTasks.length,
+      overdue,
+    };
+  }, [list]);
+
+  async function handleCreateProject(values) {
     const data = await api.createProject(values);
-    // Only splice into the current view if it actually belongs there
-    // (e.g. skip it if we're viewing "Archived" only, a new project is never archived).
-    if (archivedView !== "archived") {
-      setProjects((prev) => [...prev, data.project]);
+    if (data?.project && view !== "archived") {
+      setProjects((prev) => [data.project, ...(prev || [])]);
+    }
+  }
+
+  async function handleArchiveToggle(project) {
+    setError("");
+    const wasArchived = project.archived;
+    // Optimistic: drop from the current view, restore on failure.
+    setProjects((prev) => (prev || []).filter((p) => p.id !== project.id));
+    try {
+      await api.updateProject(project.id, { archived: !wasArchived });
+    } catch (err) {
+      setError(err.message);
+      load();
     }
   }
 
@@ -84,7 +140,7 @@ function ProjectsDashboard() {
     setDeleting(true);
     try {
       await api.deleteProject(deleteTarget.id);
-      setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      setProjects((prev) => (prev || []).filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (err) {
       setError(err.message);
@@ -93,154 +149,170 @@ function ProjectsDashboard() {
     }
   }
 
-  async function handleArchiveToggle(project) {
-    try {
-      await api.updateProject(project.id, { archived: !project.archived });
-      // The toggled project may no longer belong in the current filtered view
-      // (e.g. archiving it while viewing "Active"), so just drop it locally
-      // rather than re-fetching everything.
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
-  const hasActiveFilters = search || tags || priority || sort !== "newest" || archivedView !== "active";
+  const hasFilters = q || statusFilter !== "all" || priority !== "" || sort !== "newest";
+  const completionPct =
+    summary.totalTasks > 0 ? Math.round((summary.doneTasks / summary.totalTasks) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-text">Projects</h1>
-            <p className="text-sm text-text-soft">Track goals and tasks across every campaign.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Button
-              onClick={() => setQuickAddOpen(true)}
-              disabled={projects.length === 0}
-              title={projects.length === 0 ? "Create a project first" : undefined}
-              className="w-full sm:w-auto"
-            >
-              <span className="sm:hidden">+ Task</span>
-              <span className="hidden sm:inline">+ Quick add task</span>
-            </Button>
-            <Button variant="secondary" onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
-              + New project
-            </Button>
-          </div>
-        </div>
+    <AppShell search={search} onSearchChange={setSearch} searchPlaceholder="Search projects…">
+      <PageHeading
+        title="Projects"
+        subtitle="Every campaign in one place — track goals, tasks, and progress across your workspaces."
+        actions={
+          <>
+            <PrimaryButton onClick={() => setQuickAddOpen(true)} disabled={list.length === 0}
+              title={list.length === 0 ? "Create a project first" : undefined}>
+              <Zap size={14} strokeWidth={2.2} />
+              <span className="hidden sm:inline">Quick add task</span>
+              <span className="sm:hidden">Task</span>
+            </PrimaryButton>
+            <PrimaryButton onClick={() => setFormOpen(true)}>
+              <Plus size={15} strokeWidth={2.2} />
+              New project
+            </PrimaryButton>
+          </>
+        }
+      />
 
-        {/* Search, filters, sort */}
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="min-w-0 flex-1 sm:min-w-[180px]">
-            <TextInput
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search"
-            />
-          </div>
-          <div className="w-full sm:w-40">
-            <TextInput
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="Tag"
-            />
-          </div>
-          <Select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            className="w-full sm:w-40 sm:shrink-0"
-          >
+      <ErrorBanner message={error} onRetry={load} />
+
+      {/* Summary cards */}
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard
+          label="Active projects"
+          value={loading ? "—" : summary.total}
+          info={
+            summary.total > 0
+              ? `${summary.inProgress} in progress · ${summary.completed} completed`
+              : "No active projects yet"
+          }
+          icon={FolderKanban}
+          iconBg="#F1EDFF"
+          iconColor="#7C5CFF"
+        />
+        <SummaryCard
+          label="Tasks completed"
+          value={loading ? "—" : summary.doneTasks}
+          info={
+            summary.totalTasks > 0
+              ? `${completionPct}% of ${summary.totalTasks} tasks`
+              : "No tasks yet"
+          }
+          infoTone={summary.totalTasks > 0 && completionPct >= 50 ? "positive" : "muted"}
+          icon={CheckCircle2}
+          iconBg="#E7F6EF"
+          iconColor="#12B76A"
+        />
+        <SummaryCard
+          label="Overdue tasks"
+          value={loading ? "—" : summary.overdue}
+          info={summary.overdue > 0 ? "needs attention" : summary.totalTasks > 0 ? "everything on schedule" : "no tasks yet"}
+          infoTone={summary.overdue > 0 ? "danger" : "positive"}
+          icon={CalendarClock}
+          iconBg={summary.overdue > 0 ? "#FDEEEF" : "#E7F6EF"}
+          iconColor={summary.overdue > 0 ? "#DC3D43" : "#12B76A"}
+        />
+        <SummaryCard
+          label="Workspaces"
+          value={loading ? "—" : workspaces.length}
+          info={workspaces.length > 1 ? "across multiple workspaces" : "your personal workspace"}
+          icon={ListTodo}
+          iconBg="#F1F4F9"
+          iconColor="#5B6B7F"
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <SegmentedControl
+          ariaLabel="Filter projects by status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "all", label: "All" },
+            { value: "in_progress", label: "In progress" },
+            { value: "pending", label: "Pending" },
+            { value: "completed", label: "Completed" },
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <SegmentedControl
+            size="sm"
+            ariaLabel="Project view"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "archived", label: "Archived" },
+              { value: "all", label: "All" },
+            ]}
+          />
+          <LightSelect ariaLabel="Filter by priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
             <option value="">All priorities</option>
-            {PRIORITY_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {PRIORITIES[key].label}
-              </option>
-            ))}
-          </Select>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full sm:w-40 sm:shrink-0">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </LightSelect>
+          <LightSelect ariaLabel="Sort projects" value={sort} onChange={(e) => setSort(e.target.value)}>
             {PROJECT_SORTS.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>
             ))}
-          </Select>
-          <Select
-            value={archivedView}
-            onChange={(e) => setArchivedView(e.target.value)}
-            className="w-full sm:w-32 sm:shrink-0"
-          >
-            <option value="active">Active</option>
-            <option value="archived">Archived</option>
-            <option value="all">All</option>
-          </Select>
+          </LightSelect>
         </div>
+      </div>
 
-        {error && <p className="mb-4 text-sm text-signal-deep">{error}</p>}
-
-        {!loading && archivedView === "active" && !hasActiveFilters && projects.length > 0 && (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(() => {
-              const summary = summarizeProjectStatuses(projects);
-              return (
-                <>
-                  <StatCard label="Total projects" value={summary.total} />
-                  <StatCard label="Completed" value={summary.completed} accent="good" />
-                  <StatCard label="In progress" value={summary.in_progress} accent="signal" />
-                  <StatCard label="Pending" value={summary.pending} accent="faint" />
-                </>
-              );
-            })()}
-          </div>
-        )}
-
+      {/* Project list */}
+      <div className="mt-5">
         {loading ? (
-          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
-        ) : projects.length === 0 ? (
-          <div className="rounded-card border border-dashed border-line bg-card py-16 text-center">
-            {hasActiveFilters ? (
-              <p className="text-sm text-text-soft">No projects match these filters.</p>
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-[118px] animate-pulse rounded-2xl border border-[#E9EDF3] bg-white"
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={FolderKanban} title={hasFilters ? "No projects match these filters" : "No projects yet"}>
+            {hasFilters ? (
+              <p>Try clearing the search, status, or priority filters.</p>
             ) : (
               <>
-                <p className="mb-3 text-sm text-text-soft">No projects yet.</p>
-                <Button onClick={() => setFormOpen(true)}>Create your first project</Button>
+                <p>Create your first project to start tracking goals, tasks, and progress.</p>
+                <PrimaryButton className="mt-4" onClick={() => setFormOpen(true)}>
+                  <Plus size={15} strokeWidth={2.2} />
+                  Create project
+                </PrimaryButton>
               </>
             )}
-          </div>
+          </EmptyState>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <ProjectCard
+          <div className="space-y-3">
+            {filtered.map((project) => (
+              <DashboardProjectCard
                 key={project.id}
                 project={project}
-                onDelete={setDeleteTarget}
                 onArchiveToggle={handleArchiveToggle}
-                showWorkspaceLabel={workspaces.length > 1}
+                onDelete={setDeleteTarget}
               />
             ))}
           </div>
         )}
-
-        {!loading && archivedView === "active" && !hasActiveFilters && projects.length > 0 && (
-          <div className="mt-6">
-            <RecentActivity projects={projects} />
-          </div>
-        )}
-      </main>
+      </div>
 
       <ProjectFormModal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        onSubmit={handleCreate}
+        onSubmit={handleCreateProject}
         workspaces={workspaces}
       />
 
       <QuickAddTaskModal
         open={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
-        projects={projects}
+        projects={list}
         onCreated={load}
       />
 
@@ -252,14 +324,14 @@ function ProjectsDashboard() {
         onCancel={() => setDeleteTarget(null)}
         busy={deleting}
       />
-    </div>
+    </AppShell>
   );
 }
 
 export default function ProjectsPage() {
   return (
     <AuthGuard>
-      <ProjectsDashboard />
+      <ProjectsView />
     </AuthGuard>
   );
 }

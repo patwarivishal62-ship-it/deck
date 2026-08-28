@@ -36,7 +36,7 @@ export default function GoalCard({ goal, onEdit, onDelete, canManage = true }) {
               type="button"
               onClick={() => onDelete(goal)}
               aria-label="Delete goal"
-              className="rounded-lg p-1.5 text-text-faint transition hover:bg-[#2E1A1E] hover:text-[#FF5D73]"
+              className="rounded-lg p-1.5 text-text-faint transition hover:bg-error-tint hover:text-[#FF5D73]"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />

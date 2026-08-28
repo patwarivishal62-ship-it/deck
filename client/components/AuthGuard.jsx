@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import MobileBottomNav from "./MobileBottomNav";
 
+// Gate for signed-in screens. Pages render their own app shell (sidebar +
+// header), so no global bottom nav is mounted here anymore.
 export default function AuthGuard({ children }) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -15,16 +16,11 @@ export default function AuthGuard({ children }) {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ink">
-        <span className="font-mono text-xs uppercase tracking-widest text-text-faint">Loading…</span>
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F6FA]">
+        <span className="font-mono text-xs uppercase tracking-widest text-[#8A94A6]">Loading…</span>
       </div>
     );
   }
 
-  return (
-    <>
-      {children}
-      <MobileBottomNav />
-    </>
-  );
+  return children;
 }

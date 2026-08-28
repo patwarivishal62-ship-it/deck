@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
-import Sidebar from "@/components/dashboard/Sidebar";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import AppShell from "@/components/app/AppShell";
 import SummaryCard from "@/components/dashboard/SummaryCard";
 import DashboardProjectCard from "@/components/dashboard/DashboardProjectCard";
 import TodayTasks from "@/components/dashboard/TodayTasks";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ConfirmModal from "@/components/ConfirmModal";
-import { X, FolderKanban, ListTodo, CalendarClock, Plus } from "lucide-react";
+import { FolderKanban, ListTodo, CalendarClock, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { getProjectStatus } from "@/lib/projectStatus";
@@ -41,9 +40,7 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [formOpen, setFormOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);  const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -184,42 +181,8 @@ function Dashboard() {
   const searching = q.length > 0;
 
   return (
-    <div data-theme="light" className="min-h-screen bg-[#F5F6FA] text-[#0F172A]">
-      {/* Mobile sidebar drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-          <div
-            className="absolute inset-0 bg-[#0F172A]/50 backdrop-blur-sm"
-            onClick={() => setDrawerOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 flex w-[264px] max-w-[85vw] shadow-2xl">
-            <Sidebar onNavigate={() => setDrawerOpen(false)} />
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="Close navigation menu"
-              className="absolute -right-11 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20"
-            >
-              <X size={18} strokeWidth={2} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop sidebar */}
-      <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
-        <Sidebar />
-      </div>
-
-      <div className="lg:pl-[248px]">
-        <DashboardHeader
-          search={search}
-          onSearchChange={setSearch}
-          onOpenMenu={() => setDrawerOpen(true)}
-        />
-
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 sm:pt-7 lg:px-8 lg:pb-12">
-          {error && (
+    <AppShell search={search} onSearchChange={setSearch}>
+      {error && (
             <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-[#F6D5D7] bg-[#FDF0F0] px-4 py-3 text-sm text-[#B03238]">
               <span>{error}</span>
               <button type="button" onClick={load} className="shrink-0 font-semibold underline underline-offset-2">
@@ -373,8 +336,6 @@ function Dashboard() {
               </section>
             </>
           )}
-        </main>
-      </div>
 
       <ProjectFormModal
         open={formOpen}
@@ -391,7 +352,7 @@ function Dashboard() {
         onCancel={() => setDeleteTarget(null)}
         busy={deleting}
       />
-    </div>
+    </AppShell>
   );
 }
 

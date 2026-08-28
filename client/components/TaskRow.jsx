@@ -4,7 +4,7 @@ import { CATEGORIES } from "@/lib/constants";
 
 const STATUS_STYLES = {
   todo: "bg-ink-2 text-text-soft border-line",
-  in_progress: "bg-[#1E1C2E] text-[#7C5CFF] border-[#7C5CFF]/30",
+  in_progress: "bg-signal-tint text-[#7C5CFF] border-[#7C5CFF]/30",
   done: "bg-[#132A24] text-[#22D3A6] border-[#22D3A6]/30",
 };
 const STATUS_LABELS = { todo: "To do", in_progress: "In progress", done: "Done" };
@@ -73,7 +73,7 @@ export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdi
             type="button"
             onClick={() => onDelete(task)}
             aria-label="Delete task"
-            className="rounded-lg p-2 text-text-faint transition hover:bg-[#2E1A1E] hover:text-[#FF5D73]"
+            className="rounded-lg p-2 text-text-faint transition hover:bg-error-tint hover:text-[#FF5D73]"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />

@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "preview": "node preview/server.js"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
