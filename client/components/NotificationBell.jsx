@@ -93,7 +93,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="fixed inset-x-3 top-16 z-50 max-h-[min(28rem,70dvh)] overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_rgba(0,0,0,0.6)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-80">
+        <div className="fixed inset-x-3 top-16 z-50 max-h-[min(28rem,70dvh)] overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_-12px_rgba(16,24,40,0.25)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+8px)] sm:w-80">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <span className="text-sm font-semibold text-text">Notifications</span>
             {unreadCount > 0 && (
@@ -114,7 +114,7 @@ export default function NotificationBell() {
                   key={n.id}
                   href={n.link || "/projects"}
                   onClick={() => handleItemClick(n)}
-                  className={`block border-b border-line px-4 py-3 text-sm transition last:border-b-0 hover:bg-card ${n.read ? "text-text-soft" : "text-text bg-[#1E1C2E]/50"}`}
+                  className={`block border-b border-line px-4 py-3 text-sm transition last:border-b-0 hover:bg-card ${n.read ? "text-text-soft" : "text-text bg-signal-tint/70"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className={n.read ? "" : "font-medium"}>{n.message}</span>

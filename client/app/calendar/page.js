@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Check } from "lucide-react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
-import Breadcrumbs from "@/components/Breadcrumbs";
+import AppShell from "@/components/app/AppShell";
+import PageHeading from "@/components/app/PageHeading";
+import Card from "@/components/app/Card";
+import { ErrorBanner, PrimaryButton } from "@/components/app/UI";
 import { api } from "@/lib/api";
+import { todayISO } from "@/lib/dashboard";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = [
@@ -14,11 +18,11 @@ const MONTH_NAMES = [
 ];
 
 const EVENT_STYLES = {
-  deadline: { label: "Deadline", color: "#FF5D73", dot: "bg-[#FF5D73]" },
-  launch: { label: "Launch date", color: "#4F7BFF", dot: "bg-[#4F7BFF]" },
-  milestone: { label: "Milestone", color: "#7C5CFF", dot: "bg-[#7C5CFF]" },
-  todo: { label: "To-do", color: "#22D3A6", dot: "bg-[#22D3A6]" },
-  note: { label: "Note", color: "#E8A23D", dot: "bg-[#E8A23D]" },
+  deadline: { label: "Task deadline", color: "#DC3D43" },
+  launch: { label: "Project due", color: "#4F7BFF" },
+  milestone: { label: "Milestone", color: "#7C5CFF" },
+  todo: { label: "To-do", color: "#12B76A" },
+  note: { label: "Note", color: "#E8A23D" },
 };
 
 function pad(n) {
@@ -29,15 +33,19 @@ function dateKey(year, month, day) {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
 
-function todayKey() {
-  const now = new Date();
-  return dateKey(now.getFullYear(), now.getMonth(), now.getDate());
-}
+const inputClass =
+  "h-10 w-full rounded-xl border border-[#E4E9F1] bg-white px-3.5 text-sm text-[#0F172A] outline-none transition placeholder:text-[#9AA5B5] hover:border-[#D6DEE9] focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
 
 function CalendarView() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const now = new Date();
+  const [events, setEvents] = useState(null); // null = loading
   const [error, setError] = useState("");
+
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [selectedDate, setSelectedDate] = useState(
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  );
 
   // Quick-add a personal note/to-do for the selected day.
   const [quickText, setQuickText] = useState("");
@@ -45,17 +53,15 @@ function CalendarView() {
   const [quickDue, setQuickDue] = useState("");
   const [quickBusy, setQuickBusy] = useState(false);
 
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-  const [selectedDate, setSelectedDate] = useState(todayKey());
-
-  const load = useCallback(() => {
-    api
-      .listCalendarEvents()
-      .then((data) => setEvents(data.events))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      const data = await api.listCalendarEvents();
+      setEvents(data.events);
+    } catch (err) {
+      setError(err.message);
+      setEvents((prev) => prev ?? []);
+    }
   }, []);
 
   useEffect(() => {
@@ -85,6 +91,7 @@ function CalendarView() {
   }
 
   async function togglePersonal(e) {
+    setError("");
     try {
       await api.updateEntry(e.entryId, { done: !e.done });
       await load();
@@ -94,6 +101,7 @@ function CalendarView() {
   }
 
   async function deletePersonal(e) {
+    setError("");
     try {
       await api.deleteEntry(e.entryId);
       await load();
@@ -104,7 +112,7 @@ function CalendarView() {
 
   const eventsByDate = useMemo(() => {
     const map = {};
-    for (const event of events) {
+    for (const event of events || []) {
       (map[event.date] ||= []).push(event);
     }
     return map;
@@ -136,9 +144,10 @@ function CalendarView() {
   }
 
   function goToToday() {
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
-    setSelectedDate(todayKey());
+    const n = new Date();
+    setYear(n.getFullYear());
+    setMonth(n.getMonth());
+    setSelectedDate(dateKey(n.getFullYear(), n.getMonth(), n.getDate()));
   }
 
   const selectedEvents = (eventsByDate[selectedDate] || []).sort((a, b) =>
@@ -146,255 +155,311 @@ function CalendarView() {
   );
   const projectEvents = selectedEvents.filter((e) => !e.personal);
   const personalEvents = selectedEvents.filter((e) => e.personal);
-  const today = todayKey();
+  const today = todayISO();
+  const loading = events === null;
+
+  const monthEventCount = (events || []).filter((e) => {
+    const [y, m] = e.date.split("-").map(Number);
+    return y === year && m === month + 1;
+  }).length;
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Calendar" }]} />
-
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-text">Calendar</h1>
-            <p className="text-sm text-text-soft">Deadlines, launch dates, and milestones across every project.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            {Object.entries(EVENT_STYLES).map(([type, s]) => (
-              <span key={type} className="flex items-center gap-1.5 text-text-faint">
-                <span className={`h-2 w-2 rounded-full ${s.dot}`} />
-                {s.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {error && <p className="mb-4 rounded-xl bg-[#2E1A1E] border border-[#FF5D73]/20 px-3 py-2 text-sm text-[#FF5D73]">{error}</p>}
-
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => goToMonth(-1)}
-              aria-label="Previous month"
-              className="rounded-xl border border-line bg-card p-2 text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <h2 className="min-w-0 flex-1 text-center font-display text-sm font-semibold tracking-tight text-text sm:w-40 sm:flex-none sm:text-base">
-              {MONTH_NAMES[month]} {year}
-            </h2>
-            <button
-              type="button"
-              onClick={() => goToMonth(1)}
-              aria-label="Next month"
-              className="rounded-xl border border-line bg-card p-2 text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
+    <AppShell>
+      <PageHeading
+        title="Calendar"
+        subtitle="Deadlines, project due dates, and milestones across every project — plus your own notes and to-dos."
+        actions={
           <button
             type="button"
             onClick={goToToday}
-            className="rounded-full border border-line bg-card px-4 py-1.5 text-xs font-medium text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E4E9F1] bg-white px-4 py-2 text-[13px] font-semibold text-[#31405A] shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition hover:border-[#D6DEE9] hover:bg-[#F8FAFD]"
           >
+            <CalendarDays size={14} strokeWidth={2} />
             Today
           </button>
-        </div>
+        }
+      />
 
-        {loading ? (
-          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
-        ) : (
-          <>
-            <div className="overflow-hidden rounded-2xl border border-line bg-card">
-              <div className="grid grid-cols-7 border-b border-line bg-ink-2">
+      <ErrorBanner message={error} onRetry={load} />
+
+      {/* Legend */}
+      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {Object.entries(EVENT_STYLES).map(([type, s]) => (
+          <span key={type} className="flex items-center gap-1.5 text-xs font-medium text-[#8A94A6]">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+            {s.label}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
+        {/* Month grid */}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-[#F1F4F9] px-4 py-3">
+            <h2 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">
+              {MONTH_NAMES[month]} {year}
+              {!loading && (
+                <span className="ml-2 text-xs font-medium text-[#8A94A6]">
+                  {monthEventCount} event{monthEventCount !== 1 ? "s" : ""}
+                </span>
+              )}
+            </h2>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => goToMonth(-1)}
+                aria-label="Previous month"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+              >
+                <ChevronLeft size={16} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                onClick={() => goToMonth(1)}
+                aria-label="Next month"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+              >
+                <ChevronRight size={16} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-7">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <div key={i} className="min-h-[72px] animate-pulse border-b border-r border-[#F1F4F9] sm:min-h-[92px]" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-7">
+              <div className="col-span-7 grid grid-cols-7 border-b border-[#F1F4F9] bg-[#F8FAFD]">
                 {WEEKDAYS.map((d) => (
-                  <div key={d} className="px-1 py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wide text-text-faint sm:px-2 sm:py-2.5 sm:text-[11px]">
+                  <div
+                    key={d}
+                    className="px-1 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[#8A94A6]"
+                  >
                     <span className="sm:hidden">{d[0]}</span>
                     <span className="hidden sm:inline">{d}</span>
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7">
-                {grid.map((day, i) => {
-                  if (day === null) return <div key={i} className="min-h-[52px] border-b border-r border-line bg-paper/50 sm:min-h-[84px]" />;
-                  const key = dateKey(year, month, day);
-                  const dayEvents = eventsByDate[key] || [];
-                  const isToday = key === today;
-                  const isSelected = key === selectedDate;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setSelectedDate(key)}
-                      className={`min-h-[52px] border-b border-r border-line p-1 text-left align-top transition sm:min-h-[84px] sm:p-2 ${
-                        isSelected ? "bg-[#7C5CFF]/15" : "bg-card hover:bg-card"
+              {grid.map((day, i) => {
+                if (day === null) {
+                  return <div key={i} className="min-h-[72px] border-b border-r border-[#F1F4F9] bg-[#FAFBFD] sm:min-h-[92px]" />;
+                }
+                const key = dateKey(year, month, day);
+                const dayEvents = eventsByDate[key] || [];
+                const isToday = key === today;
+                const isSelected = key === selectedDate;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setSelectedDate(key)}
+                    aria-label={`${key}${dayEvents.length ? `, ${dayEvents.length} events` : ""}`}
+                    aria-pressed={isSelected}
+                    className={`min-h-[72px] border-b border-r border-[#F1F4F9] p-1.5 text-left align-top transition duration-150 sm:min-h-[92px] sm:p-2 ${
+                      isSelected ? "bg-[#F1EDFF]" : "bg-white hover:bg-[#F8FAFD]"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                        isToday
+                          ? "bg-gradient-to-r from-[#7C5CFF] to-[#4F7BFF] text-white"
+                          : isSelected
+                            ? "bg-[#7C5CFF]/15 text-[#6D4FE0]"
+                            : "text-[#5B6B7F]"
                       }`}
                     >
-                      <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-xs font-medium ${
-                          isToday ? "bg-[#7C5CFF] text-white" : isSelected ? "bg-[#7C5CFF]/20 text-[#7C5CFF]" : "text-text-soft"
-                        }`}
-                      >
-                        {day}
-                      </span>
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {dayEvents.slice(0, 4).map((e) => (
-                          <span key={e.id} className={`h-1.5 w-1.5 rounded-full ${EVENT_STYLES[e.type]?.dot || "bg-[#7A8599]"}`} />
-                        ))}
-                      </div>
-                    </button>
-                  );
+                      {day}
+                    </span>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {dayEvents.slice(0, 4).map((e) => (
+                        <span
+                          key={e.id}
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: EVENT_STYLES[e.type]?.color || "#8A94A6" }}
+                        />
+                      ))}
+                      {dayEvents.length > 4 && (
+                        <span className="text-[9px] font-bold leading-none text-[#9AA5B5]">+{dayEvents.length - 4}</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* Selected day panel */}
+        <div className="space-y-5">
+          <Card>
+            <div className="border-b border-[#F1F4F9] px-5 py-4">
+              <h3 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">
+                {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
                 })}
-              </div>
+              </h3>
+              <p className="mt-0.5 text-xs text-[#8A94A6]">
+                {selectedEvents.length} event{selectedEvents.length !== 1 ? "s" : ""} this day
+              </p>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-line bg-card p-5">
-              <h3 className="mb-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-text-faint">{selectedDate}</h3>
-
-              {projectEvents.length === 0 ? (
-                <p className="text-sm text-text-soft">Nothing scheduled this day.</p>
+            <div className="px-5 py-4">
+              {loading ? (
+                <div className="space-y-2">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-[#EEF1F6]" />
+                  ))}
+                </div>
+              ) : projectEvents.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#E4E9F1] bg-[#FAFBFD] px-4 py-6 text-center">
+                  <p className="text-sm font-semibold text-[#0F172A]">Nothing scheduled</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[#8A94A6]">
+                    Project deadlines, milestones, and your own entries for this day will appear here.
+                  </p>
+                </div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {projectEvents.map((e) => (
                     <Link
                       key={e.id}
                       href={`/projects/${e.projectId}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-line bg-ink-2 px-4 py-3 transition hover:border-[#7C5CFF]/30"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#E9EDF3] bg-white px-3.5 py-3 transition duration-150 hover:border-[#7C5CFF]/25 hover:bg-[#F8FAFD]"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${EVENT_STYLES[e.type]?.dot || "bg-[#7A8599]"}`} />
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: EVENT_STYLES[e.type]?.color || "#8A94A6" }}
+                        />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-text">{e.title}</p>
-                          <p className="truncate text-xs text-text-faint">
-                            {EVENT_STYLES[e.type]?.label} · {e.projectName}
+                          <p className="truncate text-sm font-semibold text-[#0F172A]">{e.title}</p>
+                          <p className="truncate text-xs text-[#8A94A6]">
+                            {EVENT_STYLES[e.type]?.label || "Event"} · {e.projectName}
                           </p>
                         </div>
                       </div>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-text-faint">
-                        <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-[#9AA5B5]" />
                     </Link>
                   ))}
                 </div>
               )}
+            </div>
+          </Card>
 
-              {/* Personal notes & to-dos for this day — private to the user */}
-              <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-text-faint">
-                    Your notes &amp; to-dos
-                  </span>
-                  <Link href="/personal" className="text-xs font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">
-                    Open
-                  </Link>
-                </div>
+          {/* Personal entries for the day */}
+          <Card>
+            <div className="flex items-center justify-between border-b border-[#F1F4F9] px-5 py-4">
+              <h3 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">Your notes &amp; to-dos</h3>
+              <Link
+                href="/personal"
+                className="text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+              >
+                Open
+              </Link>
+            </div>
 
-                {personalEvents.length === 0 ? (
-                  <p className="text-xs text-text-faint">Nothing logged for this day yet.</p>
-                ) : (
+            <div className="px-5 py-4">
+              {!loading && personalEvents.length === 0 ? (
+                <p className="mb-3 text-xs text-[#8A94A6]">Nothing logged for this day yet.</p>
+              ) : (
+                personalEvents.length > 0 && (
                   <ul className="mb-3 flex flex-col gap-2">
                     {personalEvents.map((e) => (
-                      <li key={e.id} className="flex items-center gap-3 rounded-xl border border-line bg-ink-2 px-3 py-2.5">
+                      <li
+                        key={e.id}
+                        className="flex items-center gap-3 rounded-xl border border-[#E9EDF3] bg-white px-3.5 py-2.5"
+                      >
                         {e.type === "todo" ? (
                           <button
                             type="button"
                             onClick={() => togglePersonal(e)}
-                            aria-label={e.done ? "Mark not done" : "Mark done"}
-                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                            aria-label={e.done ? `Mark "${e.title}" as not done` : `Mark "${e.title}" as done`}
+                            aria-pressed={e.done}
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
                               e.done
-                                ? "border-[#22D3A6] bg-[#22D3A6] text-[#0B0F14]"
-                                : "border-line bg-card text-transparent hover:border-[#22D3A6]"
+                                ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
+                                : "border-[#C9D3E0] bg-white hover:border-[#7C5CFF] hover:bg-[#F7F5FF]"
                             }`}
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
+                            {e.done && <Check size={12} strokeWidth={3} />}
                           </button>
                         ) : (
-                          <span className={`h-2 w-2 shrink-0 rounded-full ${EVENT_STYLES[e.type].dot}`} />
+                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: EVENT_STYLES.note.color }} />
                         )}
-                        <p className={`min-w-0 flex-1 text-sm ${e.type === "todo" && e.done ? "text-text-faint line-through" : "text-text"}`}>
+                        <p
+                          className={`min-w-0 flex-1 truncate text-sm font-medium ${
+                            e.type === "todo" && e.done ? "text-[#9AA5B5] line-through" : "text-[#0F172A]"
+                          }`}
+                        >
                           {e.title}
                         </p>
                         <button
                           type="button"
                           onClick={() => deletePersonal(e)}
-                          aria-label="Delete"
-                          className="rounded-lg p-1.5 text-text-faint transition hover:bg-[#2E1A1E] hover:text-[#FF5D73]"
+                          aria-label={`Delete "${e.title}"`}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#FDEEEF] hover:text-[#DC3D43]"
                         >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18M8 6V4h8v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          <Trash2 size={14} strokeWidth={1.8} />
                         </button>
                       </li>
                     ))}
                   </ul>
-                )}
+                )
+              )}
 
-                <form onSubmit={handleQuickAdd} className="flex flex-col gap-2 sm:flex-row">
-                  <div className="flex gap-1 rounded-full bg-paper p-1 sm:hidden">
-                    {[
-                      { value: "todo", label: "To-do" },
-                      { value: "note", label: "Note" },
-                    ].map((k) => (
-                      <button
-                        key={k.value}
-                        type="button"
-                        onClick={() => setQuickKind(k.value)}
-                        className={`flex-1 rounded-full px-3 py-1 text-xs font-medium transition ${
-                          quickKind === k.value ? "bg-card text-text border border-line" : "text-text-soft"
-                        }`}
-                      >
-                        {k.label}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    value={quickText}
-                    onChange={(e) => setQuickText(e.target.value)}
-                    placeholder={quickKind === "todo" ? "Add a to-do for this day…" : "Add a note for this day…"}
-                    className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-faint outline-none transition focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
-                  />
-                  <div className="hidden sm:flex items-center gap-1">
-                    <select
-                      value={quickKind}
-                      onChange={(e) => setQuickKind(e.target.value)}
-                      className="rounded-xl border border-line bg-ink-2 px-2.5 py-2.5 text-xs text-text outline-none"
+              <form onSubmit={handleQuickAdd} className="flex flex-col gap-2">
+                <div className="flex gap-1.5">
+                  {[
+                    { value: "todo", label: "To-do" },
+                    { value: "note", label: "Note" },
+                  ].map((k) => (
+                    <button
+                      key={k.value}
+                      type="button"
+                      onClick={() => setQuickKind(k.value)}
+                      aria-pressed={quickKind === k.value}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                        quickKind === k.value
+                          ? "border-[#7C5CFF]/30 bg-[#F1EDFF] text-[#6D4FE0]"
+                          : "border-[#E4E9F1] bg-white text-[#5B6B7F] hover:border-[#D6DEE9]"
+                      }`}
                     >
-                      <option value="todo">To-do</option>
-                      <option value="note">Note</option>
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={quickBusy || !quickText.trim()}
-                    className="shrink-0 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6A44FF] disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                </form>
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  value={quickText}
+                  onChange={(e) => setQuickText(e.target.value)}
+                  placeholder={quickKind === "todo" ? "Add a to-do for this day…" : "Add a note for this day…"}
+                  aria-label="Quick add entry"
+                  className={inputClass}
+                />
                 {quickKind === "todo" && (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-text-faint">
-                    <span>Due (optional):</span>
+                  <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+                    Due (optional)
                     <input
                       type="date"
                       value={quickDue}
                       onChange={(e) => setQuickDue(e.target.value)}
-                      className="rounded-lg border border-line bg-ink-2 px-2 py-1 text-xs text-text outline-none focus:border-[#7C5CFF]"
+                      aria-label="Due date (optional)"
+                      className={`${inputClass} h-9 w-[140px]`}
                     />
                   </label>
                 )}
-              </div>
+                <PrimaryButton type="submit" disabled={quickBusy || !quickText.trim()} className="self-start">
+                  {quickBusy ? "Adding…" : "Add"}
+                </PrimaryButton>
+              </form>
             </div>
-          </>
-        )}
-      </main>
-    </div>
+          </Card>
+        </div>
+      </div>
+    </AppShell>
   );
 }
 

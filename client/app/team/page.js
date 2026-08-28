@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
-import Breadcrumbs from "@/components/Breadcrumbs";
+import AppShell from "@/components/app/AppShell";
+import PageHeading from "@/components/app/PageHeading";
 import SettingsCard from "@/components/SettingsCard";
 import { Field, TextInput, Select, Button } from "@/components/FormControls";
 import { api } from "@/lib/api";
@@ -248,14 +248,9 @@ function TeamPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Team" }]} />
-        <div className="mb-6">
-          <h1 className="font-display text-2xl font-semibold text-text">Team</h1>
-          <p className="text-sm text-text-soft">Manage the workspaces you belong to and who's in them.</p>
-        </div>
+    <AppShell>
+      <div className="mx-auto max-w-3xl">
+        <PageHeading title="Team" subtitle="Manage the workspaces you belong to and who's in them." />
 
         {error && <p className="mb-4 text-sm text-signal-deep">{error}</p>}
 
@@ -311,8 +306,8 @@ function TeamPageContent() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

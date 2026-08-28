@@ -16,12 +16,15 @@ const CATEGORY_ICONS = {
   other: Folder,
 };
 
-// Status pill colors — small rounded pill per the reference.
+// Status pill colors — small rounded pill per the reference. Shared with the
+// platform-wide StatusPill in components/app/UI.jsx.
 const STATUS_PILLS = {
   completed: { label: "Completed", bg: "#E7F6EF", color: "#0E9F6E", dot: "#12B76A" },
   in_progress: { label: "In progress", bg: "#F1EDFF", color: "#6D4FE0", dot: "#7C5CFF" },
   pending: { label: "Pending", bg: "#F1F4F9", color: "#5B6B7F", dot: "#8A94A6" },
 };
+
+const ARCHIVED_PILL = { label: "Archived", bg: "#F1F4F9", color: "#8A94A6", dot: "#C9D3E0" };
 
 export default function DashboardProjectCard({ project, onArchiveToggle, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,6 +89,15 @@ export default function DashboardProjectCard({ project, onArchiveToggle, onDelet
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pill.dot }} />
               {pill.label}
             </span>
+            {project.archived && (
+              <span
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                style={{ backgroundColor: ARCHIVED_PILL.bg, color: ARCHIVED_PILL.color }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ARCHIVED_PILL.dot }} />
+                {ARCHIVED_PILL.label}
+              </span>
+            )}
           </div>
           {project.description && (
             <p className="mt-1 truncate text-xs text-[#8A94A6]">{project.description}</p>

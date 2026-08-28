@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
-import Breadcrumbs from "@/components/Breadcrumbs";
+import AppShell from "@/components/app/AppShell";
+import { ArrowLeft } from "lucide-react";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
@@ -210,26 +210,30 @@ function ProjectDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
-        </main>
-      </div>
+      <AppShell>
+        <div className="flex items-center gap-3 py-16">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#E4E9F1] border-t-[#7C5CFF]" aria-hidden="true" />
+          <span className="text-sm font-medium text-[#8A94A6]">Loading project…</span>
+        </div>
+      </AppShell>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-          <p className="text-sm text-signal-deep">{error || "Project not found."}</p>
-          <Link href="/projects" className="mt-3 inline-block text-sm text-signal-deep underline">
-            Back to projects
-          </Link>
-        </main>
-      </div>
+      <AppShell>
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+        >
+          <ArrowLeft size={15} strokeWidth={2} />
+          Back to projects
+        </Link>
+        <div className="mt-10 rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-6 py-12 text-center">
+          <p className="text-sm font-semibold text-[#0F172A]">{error || "Project not found."}</p>
+          <p className="mt-1 text-xs text-[#8A94A6]">It may have been deleted, or you may not have access to it.</p>
+        </div>
+      </AppShell>
     );
   }
 
@@ -254,18 +258,17 @@ function ProjectDetail() {
   const canManage = role === "admin" || role === "owner";
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <Breadcrumbs
-          items={[
-            { label: "Home", href: "/projects" },
-            { label: "Projects", href: "/projects" },
-            { label: project.name },
-          ]}
-        />
+    <AppShell>
+      <Link
+        href="/projects"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+      >
+        <ArrowLeft size={15} strokeWidth={2} />
+        Projects
+      </Link>
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mt-4">
+        <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h1 className="font-display text-2xl font-semibold text-text">{project.name}</h1>
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
@@ -574,7 +577,7 @@ function ProjectDetail() {
             <ActivityTimeline projectId={id} />
           </div>
         </section>
-      </main>
+      </div>
 
       <Modal
         open={!!commentTaskTarget}
@@ -650,7 +653,7 @@ function ProjectDetail() {
         onCancel={() => setDeleteTaskTarget(null)}
         busy={busy}
       />
-    </div>
+    </AppShell>
   );
 }
 

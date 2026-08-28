@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
+import AppShell from "@/components/app/AppShell";
+import PageHeading from "@/components/app/PageHeading";
 import SettingsCard from "@/components/SettingsCard";
-import Breadcrumbs from "@/components/Breadcrumbs";
 import Modal from "@/components/Modal";
 import InstallButton from "@/components/InstallButton";
 import { InstallSteps } from "@/components/InstallSteps";
@@ -265,22 +265,17 @@ function AppSection() {
 
 function SettingsPageContent() {
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-2xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
-        <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Settings" }]} />
-        <div className="mb-6">
-          <h1 className="font-display text-2xl font-semibold text-text">Settings</h1>
-          <p className="text-sm text-text-soft">Manage your profile, security, devices, and account.</p>
-        </div>
-        <div className="flex flex-col gap-5">
+    <AppShell>
+      <div className="mx-auto max-w-2xl">
+        <PageHeading title="Settings" subtitle="Manage your profile, security, devices, and account." />
+        <div className="mt-5 flex flex-col gap-5">
           <ProfileSection />
           <SecuritySection />
           <AppSection />
           <AccountActionsSection />
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

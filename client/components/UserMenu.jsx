@@ -68,7 +68,7 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(16rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-line bg-card shadow-[0_16px_40px_-12px_rgba(16,24,40,0.25)]">
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-semibold text-text">{user.name || "Your account"}</p>
             <p className="truncate text-xs text-text-faint">{user.email}</p>
@@ -100,6 +100,13 @@ export default function UserMenu() {
               Settings
             </Link>
             <Link
+              href="/help"
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-text transition hover:bg-ink-2"
+            >
+              Help &amp; Guidebook
+            </Link>
+            <Link
               href="/download"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2 text-sm text-text transition hover:bg-ink-2"
@@ -125,7 +132,7 @@ export default function UserMenu() {
                 setOpen(false);
                 logout();
               }}
-              className="block w-full px-4 py-2 text-left text-sm font-medium text-[#FF5D73] transition hover:bg-[#2E1A1E]"
+              className="block w-full px-4 py-2 text-left text-sm font-medium text-[#FF5D73] transition hover:bg-error-tint"
             >
               Sign out
             </button>
