@@ -2,26 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Folder,
-  CheckSquare,
-  Calendar,
-  BarChart2,
-  FileText,
-  Plug,
-  Settings,
-  HelpCircle,
-} from "lucide-react";
+import { LayoutDashboard, Folder, CheckSquare, Calendar, Settings, HelpCircle } from "lucide-react";
 
 const PRIMARY = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: Folder },
   { href: "/personal", label: "Tasks", icon: CheckSquare },
   { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/overview#analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/overview#reports", label: "Reports", icon: FileText },
-  { href: "/overview#integrations", label: "Integrations", icon: Plug },
 ];
 
 const BOTTOM = [

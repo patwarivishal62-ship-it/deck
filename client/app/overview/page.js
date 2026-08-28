@@ -1,18 +1,12 @@
 "use client";
 
 import AppShell from "@/components/dashboard/AppShell";
-import Greeting from "@/components/dashboard/Greeting";
-import StatsGrid from "@/components/dashboard/StatsGrid";
-import ProjectsSection from "@/components/dashboard/ProjectsSection";
-import TasksSection from "@/components/dashboard/TasksSection";
+import OverviewContent from "@/components/dashboard/OverviewContent";
 
 export default function OverviewPage() {
   return (
     <AppShell framed>
-      <Greeting />
-      <StatsGrid />
-      <ProjectsSection />
-      <TasksSection />
+      <OverviewContent />
     </AppShell>
   );
 }
