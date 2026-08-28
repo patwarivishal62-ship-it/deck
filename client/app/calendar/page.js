@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthGuard from "@/components/AuthGuard";
+import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { api } from "@/lib/api";
 
@@ -149,6 +150,7 @@ function CalendarView() {
 
   return (
     <div className="min-h-screen bg-paper">
+      <TopBar />
       <main className="mx-auto max-w-5xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Calendar" }]} />
 

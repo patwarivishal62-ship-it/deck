@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
+import TopBar from "@/components/TopBar";
 import SettingsCard from "@/components/SettingsCard";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Modal from "@/components/Modal";
@@ -265,6 +266,7 @@ function AppSection() {
 function SettingsPageContent() {
   return (
     <div className="min-h-screen bg-paper">
+      <TopBar />
       <main className="mx-auto max-w-2xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Settings" }]} />
         <div className="mb-6">
