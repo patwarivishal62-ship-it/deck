@@ -33,7 +33,7 @@ function LoginForm() {
         await signup(email.trim(), password, name.trim());
       }
       const next = searchParams.get("next");
-      router.replace(next && next.startsWith("/") ? next : "/overview");
+      router.replace(next && next.startsWith("/") ? next : "/projects");
     } catch (err) {
       setError(err.message);
     } finally {
