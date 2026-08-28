@@ -98,6 +98,11 @@ cp .env.example .env
 #   JWT_SECRET   — a long random string
 ```
 
+> **No database handy?** If `MONGODB_URI` is left out, the server starts against an in-memory
+> database (`server/src/db/memory.js`) — the whole app works exactly as it does with MongoDB,
+> but everything is wiped on restart. It's for local trials and sandboxes, never for production.
+> The server logs a warning at startup when it's in this mode.
+
 ### 3. Run both apps together
 
 From the **root** `deck-app` folder:
@@ -126,7 +131,9 @@ npm run dev:client   # just Next.js, on :3000
 
 1. Browser talks only to `http://localhost:3000` (Next.js).
 2. Next.js's `rewrites()` config silently forwards anything under `/api/*` to the Express server on `:4000` —
-   this means there's no CORS friction in dev and cookies travel naturally between the two.
+   this means there's no CORS friction in dev and cookies travel naturally between the two. The upstream is
+   `http://localhost:4000` by default; point it elsewhere with the `API_UPSTREAM` env var (e.g. a deployed
+   API) — see `client/next.config.js`.
 3. Express verifies the `deck_token` httpOnly cookie on every protected route, attaches `req.userId`, and
    every query is scoped to that user (`{ userId }`), so users never see each other's projects.
 
@@ -171,8 +178,9 @@ Notes:
   `14.2.35`, the specific patched release for the December 2025 RSC CVEs. If you ever expose this beyond
   local dev, re-run `npm audit` and consider moving to a current Next 15/16 release.
 - Set a real, random `JWT_SECRET` in `server/.env` (don't reuse the placeholder).
-- Set `MONGODB_URI` in Render's environment variables to your MongoDB Atlas connection string. The server
-  won't start without it (it connects to Mongo before it starts listening).
+- Set `MONGODB_URI` in Render's environment variables to your MongoDB Atlas connection string. Without it
+  the server falls back to the in-memory database and **loses all data on every restart** — fine for a
+  local trial, never for a public deploy.
 - In Atlas, make sure Render's outbound IPs (or `0.0.0.0/0` if Render's IPs aren't static on your plan) are
   allow-listed under Network Access, and that the database user in the connection string has read/write
   access to the `deck` database.
