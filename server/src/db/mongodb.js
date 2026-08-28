@@ -1,4 +1,5 @@
 const { MongoClient } = require("mongodb");
+const { createMemoryDb } = require("./memory");
 
 let client;
 let db;
@@ -8,7 +9,13 @@ async function connectDB() {
 
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    throw new Error("MONGODB_URI is not defined");
+    // Dev/preview fallback: no database available, so run against a
+    // throwaway in-memory store with the same collection API. Everything
+    // works (signup, projects, goals, tasks, ...) but nothing persists.
+    console.warn("⚠️  MONGODB_URI is not set — using the in-memory database.");
+    console.warn("⚠️  Data will be lost when the server restarts. Set MONGODB_URI to use MongoDB.");
+    db = createMemoryDb();
+    return db;
   }
 
   client = new MongoClient(uri);
