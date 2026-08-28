@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import SettingsCard from "@/components/SettingsCard";
 import { Field, TextInput, Select, Button } from "@/components/FormControls";
@@ -249,7 +248,6 @@ function TeamPageContent() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <TopBar />
       <main className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Team" }]} />
         <div className="mb-6">

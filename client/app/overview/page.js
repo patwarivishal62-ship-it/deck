@@ -6,7 +6,7 @@ import StatsGrid from "@/components/dashboard/StatsGrid";
 import ProjectsSection from "@/components/dashboard/ProjectsSection";
 import TasksSection from "@/components/dashboard/TasksSection";
 
-export default function Home() {
+export default function OverviewPage() {
   return (
     <AppShell framed>
       <Greeting />

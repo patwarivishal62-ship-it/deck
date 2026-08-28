@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import MobileBottomNav from "./MobileBottomNav";
+import AppShell from "./dashboard/AppShell";
 
-export default function AuthGuard({ children }) {
+export default function AuthGuard({ children, framed = false }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -15,16 +15,11 @@ export default function AuthGuard({ children }) {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ink">
-        <span className="font-mono text-xs uppercase tracking-widest text-text-faint">Loading…</span>
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F9FC]">
+        <span className="text-xs uppercase tracking-widest text-[#7B8498]">Loading…</span>
       </div>
     );
   }
 
-  return (
-    <>
-      {children}
-      <MobileBottomNav />
-    </>
-  );
+  return <AppShell framed={framed}>{children}</AppShell>;
 }
