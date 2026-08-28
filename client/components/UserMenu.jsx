@@ -99,6 +99,18 @@ export default function UserMenu() {
             >
               Settings
             </Link>
+            <Link
+              href="/download"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-sm text-text transition hover:bg-ink-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-faint">
+                <path d="M12 3v12" />
+                <path d="M7 11l5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+              Get the app
+            </Link>
           </nav>
 
           <div className="border-t border-line px-4 py-3">
