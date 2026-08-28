@@ -51,7 +51,7 @@ export default function Sidebar({ onNavigate }) {
 
   function isActive(href) {
     const path = href.split("#")[0];
-    if (path === "/overview") return pathname === "/overview" && !href.includes("#");
+    if (path === "/overview") return (pathname === "/overview" || pathname === "/") && !href.includes("#");
     return pathname === path || pathname?.startsWith(`${path}/`);
   }
 
@@ -72,7 +72,7 @@ export default function Sidebar({ onNavigate }) {
           <NavItem
             key={item.label}
             {...item}
-            active={item.label === "Overview" ? pathname === "/overview" : isActive(item.href)}
+            active={item.label === "Overview" ? pathname === "/overview" || pathname === "/" : isActive(item.href)}
             onClick={onNavigate}
           />
         ))}

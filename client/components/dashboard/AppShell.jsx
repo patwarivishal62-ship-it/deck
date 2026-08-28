@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
 export default function AppShell({ children, framed = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "light");
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#D8DCE8] p-0 sm:p-3 lg:p-4">
