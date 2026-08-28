@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
@@ -211,8 +210,7 @@ function ProjectDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
+          <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
           <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
         </main>
       </div>
@@ -222,8 +220,7 @@ function ProjectDetail() {
   if (!project) {
     return (
       <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
+          <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
           <p className="text-sm text-signal-deep">{error || "Project not found."}</p>
           <Link href="/projects" className="mt-3 inline-block text-sm text-signal-deep underline">
             Back to projects
@@ -255,7 +252,6 @@ function ProjectDetail() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <TopBar />
       <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs
           items={[

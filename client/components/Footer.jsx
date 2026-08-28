@@ -27,6 +27,7 @@ export default function Footer() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const logoVariant = theme === "dark" ? "light" : "dark";
+  if (user) return null;
   return (
     <footer className={`border-t border-line bg-paper ${user ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-6" : ""}`}>
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-5">

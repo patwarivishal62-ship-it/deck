@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Button, TextInput } from "@/components/FormControls";
 import { api } from "@/lib/api";
@@ -154,7 +153,6 @@ function PersonalView() {
 
   return (
     <div className="min-h-screen bg-paper">
-      <TopBar />
       <main className="mx-auto max-w-3xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
         <Breadcrumbs items={[{ label: "Home", href: "/projects" }, { label: "Personal" }]} />
 

@@ -326,7 +326,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) router.replace("/projects");
+    if (!loading && user) router.replace("/overview");
   }, [loading, user, router]);
 
   return <LandingPage />;

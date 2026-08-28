@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
 import ProjectCard from "@/components/ProjectCard";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import QuickAddTaskModal from "@/components/QuickAddTaskModal";
@@ -108,9 +107,8 @@ function ProjectsDashboard() {
   const hasActiveFilters = search || tags || priority || sort !== "newest" || archivedView !== "active";
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-5 sm:py-8 md:pb-8">
+    <div className="min-h-full">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold text-text">Projects</h1>
