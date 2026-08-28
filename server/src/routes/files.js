@@ -52,15 +52,15 @@ router.post("/:projectId/files", (req, res) => {
       return res.status(400).json({ error: message });
     }
 
+    const project = await ownedProject(req.params.projectId, req);
+    if (!project) return res.status(404).json({ error: "Project not found." });
+    if (!req.file) return res.status(400).json({ error: "No file was uploaded." });
+
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return res.status(503).json({ error: "File storage isn't configured yet." });
+    }
+
     try {
-      const project = await ownedProject(req.params.projectId, req);
-      if (!project) return res.status(404).json({ error: "Project not found." });
-      if (!req.file) return res.status(400).json({ error: "No file was uploaded." });
-
-      if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        return res.status(503).json({ error: "File storage isn't configured yet." });
-      }
-
       const blobPathname = `projects/${project.id}/${nanoid()}-${req.file.originalname}`;
       const blob = await put(blobPathname, req.file.buffer, {
         access: "public",
