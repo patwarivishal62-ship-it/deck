@@ -2,7 +2,8 @@
   "name": "deck",
   "version": "1.0.0",
   "private": true,
-  "description": "Deck — Project Control Center. Marketing project, goal, and task tracker.",
+  "license": "UNLICENSED",
+  "description": "Deck — Project Control Center. Marketing project, goal, and task tracker. Proprietary — all rights reserved.",
   "scripts": {
     "dev": "concurrently -n SERVER,CLIENT -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm --prefix server run dev",
