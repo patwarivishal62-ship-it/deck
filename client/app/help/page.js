@@ -253,22 +253,22 @@ const FAQ = [
 
 function FaqItem({ item, open, onToggle }) {
   return (
-    <div className="border-b border-[#F1F4F9] last:border-b-0">
+    <div className="border-b border-line last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition hover:bg-[#F8FAFD]"
+        className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition hover:bg-paper"
       >
-        <span className="text-[13.5px] font-semibold text-[#0F172A]">{item.q}</span>
+        <span className="text-[13.5px] font-semibold text-text">{item.q}</span>
         <ChevronDown
           size={16}
           strokeWidth={2}
-          className={`shrink-0 text-[#9AA5B5] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-text-faint transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <p className="px-5 pb-4 text-[13px] leading-relaxed text-[#5B6B7F]">{item.a}</p>
+        <p className="px-5 pb-4 text-[13px] leading-relaxed text-text-soft">{item.a}</p>
       )}
     </div>
   );
@@ -319,8 +319,8 @@ function HelpView() {
                 {i + 1}
               </span>
               <div className="min-w-0">
-                <p className="text-[13.5px] font-semibold text-[#0F172A]">{step.title}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-[#8A94A6]">{step.body}</p>
+                <p className="text-[13.5px] font-semibold text-text">{step.title}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-text-faint">{step.body}</p>
               </div>
             </li>
           ))}
@@ -329,7 +329,7 @@ function HelpView() {
 
       {/* Feature guide */}
       <div className="mt-6">
-        <h2 className="mb-3 font-display text-base font-bold tracking-tight text-[#0F172A]">Feature guide</h2>
+        <h2 className="mb-3 font-display text-base font-bold tracking-tight text-text">Feature guide</h2>
         {filteredGuide.length === 0 ? (
           <EmptyState icon={CircleHelp} title="No guide sections match your search" />
         ) : (
@@ -337,15 +337,15 @@ function HelpView() {
             {filteredGuide.map((g) => (
               <Card key={g.title} className="flex flex-col p-5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1EDFF] text-[#7C5CFF]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-signal-tint text-[#7C5CFF]">
                     <g.icon size={17} strokeWidth={1.8} />
                   </span>
-                  <h3 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">{g.title}</h3>
+                  <h3 className="font-display text-[15px] font-bold tracking-tight text-text">{g.title}</h3>
                 </div>
-                <p className="mt-2.5 text-[13px] leading-relaxed text-[#5B6B7F]">{g.body}</p>
+                <p className="mt-2.5 text-[13px] leading-relaxed text-text-soft">{g.body}</p>
                 <ul className="mt-3 flex-1 space-y-1.5">
                   {g.points.map((p) => (
-                    <li key={p} className="flex gap-2 text-xs leading-relaxed text-[#8A94A6]">
+                    <li key={p} className="flex gap-2 text-xs leading-relaxed text-text-faint">
                       <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-[#7C5CFF]" aria-hidden="true" />
                       {p}
                     </li>
@@ -353,7 +353,7 @@ function HelpView() {
                 </ul>
                 <Link
                   href={g.href}
-                  className="mt-3.5 self-start text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+                  className="mt-3.5 self-start text-[13px] font-semibold text-signal transition hover:text-signal"
                 >
                   Open {g.title} →
                 </Link>
@@ -366,9 +366,9 @@ function HelpView() {
       {/* FAQ */}
       <div className="mt-8">
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="font-display text-base font-bold tracking-tight text-[#0F172A]">
+          <h2 className="font-display text-base font-bold tracking-tight text-text">
             Questions &amp; answers
-            {!q && <span className="ml-2 text-xs font-medium text-[#8A94A6]">{totalFaq} answers</span>}
+            {!q && <span className="ml-2 text-xs font-medium text-text-faint">{totalFaq} answers</span>}
           </h2>
         </div>
 
@@ -404,20 +404,20 @@ function HelpView() {
       <Card className="mt-8">
         <div className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F1EDFF] text-[#7C5CFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-tint text-[#7C5CFF]">
               <Mail size={18} strokeWidth={1.8} />
             </span>
             <div>
-              <p className="text-[14px] font-semibold text-[#0F172A]">Still stuck?</p>
-              <p className="mt-0.5 text-[13px] text-[#8A94A6]">
-                Write to <span className="font-semibold text-[#6D4FE0]">support@planyourdeck.com</span> — we usually
+              <p className="text-[14px] font-semibold text-text">Still stuck?</p>
+              <p className="mt-0.5 text-[13px] text-text-faint">
+                Write to <span className="font-semibold text-signal">support@planyourdeck.com</span> — we usually
                 reply within a day.
               </p>
             </div>
           </div>
           <Link
             href="/download"
-            className="shrink-0 rounded-full border border-[#E4E9F1] bg-white px-4 py-2 text-[13px] font-semibold text-[#31405A] transition hover:border-[#D6DEE9] hover:bg-[#F8FAFD]"
+            className="shrink-0 rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-text transition hover:border-line hover:bg-paper"
           >
             Install the app
           </Link>

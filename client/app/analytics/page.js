@@ -52,11 +52,11 @@ function Donut({ segments, size = 148, thickness = 16, centerLabel, centerValue 
         aria-hidden="true"
       />
       <div
-        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full bg-white"
+        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full bg-card"
         style={{ width: size - thickness * 2, height: size - thickness * 2 }}
       >
-        <span className="font-display text-2xl font-bold tracking-tight text-[#0F172A]">{centerValue}</span>
-        <span className="text-[11px] font-medium text-[#8A94A6]">{centerLabel}</span>
+        <span className="font-display text-2xl font-bold tracking-tight text-text">{centerValue}</span>
+        <span className="text-[11px] font-medium text-text-faint">{centerLabel}</span>
       </div>
     </div>
   );
@@ -194,15 +194,15 @@ function AnalyticsView() {
 
       {loading ? (
         <div className="mt-6 space-y-4">
-          <div className="h-64 animate-pulse rounded-2xl border border-[#E9EDF3] bg-white" />
-          <div className="h-64 animate-pulse rounded-2xl border border-[#E9EDF3] bg-white" />
+          <div className="h-64 animate-pulse rounded-2xl border border-line bg-card" />
+          <div className="h-64 animate-pulse rounded-2xl border border-line bg-card" />
         </div>
       ) : analytics.total === 0 ? (
         <div className="mt-6">
           <EmptyState icon={TrendingUp} title="No data to analyze yet">
             <p>
               Analytics fill in automatically as you create projects and complete tasks.{" "}
-              <Link href="/projects" className="font-semibold text-[#6D4FE0] underline underline-offset-2">
+              <Link href="/projects" className="font-semibold text-signal underline underline-offset-2">
                 Create your first project
               </Link>{" "}
               to get started.
@@ -218,13 +218,13 @@ function AnalyticsView() {
               <div className="flex items-center gap-6 px-5 py-5">
                 <Donut segments={segments} centerValue={analytics.total} centerLabel="projects" />
                 <ul className="min-w-0 flex-1 space-y-2.5">
-                  {segments.length === 0 && <li className="text-sm text-[#8A94A6]">No projects yet.</li>}
+                  {segments.length === 0 && <li className="text-sm text-text-faint">No projects yet.</li>}
                   {segments.map((s) => (
                     <li key={s.key} className="flex items-center gap-2.5">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
-                      <span className="min-w-0 flex-1 text-[13px] font-medium text-[#31405A]">{s.label}</span>
-                      <span className="text-[13px] font-bold text-[#0F172A]">{s.value}</span>
-                      <span className="w-10 text-right text-[11px] font-medium text-[#9AA5B5]">
+                      <span className="min-w-0 flex-1 text-[13px] font-medium text-text">{s.label}</span>
+                      <span className="text-[13px] font-bold text-text">{s.value}</span>
+                      <span className="w-10 text-right text-[11px] font-medium text-text-faint">
                         {Math.round((s.value / analytics.total) * 100)}%
                       </span>
                     </li>
@@ -236,7 +236,7 @@ function AnalyticsView() {
             <Card>
               <CardHeading title="Task breakdown" sub={`${taskTotal} tasks across all projects in scope`} />
               <div className="px-5 py-5">
-                <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#EEF1F6]">
+                <div className="flex h-3 w-full overflow-hidden rounded-full bg-paper-2">
                   {taskSegments.map(
                     (s) =>
                       s.value > 0 && (
@@ -251,18 +251,18 @@ function AnalyticsView() {
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {taskSegments.map((s) => (
-                    <div key={s.label} className="rounded-xl bg-[#F8FAFD] px-3 py-2.5">
-                      <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#8A94A6]">
+                    <div key={s.label} className="rounded-xl bg-paper px-3 py-2.5">
+                      <p className="flex items-center gap-1.5 text-[11px] font-medium text-text-faint">
                         <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
                         {s.label}
                       </p>
-                      <p className="mt-0.5 font-display text-lg font-bold text-[#0F172A]">{s.value}</p>
+                      <p className="mt-0.5 font-display text-lg font-bold text-text">{s.value}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-xs leading-relaxed text-[#8A94A6]">
+                <p className="mt-4 text-xs leading-relaxed text-text-faint">
                   Completion rate:{" "}
-                  <span className="font-bold text-[#0F172A]">{analytics.avgTaskCompletion}%</span> of all tasks are done.
+                  <span className="font-bold text-text">{analytics.avgTaskCompletion}%</span> of all tasks are done.
                 </p>
               </div>
             </Card>
@@ -280,19 +280,19 @@ function AnalyticsView() {
                 <div className="flex h-36 items-end gap-2">
                   {weeks.map((w, i) => (
                     <div key={i} className="group flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-[#0F172A] opacity-0 transition group-hover:opacity-100">
+                      <span className="text-[11px] font-bold text-text opacity-0 transition group-hover:opacity-100">
                         {w.count}
                       </span>
                       <div
                         className={`w-full rounded-t-md transition-all duration-500 ${
                           w.count > 0
                             ? "bg-gradient-to-t from-[#7C5CFF] to-[#4F7BFF]"
-                            : "bg-[#EEF1F6]"
+                            : "bg-paper-2"
                         }`}
                         style={{ height: `${Math.max(6, (w.count / maxWeek) * 100)}%` }}
                         title={`${w.label}: ${w.count} completed`}
                       />
-                      <span className="w-full truncate text-center text-[10px] font-medium text-[#9AA5B5]">
+                      <span className="w-full truncate text-center text-[10px] font-medium text-text-faint">
                         {w.label}
                       </span>
                     </div>
@@ -305,7 +305,7 @@ function AnalyticsView() {
               <CardHeading title="Channel mix" sub="Projects and goals by marketing category" />
               <div className="px-5 py-5">
                 {categoriesWithWork.length === 0 ? (
-                  <p className="text-sm text-[#8A94A6]">
+                  <p className="text-sm text-text-faint">
                     No categorized goals yet — add a goal with a category (Social, Paid Ads, SEO…) to see the channel mix.
                   </p>
                 ) : (
@@ -315,15 +315,15 @@ function AnalyticsView() {
                       return (
                         <li key={c.key}>
                           <div className="mb-1 flex items-center justify-between gap-2 text-[13px]">
-                            <span className="flex min-w-0 items-center gap-2 font-medium text-[#31405A]">
+                            <span className="flex min-w-0 items-center gap-2 font-medium text-text">
                               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
                               {c.label}
                             </span>
-                            <span className="shrink-0 text-[11px] font-medium text-[#8A94A6]">
+                            <span className="shrink-0 text-[11px] font-medium text-text-faint">
                               {c.projects} project{c.projects !== 1 ? "s" : ""} · {c.goals} goal{c.goals !== 1 ? "s" : ""}
                             </span>
                           </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-[#EEF1F6]">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-paper-2">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{ width: `${Math.max(3, weight * 100)}%`, backgroundColor: c.color }}
@@ -355,7 +355,7 @@ function AnalyticsView() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-[#F1F4F9] text-[11px] uppercase tracking-wide text-[#8A94A6]">
+                  <tr className="border-b border-line text-[11px] uppercase tracking-wide text-text-faint">
                     <th scope="col" className="px-5 py-3 font-semibold">Project</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Status</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Progress</th>
@@ -373,20 +373,20 @@ function AnalyticsView() {
                       <Fragment key={row.project.id}>
                         <tr
                           onClick={() => setExpanded(isOpen ? null : row.project.id)}
-                          className={`cursor-pointer border-b border-[#F1F4F9] transition hover:bg-[#F8FAFD] ${
-                            isOpen ? "bg-[#F8FAFD]" : ""
+                          className={`cursor-pointer border-b border-line transition hover:bg-paper ${
+                            isOpen ? "bg-paper" : ""
                           }`}
                         >
                           <td className="max-w-[260px] px-5 py-3.5">
                             <Link
                               href={`/projects/${row.project.id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="block truncate font-semibold text-[#0F172A] transition hover:text-[#6D4FE0]"
+                              className="block truncate font-semibold text-text transition hover:text-signal"
                             >
                               {row.project.name}
                             </Link>
                             {row.categoryKey && (
-                              <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#8A94A6]">
+                              <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-text-faint">
                                 <span
                                   className="h-1.5 w-1.5 rounded-full"
                                   style={{ backgroundColor: CATEGORIES[row.categoryKey].color }}
@@ -401,43 +401,43 @@ function AnalyticsView() {
                           <td className="px-3 py-3.5">
                             <div className="flex w-36 items-center gap-2.5">
                               <ProgressBar value={row.progress} label={`${row.project.name} progress`} />
-                              <span className="w-9 shrink-0 text-xs font-bold text-[#0F172A]">{row.progress}%</span>
+                              <span className="w-9 shrink-0 text-xs font-bold text-text">{row.progress}%</span>
                             </div>
                           </td>
-                          <td className="px-3 py-3.5 text-center text-[13px] font-medium text-[#31405A]">
+                          <td className="px-3 py-3.5 text-center text-[13px] font-medium text-text">
                             {row.tasksDone}/{row.tasksTotal}
                           </td>
-                          <td className="px-3 py-3.5 text-center text-[13px] font-medium text-[#31405A]">{row.goalsTotal}</td>
+                          <td className="px-3 py-3.5 text-center text-[13px] font-medium text-text">{row.goalsTotal}</td>
                           <td className="px-3 py-3.5 text-center">
                             {row.overdueTasks > 0 ? (
                               <Chip tone="danger">{row.overdueTasks}</Chip>
                             ) : (
-                              <span className="text-[13px] text-[#C9D3E0]">—</span>
+                              <span className="text-[13px] text-text-faint">—</span>
                             )}
                           </td>
                           <td className="px-5 py-3.5 text-right text-[13px] font-medium">
                             {row.dueDate ? (
-                              <span className={row.overdueProject ? "text-[#DC3D43]" : "text-[#5B6B7F]"}>
+                              <span className={row.overdueProject ? "text-error-text" : "text-text-soft"}>
                                 {row.overdueProject ? "Overdue · " : ""}
                                 {formatDueDate(row.dueDate)}
                               </span>
                             ) : (
-                              <span className="text-[#C9D3E0]">—</span>
+                              <span className="text-text-faint">—</span>
                             )}
                           </td>
                           <td className="px-2 py-3.5">
                             <ChevronDown
                               size={15}
                               strokeWidth={2}
-                              className={`text-[#9AA5B5] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                              className={`text-text-faint transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                             />
                           </td>
                         </tr>
                         {isOpen && (
-                          <tr className="border-b border-[#F1F4F9] bg-[#FAFBFD]">
+                          <tr className="border-b border-line bg-paper">
                             <td colSpan={8} className="px-5 py-4">
                               {row.project.goals.length === 0 && row.tasksTotal === 0 ? (
-                                <p className="text-[13px] text-[#8A94A6]">
+                                <p className="text-[13px] text-text-faint">
                                   No goals or tasks logged for this project yet — open it to add some.
                                 </p>
                               ) : (
@@ -449,22 +449,22 @@ function AnalyticsView() {
                                         : 0;
                                     const cat = CATEGORIES[g.category];
                                     return (
-                                      <div key={g.id} className="rounded-xl border border-[#E9EDF3] bg-white px-3.5 py-3">
+                                      <div key={g.id} className="rounded-xl border border-line bg-card px-3.5 py-3">
                                         <div className="flex items-center justify-between gap-2">
-                                          <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold text-[#0F172A]">
+                                          <span className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold text-text">
                                             <Target size={13} strokeWidth={2} className="shrink-0 text-[#7C5CFF]" />
                                             <span className="truncate">{g.title}</span>
                                           </span>
-                                          <span className="shrink-0 text-[11px] font-medium text-[#8A94A6]">
+                                          <span className="shrink-0 text-[11px] font-medium text-text-faint">
                                             {g.currentValue}/{g.targetValue}
                                           </span>
                                         </div>
                                         <div className="mt-2 flex items-center gap-2">
                                           <ProgressBar value={pct} label={`${g.title} progress`} />
-                                          <span className="w-9 shrink-0 text-right text-[11px] font-bold text-[#0F172A]">{pct}%</span>
+                                          <span className="w-9 shrink-0 text-right text-[11px] font-bold text-text">{pct}%</span>
                                         </div>
                                         {cat && (
-                                          <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-[#8A94A6]">
+                                          <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-text-faint">
                                             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: cat.color }} />
                                             {cat.label}
                                           </span>
@@ -473,7 +473,7 @@ function AnalyticsView() {
                                     );
                                   })}
                                   {row.project.goals.length === 0 && row.tasksTotal > 0 && (
-                                    <p className="text-[13px] text-[#8A94A6]">
+                                    <p className="text-[13px] text-text-faint">
                                       No goals yet — this project&apos;s progress comes from its {row.tasksTotal} task
                                       {row.tasksTotal !== 1 ? "s" : ""}.
                                     </p>

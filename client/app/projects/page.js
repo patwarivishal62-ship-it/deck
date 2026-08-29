@@ -270,7 +270,7 @@ function ProjectsView() {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-[118px] animate-pulse rounded-2xl border border-[#E9EDF3] bg-white"
+                className="h-[118px] animate-pulse rounded-2xl border border-line bg-card"
               />
             ))}
           </div>

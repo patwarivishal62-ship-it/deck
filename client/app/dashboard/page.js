@@ -21,14 +21,14 @@ const MAX_TASKS = 6;
 function DashboardSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-7 w-56 rounded-lg bg-[#E9EDF3]" />
-      <div className="mt-2 h-4 w-72 rounded bg-[#EEF1F6]" />
+      <div className="h-7 w-56 rounded-lg bg-paper-2" />
+      <div className="mt-2 h-4 w-72 rounded bg-paper-2" />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 rounded-2xl border border-[#E9EDF3] bg-white" />
+          <div key={i} className="h-28 rounded-2xl border border-line bg-card" />
         ))}
       </div>
-      <div className="mt-8 h-[340px] rounded-2xl border border-[#E9EDF3] bg-white" />
+      <div className="mt-8 h-[340px] rounded-2xl border border-line bg-card" />
     </div>
   );
 }
@@ -183,7 +183,7 @@ function Dashboard() {
   return (
     <AppShell search={search} onSearchChange={setSearch}>
       {error && (
-            <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-[#F6D5D7] bg-[#FDF0F0] px-4 py-3 text-sm text-[#B03238]">
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-error-line bg-error-tint px-4 py-3 text-sm text-error-text">
               <span>{error}</span>
               <button type="button" onClick={load} className="shrink-0 font-semibold underline underline-offset-2">
                 Retry
@@ -197,11 +197,11 @@ function Dashboard() {
             <>
               {/* Greeting */}
               <div>
-                <h1 className="font-display text-[22px] font-bold tracking-tight text-[#0F172A] sm:text-2xl">
+                <h1 className="font-display text-[22px] font-bold tracking-tight text-text sm:text-2xl">
                   Good {partOfDay()}
                   {greetingName ? `, ${greetingName}` : ""}
                 </h1>
-                <p className="mt-1 text-sm text-[#5B6B7F]">{greetingSubtitle()}</p>
+                <p className="mt-1 text-sm text-text-soft">{greetingSubtitle()}</p>
               </div>
 
               {/* Summary cards */}
@@ -251,31 +251,31 @@ function Dashboard() {
               {/* Projects */}
               <section className="mt-8" aria-labelledby="dashboard-projects-heading">
                 <div className="mb-3.5 flex items-center justify-between gap-3">
-                  <h2 id="dashboard-projects-heading" className="font-display text-base font-bold tracking-tight text-[#0F172A]">
+                  <h2 id="dashboard-projects-heading" className="font-display text-base font-bold tracking-tight text-text">
                     Projects
                   </h2>
                   <Link
                     href="/projects"
-                    className="text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+                    className="text-[13px] font-semibold text-signal transition hover:text-signal"
                   >
                     View all
                   </Link>
                 </div>
 
                 {showProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-6 py-12 text-center">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F1EDFF] text-[#7C5CFF]">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
                       <FolderKanban size={20} strokeWidth={1.8} />
                     </span>
                     {searching ? (
                       <>
-                        <p className="mt-3 text-sm font-semibold text-[#0F172A]">No projects match “{search.trim()}”</p>
-                        <p className="mt-1 text-xs text-[#8A94A6]">Try a different search term.</p>
+                        <p className="mt-3 text-sm font-semibold text-text">No projects match “{search.trim()}”</p>
+                        <p className="mt-1 text-xs text-text-faint">Try a different search term.</p>
                       </>
                     ) : (
                       <>
-                        <p className="mt-3 text-sm font-semibold text-[#0F172A]">No projects yet</p>
-                        <p className="mt-1 max-w-xs text-xs leading-relaxed text-[#8A94A6]">
+                        <p className="mt-3 text-sm font-semibold text-text">No projects yet</p>
+                        <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
                           Create your first project to see goals, tasks, and progress here.
                         </p>
                         <button
@@ -302,7 +302,7 @@ function Dashboard() {
                     {!searching && filteredProjects.length > MAX_PROJECTS && (
                       <Link
                         href="/projects"
-                        className="block rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-4 py-3.5 text-center text-[13px] font-semibold text-[#6D4FE0] transition hover:border-[#7C5CFF]/40 hover:bg-white"
+                        className="block rounded-2xl border border-dashed border-line bg-card px-4 py-3.5 text-center text-[13px] font-semibold text-signal transition hover:border-[#7C5CFF]/40 hover:bg-card"
                       >
                         View {filteredProjects.length - MAX_PROJECTS} more project
                         {filteredProjects.length - MAX_PROJECTS !== 1 ? "s" : ""}
@@ -315,12 +315,12 @@ function Dashboard() {
               {/* Today's Tasks */}
               <section className="mt-8" aria-labelledby="dashboard-tasks-heading">
                 <div className="mb-3.5 flex items-center justify-between gap-3">
-                  <h2 id="dashboard-tasks-heading" className="font-display text-base font-bold tracking-tight text-[#0F172A]">
+                  <h2 id="dashboard-tasks-heading" className="font-display text-base font-bold tracking-tight text-text">
                     Today&apos;s Tasks
                   </h2>
                   <Link
                     href="/projects"
-                    className="text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+                    className="text-[13px] font-semibold text-signal transition hover:text-signal"
                   >
                     View all
                   </Link>

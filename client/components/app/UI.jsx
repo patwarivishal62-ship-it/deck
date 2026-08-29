@@ -33,7 +33,7 @@ export function ProgressBar({ value, label, className = "" }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
     <div
-      className={`h-1.5 w-full overflow-hidden rounded-full bg-[#EEF1F6] ${className}`}
+      className={`h-1.5 w-full overflow-hidden rounded-full bg-paper-2 ${className}`}
       role="progressbar"
       aria-valuenow={pct}
       aria-valuemin={0}
@@ -51,14 +51,14 @@ export function ProgressBar({ value, label, className = "" }) {
 // Dashed empty state with icon, used wherever a list can be empty.
 export function EmptyState({ icon: Icon, title, children }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-6 py-12 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
       {Icon && (
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F1EDFF] text-[#7C5CFF]">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
           <Icon size={20} strokeWidth={1.8} />
         </span>
       )}
-      <p className="mt-3 text-sm font-semibold text-[#0F172A]">{title}</p>
-      {children && <div className="mt-1 max-w-sm text-xs leading-relaxed text-[#8A94A6]">{children}</div>}
+      <p className="mt-3 text-sm font-semibold text-text">{title}</p>
+      {children && <div className="mt-1 max-w-sm text-xs leading-relaxed text-text-faint">{children}</div>}
     </div>
   );
 }
@@ -67,7 +67,7 @@ export function EmptyState({ icon: Icon, title, children }) {
 export function ErrorBanner({ message, onRetry }) {
   if (!message) return null;
   return (
-    <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-[#F6D5D7] bg-[#FDF0F0] px-4 py-3 text-sm text-[#B03238]">
+    <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-error-line bg-error-tint px-4 py-3 text-sm text-error-text">
       <span>{message}</span>
       {onRetry && (
         <button type="button" onClick={onRetry} className="shrink-0 font-semibold underline underline-offset-2">
@@ -95,7 +95,7 @@ export function SecondaryButton({ children, className = "", ...rest }) {
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-[#E4E9F1] bg-white px-4 py-2 text-[13px] font-semibold text-[#31405A] shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition duration-150 hover:border-[#D6DEE9] hover:bg-[#F8FAFD] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-text shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition duration-150 hover:border-line hover:bg-paper active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...rest}
     >
       {children}

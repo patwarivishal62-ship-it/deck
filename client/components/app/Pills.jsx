@@ -4,8 +4,8 @@
 // consistent control style.
 
 const activePill =
-  "border-[#7C5CFF]/30 bg-[#F1EDFF] text-[#6D4FE0] shadow-[0_2px_8px_-4px_rgba(124,92,255,0.45)]";
-const idlePill = "border-[#E4E9F1] bg-white text-[#5B6B7F] hover:border-[#D6DEE9] hover:text-[#31405A]";
+  "border-[#7C5CFF]/30 bg-signal-tint text-signal shadow-[0_2px_8px_-4px_rgba(124,92,255,0.45)]";
+const idlePill = "border-line bg-card text-text-soft hover:border-line hover:text-text";
 
 export function SegmentedControl({ options, value, onChange, ariaLabel, size = "md" }) {
   const pad = size === "sm" ? "px-3 py-1 text-xs" : "px-3.5 py-1.5 text-[12.5px]";
@@ -25,7 +25,7 @@ export function SegmentedControl({ options, value, onChange, ariaLabel, size = "
           >
             {opt.label}
             {opt.count !== undefined && (
-              <span className={`ml-1.5 font-bold ${active ? "text-[#7C5CFF]" : "text-[#9AA5B5]"}`}>
+              <span className={`ml-1.5 font-bold ${active ? "text-[#7C5CFF]" : "text-text-faint"}`}>
                 {opt.count}
               </span>
             )}
@@ -38,11 +38,11 @@ export function SegmentedControl({ options, value, onChange, ariaLabel, size = "
 
 export function Chip({ children, tone = "muted", className = "" }) {
   const tones = {
-    muted: "bg-[#F1F4F9] text-[#5B6B7F]",
-    accent: "bg-[#F1EDFF] text-[#6D4FE0]",
-    positive: "bg-[#E7F6EF] text-[#0E9F6E]",
-    warning: "bg-[#FEF4E4] text-[#C77714]",
-    danger: "bg-[#FDEEEF] text-[#DC3D43]",
+    muted: "bg-paper-2 text-text-soft",
+    accent: "bg-signal-tint text-signal",
+    positive: "bg-good-tint text-good-text",
+    warning: "bg-warn-tint text-warn-text",
+    danger: "bg-error-tint text-error-text",
   };
   return (
     <span
@@ -58,7 +58,7 @@ export function LightSelect({ children, className = "", ariaLabel, ...rest }) {
   return (
     <select
       aria-label={ariaLabel}
-      className={`h-9 cursor-pointer rounded-xl border border-[#E4E9F1] bg-white px-3 text-[13px] font-medium text-[#31405A] outline-none transition hover:border-[#D6DEE9] focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10 ${className}`}
+      className={`h-9 cursor-pointer rounded-xl border border-line bg-card px-3 text-[13px] font-medium text-text outline-none transition hover:border-line focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10 ${className}`}
       {...rest}
     >
       {children}

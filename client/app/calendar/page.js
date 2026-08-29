@@ -34,7 +34,7 @@ function dateKey(year, month, day) {
 }
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-[#E4E9F1] bg-white px-3.5 text-sm text-[#0F172A] outline-none transition placeholder:text-[#9AA5B5] hover:border-[#D6DEE9] focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
+  "h-10 w-full rounded-xl border border-line bg-card px-3.5 text-sm text-text outline-none transition placeholder:text-text-faint hover:border-line focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
 
 function CalendarView() {
   const now = new Date();
@@ -172,7 +172,7 @@ function CalendarView() {
           <button
             type="button"
             onClick={goToToday}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#E4E9F1] bg-white px-4 py-2 text-[13px] font-semibold text-[#31405A] shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition hover:border-[#D6DEE9] hover:bg-[#F8FAFD]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-text shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition hover:border-line hover:bg-paper"
           >
             <CalendarDays size={14} strokeWidth={2} />
             Today
@@ -185,7 +185,7 @@ function CalendarView() {
       {/* Legend */}
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         {Object.entries(EVENT_STYLES).map(([type, s]) => (
-          <span key={type} className="flex items-center gap-1.5 text-xs font-medium text-[#8A94A6]">
+          <span key={type} className="flex items-center gap-1.5 text-xs font-medium text-text-faint">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
             {s.label}
           </span>
@@ -195,11 +195,11 @@ function CalendarView() {
       <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_340px]">
         {/* Month grid */}
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-[#F1F4F9] px-4 py-3">
-            <h2 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <h2 className="font-display text-[15px] font-bold tracking-tight text-text">
               {MONTH_NAMES[month]} {year}
               {!loading && (
-                <span className="ml-2 text-xs font-medium text-[#8A94A6]">
+                <span className="ml-2 text-xs font-medium text-text-faint">
                   {monthEventCount} event{monthEventCount !== 1 ? "s" : ""}
                 </span>
               )}
@@ -209,7 +209,7 @@ function CalendarView() {
                 type="button"
                 onClick={() => goToMonth(-1)}
                 aria-label="Previous month"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-faint transition hover:bg-paper-2 hover:text-text"
               >
                 <ChevronLeft size={16} strokeWidth={2} />
               </button>
@@ -217,7 +217,7 @@ function CalendarView() {
                 type="button"
                 onClick={() => goToMonth(1)}
                 aria-label="Next month"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-faint transition hover:bg-paper-2 hover:text-text"
               >
                 <ChevronRight size={16} strokeWidth={2} />
               </button>
@@ -227,16 +227,16 @@ function CalendarView() {
           {loading ? (
             <div className="grid grid-cols-7">
               {Array.from({ length: 35 }).map((_, i) => (
-                <div key={i} className="min-h-[72px] animate-pulse border-b border-r border-[#F1F4F9] sm:min-h-[92px]" />
+                <div key={i} className="min-h-[72px] animate-pulse border-b border-r border-line sm:min-h-[92px]" />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-7">
-              <div className="col-span-7 grid grid-cols-7 border-b border-[#F1F4F9] bg-[#F8FAFD]">
+              <div className="col-span-7 grid grid-cols-7 border-b border-line bg-paper">
                 {WEEKDAYS.map((d) => (
                   <div
                     key={d}
-                    className="px-1 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-[#8A94A6]"
+                    className="px-1 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-text-faint"
                   >
                     <span className="sm:hidden">{d[0]}</span>
                     <span className="hidden sm:inline">{d}</span>
@@ -245,7 +245,7 @@ function CalendarView() {
               </div>
               {grid.map((day, i) => {
                 if (day === null) {
-                  return <div key={i} className="min-h-[72px] border-b border-r border-[#F1F4F9] bg-[#FAFBFD] sm:min-h-[92px]" />;
+                  return <div key={i} className="min-h-[72px] border-b border-r border-line bg-paper sm:min-h-[92px]" />;
                 }
                 const key = dateKey(year, month, day);
                 const dayEvents = eventsByDate[key] || [];
@@ -258,8 +258,8 @@ function CalendarView() {
                     onClick={() => setSelectedDate(key)}
                     aria-label={`${key}${dayEvents.length ? `, ${dayEvents.length} events` : ""}`}
                     aria-pressed={isSelected}
-                    className={`min-h-[72px] border-b border-r border-[#F1F4F9] p-1.5 text-left align-top transition duration-150 sm:min-h-[92px] sm:p-2 ${
-                      isSelected ? "bg-[#F1EDFF]" : "bg-white hover:bg-[#F8FAFD]"
+                    className={`min-h-[72px] border-b border-r border-line p-1.5 text-left align-top transition duration-150 sm:min-h-[92px] sm:p-2 ${
+                      isSelected ? "bg-signal-tint" : "bg-card hover:bg-paper"
                     }`}
                   >
                     <span
@@ -267,8 +267,8 @@ function CalendarView() {
                         isToday
                           ? "bg-gradient-to-r from-[#7C5CFF] to-[#4F7BFF] text-white"
                           : isSelected
-                            ? "bg-[#7C5CFF]/15 text-[#6D4FE0]"
-                            : "text-[#5B6B7F]"
+                            ? "bg-[#7C5CFF]/15 text-signal"
+                            : "text-text-soft"
                       }`}
                     >
                       {day}
@@ -282,7 +282,7 @@ function CalendarView() {
                         />
                       ))}
                       {dayEvents.length > 4 && (
-                        <span className="text-[9px] font-bold leading-none text-[#9AA5B5]">+{dayEvents.length - 4}</span>
+                        <span className="text-[9px] font-bold leading-none text-text-faint">+{dayEvents.length - 4}</span>
                       )}
                     </div>
                   </button>
@@ -295,15 +295,15 @@ function CalendarView() {
         {/* Selected day panel */}
         <div className="space-y-5">
           <Card>
-            <div className="border-b border-[#F1F4F9] px-5 py-4">
-              <h3 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">
+            <div className="border-b border-line px-5 py-4">
+              <h3 className="font-display text-[15px] font-bold tracking-tight text-text">
                 {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 })}
               </h3>
-              <p className="mt-0.5 text-xs text-[#8A94A6]">
+              <p className="mt-0.5 text-xs text-text-faint">
                 {selectedEvents.length} event{selectedEvents.length !== 1 ? "s" : ""} this day
               </p>
             </div>
@@ -312,13 +312,13 @@ function CalendarView() {
               {loading ? (
                 <div className="space-y-2">
                   {[0, 1].map((i) => (
-                    <div key={i} className="h-14 animate-pulse rounded-xl bg-[#EEF1F6]" />
+                    <div key={i} className="h-14 animate-pulse rounded-xl bg-paper-2" />
                   ))}
                 </div>
               ) : projectEvents.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#E4E9F1] bg-[#FAFBFD] px-4 py-6 text-center">
-                  <p className="text-sm font-semibold text-[#0F172A]">Nothing scheduled</p>
-                  <p className="mt-1 text-xs leading-relaxed text-[#8A94A6]">
+                <div className="rounded-xl border border-dashed border-line bg-paper px-4 py-6 text-center">
+                  <p className="text-sm font-semibold text-text">Nothing scheduled</p>
+                  <p className="mt-1 text-xs leading-relaxed text-text-faint">
                     Project deadlines, milestones, and your own entries for this day will appear here.
                   </p>
                 </div>
@@ -328,7 +328,7 @@ function CalendarView() {
                     <Link
                       key={e.id}
                       href={`/projects/${e.projectId}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[#E9EDF3] bg-white px-3.5 py-3 transition duration-150 hover:border-[#7C5CFF]/25 hover:bg-[#F8FAFD]"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3.5 py-3 transition duration-150 hover:border-[#7C5CFF]/25 hover:bg-paper"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <span
@@ -336,13 +336,13 @@ function CalendarView() {
                           style={{ backgroundColor: EVENT_STYLES[e.type]?.color || "#8A94A6" }}
                         />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#0F172A]">{e.title}</p>
-                          <p className="truncate text-xs text-[#8A94A6]">
+                          <p className="truncate text-sm font-semibold text-text">{e.title}</p>
+                          <p className="truncate text-xs text-text-faint">
                             {EVENT_STYLES[e.type]?.label || "Event"} · {e.projectName}
                           </p>
                         </div>
                       </div>
-                      <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-[#9AA5B5]" />
+                      <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-text-faint" />
                     </Link>
                   ))}
                 </div>
@@ -352,11 +352,11 @@ function CalendarView() {
 
           {/* Personal entries for the day */}
           <Card>
-            <div className="flex items-center justify-between border-b border-[#F1F4F9] px-5 py-4">
-              <h3 className="font-display text-[15px] font-bold tracking-tight text-[#0F172A]">Your notes &amp; to-dos</h3>
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
+              <h3 className="font-display text-[15px] font-bold tracking-tight text-text">Your notes &amp; to-dos</h3>
               <Link
                 href="/personal"
-                className="text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+                className="text-[13px] font-semibold text-signal transition hover:text-signal"
               >
                 Open
               </Link>
@@ -364,14 +364,14 @@ function CalendarView() {
 
             <div className="px-5 py-4">
               {!loading && personalEvents.length === 0 ? (
-                <p className="mb-3 text-xs text-[#8A94A6]">Nothing logged for this day yet.</p>
+                <p className="mb-3 text-xs text-text-faint">Nothing logged for this day yet.</p>
               ) : (
                 personalEvents.length > 0 && (
                   <ul className="mb-3 flex flex-col gap-2">
                     {personalEvents.map((e) => (
                       <li
                         key={e.id}
-                        className="flex items-center gap-3 rounded-xl border border-[#E9EDF3] bg-white px-3.5 py-2.5"
+                        className="flex items-center gap-3 rounded-xl border border-line bg-card px-3.5 py-2.5"
                       >
                         {e.type === "todo" ? (
                           <button
@@ -382,7 +382,7 @@ function CalendarView() {
                             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
                               e.done
                                 ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
-                                : "border-[#C9D3E0] bg-white hover:border-[#7C5CFF] hover:bg-[#F7F5FF]"
+                                : "border-line bg-card hover:border-[#7C5CFF] hover:bg-signal-tint"
                             }`}
                           >
                             {e.done && <Check size={12} strokeWidth={3} />}
@@ -392,7 +392,7 @@ function CalendarView() {
                         )}
                         <p
                           className={`min-w-0 flex-1 truncate text-sm font-medium ${
-                            e.type === "todo" && e.done ? "text-[#9AA5B5] line-through" : "text-[#0F172A]"
+                            e.type === "todo" && e.done ? "text-text-faint line-through" : "text-text"
                           }`}
                         >
                           {e.title}
@@ -401,7 +401,7 @@ function CalendarView() {
                           type="button"
                           onClick={() => deletePersonal(e)}
                           aria-label={`Delete "${e.title}"`}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#FDEEEF] hover:text-[#DC3D43]"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-faint transition hover:bg-error-tint hover:text-error-text"
                         >
                           <Trash2 size={14} strokeWidth={1.8} />
                         </button>
@@ -424,8 +424,8 @@ function CalendarView() {
                       aria-pressed={quickKind === k.value}
                       className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                         quickKind === k.value
-                          ? "border-[#7C5CFF]/30 bg-[#F1EDFF] text-[#6D4FE0]"
-                          : "border-[#E4E9F1] bg-white text-[#5B6B7F] hover:border-[#D6DEE9]"
+                          ? "border-[#7C5CFF]/30 bg-signal-tint text-signal"
+                          : "border-line bg-card text-text-soft hover:border-line"
                       }`}
                     >
                       {k.label}
@@ -440,7 +440,7 @@ function CalendarView() {
                   className={inputClass}
                 />
                 {quickKind === "todo" && (
-                  <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+                  <label className="flex items-center gap-2 text-xs font-medium text-text-faint">
                     Due (optional)
                     <input
                       type="date"

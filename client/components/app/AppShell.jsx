@@ -6,9 +6,13 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 // Shared shell for every signed-in screen — the deep-navy sidebar (fixed on
-// desktop lg+, slide-in drawer on mobile), the sticky light header, and the
-// light content area. One shell = one uniform platform: every page renders
-// inside it with the same padding, background, and header behavior.
+// desktop lg+, slide-in drawer on mobile), the sticky header, and the content
+// area. The shell is fully theme-aware: surfaces and text use design tokens
+// (bg-paper-2, text-text, border-line, …) that resolve per data-theme, so the
+// user's Dark / Light / Eye Care choice restyles every signed-in page. The
+// sidebar intentionally pins data-theme="dark" on itself to stay navy in all
+// themes. One shell = one uniform platform: every page renders inside it with
+// the same padding, background, and header behavior.
 export default function AppShell({
   children,
   search = "",
@@ -18,12 +22,12 @@ export default function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div data-theme="light" className="min-h-screen bg-[#F5F6FA] text-[#0F172A]">
+    <div className="min-h-screen bg-paper-2 text-text">
       {/* Mobile sidebar drawer */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <div
-            className="absolute inset-0 bg-[#0F172A]/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setDrawerOpen(false)}
           />
           <div className="absolute inset-y-0 left-0 flex w-[264px] max-w-[85vw] shadow-2xl">
