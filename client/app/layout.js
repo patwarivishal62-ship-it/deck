@@ -1,4 +1,5 @@
 import "./globals.css";
+import Script from "next/script";
 import { AuthProvider } from "@/lib/AuthContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { PWAProvider } from "@/lib/PWAContext";
@@ -139,6 +140,21 @@ export default function RootLayout({ children }) {
           }}
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+        {/* Google tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-0519NKWBYK"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-0519NKWBYK');
+          `}
+        </Script>
       </head>
       <body className="bg-paper antialiased">
         <ThemeProvider>
