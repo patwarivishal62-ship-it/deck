@@ -13,7 +13,7 @@ function TaskItem({ task, onToggle, busy }) {
   const overdue = !done && task.dueDate && task.dueDate < todayISO();
 
   return (
-    <li className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-[#E9EDF3] hover:bg-[#F8FAFD]">
+    <li className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-line hover:bg-paper">
       <button
         type="button"
         onClick={() => onToggle(task)}
@@ -23,7 +23,7 @@ function TaskItem({ task, onToggle, busy }) {
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
           done
             ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
-            : "border-[#C9D3E0] bg-white hover:border-[#7C5CFF] hover:bg-[#F7F5FF]"
+            : "border-line bg-card hover:border-[#7C5CFF] hover:bg-signal-tint"
         } ${busy ? "opacity-60" : ""}`}
       >
         {done && <Check size={12} strokeWidth={3} />}
@@ -32,13 +32,13 @@ function TaskItem({ task, onToggle, busy }) {
       <div className="min-w-0 flex-1">
         <p
           className={`truncate text-sm font-medium ${
-            done ? "text-[#9AA5B5] line-through" : "text-[#0F172A]"
+            done ? "text-text-faint line-through" : "text-text"
           }`}
         >
           {task.title}
         </p>
         {/* Project indicator on very small screens lives under the title */}
-        <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#8A94A6] sm:hidden">
+        <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-text-faint sm:hidden">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
           <span className="truncate">{task.project?.name}</span>
         </span>
@@ -47,7 +47,7 @@ function TaskItem({ task, onToggle, busy }) {
       {/* Related project indicator (desktop) */}
       <Link
         href={`/projects/${task.project?.id}`}
-        className="hidden max-w-[180px] shrink-0 items-center gap-1.5 rounded-full bg-[#F1F4F9] px-2.5 py-1 text-[11px] font-medium text-[#5B6B7F] transition hover:bg-[#E9EEF5] sm:inline-flex"
+        className="hidden max-w-[180px] shrink-0 items-center gap-1.5 rounded-full bg-paper-2 px-2.5 py-1 text-[11px] font-medium text-text-soft transition hover:bg-paper-2 sm:inline-flex"
         title={task.project?.name}
       >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
@@ -56,11 +56,11 @@ function TaskItem({ task, onToggle, busy }) {
 
       {/* Due chip */}
       {done ? (
-        <span className="shrink-0 rounded-full bg-[#E7F6EF] px-2.5 py-1 text-[11px] font-semibold text-[#0E9F6E]">Done</span>
+        <span className="shrink-0 rounded-full bg-good-tint px-2.5 py-1 text-[11px] font-semibold text-good-text">Done</span>
       ) : overdue ? (
-        <span className="shrink-0 rounded-full bg-[#FDEEEF] px-2.5 py-1 text-[11px] font-semibold text-[#DC3D43]">Overdue</span>
+        <span className="shrink-0 rounded-full bg-error-tint px-2.5 py-1 text-[11px] font-semibold text-error-text">Overdue</span>
       ) : (
-        <span className="shrink-0 rounded-full bg-[#F1EDFF] px-2.5 py-1 text-[11px] font-semibold text-[#6D4FE0]">Today</span>
+        <span className="shrink-0 rounded-full bg-signal-tint px-2.5 py-1 text-[11px] font-semibold text-signal">Today</span>
       )}
     </li>
   );
@@ -74,9 +74,9 @@ export default function TodayTasks({ tasks, loading, onToggle, togglingId, max =
       <div className="space-y-1.5">
         {[0, 1, 2].map((i) => (
           <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-3">
-            <div className="h-5 w-5 animate-pulse rounded-md bg-[#EEF1F6]" />
-            <div className="h-3.5 flex-1 animate-pulse rounded bg-[#EEF1F6]" />
-            <div className="hidden h-6 w-24 animate-pulse rounded-full bg-[#EEF1F6] sm:block" />
+            <div className="h-5 w-5 animate-pulse rounded-md bg-paper-2" />
+            <div className="h-3.5 flex-1 animate-pulse rounded bg-paper-2" />
+            <div className="hidden h-6 w-24 animate-pulse rounded-full bg-paper-2 sm:block" />
           </div>
         ))}
       </div>
@@ -85,12 +85,12 @@ export default function TodayTasks({ tasks, loading, onToggle, togglingId, max =
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-6 py-10 text-center">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F1EDFF] text-[#7C5CFF]">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-card px-6 py-10 text-center">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
           <Inbox size={20} strokeWidth={1.8} />
         </span>
-        <p className="mt-3 text-sm font-semibold text-[#0F172A]">Nothing due today</p>
-        <p className="mt-1 max-w-xs text-xs leading-relaxed text-[#8A94A6]">
+        <p className="mt-3 text-sm font-semibold text-text">Nothing due today</p>
+        <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
           Tasks due today — or overdue — from your projects will show up here.
         </p>
       </div>
@@ -98,7 +98,7 @@ export default function TodayTasks({ tasks, loading, onToggle, togglingId, max =
   }
 
   return (
-    <ul className="rounded-2xl border border-[#E9EDF3] bg-white p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-16px_rgba(16,24,40,0.10)] sm:p-2">
+    <ul className="rounded-2xl border border-line bg-card p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-16px_rgba(16,24,40,0.10)] sm:p-2">
       {tasks.slice(0, max).map((task) => (
         <TaskItem key={task.id} task={task} onToggle={onToggle} busy={togglingId === task.id} />
       ))}

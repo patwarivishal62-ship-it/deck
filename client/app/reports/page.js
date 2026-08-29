@@ -113,7 +113,7 @@ function ReportsView() {
 
       <ErrorBanner message={error} onRetry={load} />
       {generated && (
-        <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#CDEFDD] bg-[#F0FBF5] px-4 py-3 text-sm text-[#0E9F6E]">
+        <div className="mb-5 flex items-center gap-2 rounded-xl border border-good-line bg-good-tint px-4 py-3 text-sm text-good-text">
           <CheckCircle2 size={16} strokeWidth={2} />
           {generated}
         </div>
@@ -136,19 +136,19 @@ function ReportsView() {
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
                 aria-label="From date"
-                className="h-9 rounded-xl border border-[#E4E9F1] bg-white px-3 text-[13px] font-medium text-[#31405A] outline-none focus:border-[#7C5CFF]/50"
+                className="h-9 rounded-xl border border-line bg-card px-3 text-[13px] font-medium text-text outline-none focus:border-[#7C5CFF]/50"
               />
-              <span className="text-xs font-medium text-[#8A94A6]">to</span>
+              <span className="text-xs font-medium text-text-faint">to</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
                 aria-label="To date"
-                className="h-9 rounded-xl border border-[#E4E9F1] bg-white px-3 text-[13px] font-medium text-[#31405A] outline-none focus:border-[#7C5CFF]/50"
+                className="h-9 rounded-xl border border-line bg-card px-3 text-[13px] font-medium text-text outline-none focus:border-[#7C5CFF]/50"
               />
             </div>
           ) : (
-            <p className="text-xs font-medium text-[#8A94A6]">
+            <p className="text-xs font-medium text-text-faint">
               {period.from} → {period.to}
             </p>
           )}
@@ -160,7 +160,7 @@ function ReportsView() {
         {previewStats.map((s) => (
           <div
             key={s.label}
-            className="flex items-center gap-3.5 rounded-2xl border border-[#E9EDF3] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_12px_28px_-16px_rgba(16,24,40,0.10)]"
+            className="flex items-center gap-3.5 rounded-2xl border border-line bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_12px_28px_-16px_rgba(16,24,40,0.10)]"
           >
             <span
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -170,8 +170,8 @@ function ReportsView() {
               <s.icon size={18} strokeWidth={1.8} />
             </span>
             <div className="min-w-0">
-              <p className="text-[12.5px] font-medium text-[#5B6B7F]">{s.label}</p>
-              <p className="font-display text-[22px] font-bold leading-tight tracking-tight text-[#0F172A]">
+              <p className="text-[12.5px] font-medium text-text-soft">{s.label}</p>
+              <p className="font-display text-[22px] font-bold leading-tight tracking-tight text-text">
                 {loading ? "—" : s.value}
               </p>
             </div>
@@ -181,14 +181,14 @@ function ReportsView() {
 
       {loading ? (
         <div className="mt-4 space-y-4">
-          <div className="h-72 animate-pulse rounded-2xl border border-[#E9EDF3] bg-white" />
+          <div className="h-72 animate-pulse rounded-2xl border border-line bg-card" />
         </div>
       ) : report.summary.activeProjects === 0 && report.summary.tasksCompleted === 0 ? (
         <div className="mt-4">
           <EmptyState icon={FileText} title="Nothing to report yet">
             <p>
               Reports are generated from your real project data.{" "}
-              <Link href="/projects" className="font-semibold text-[#6D4FE0] underline underline-offset-2">
+              <Link href="/projects" className="font-semibold text-signal underline underline-offset-2">
                 Create a project
               </Link>{" "}
               or complete a few tasks first.
@@ -206,7 +206,7 @@ function ReportsView() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-[#F1F4F9] text-[11px] uppercase tracking-wide text-[#8A94A6]">
+                  <tr className="border-b border-line text-[11px] uppercase tracking-wide text-text-faint">
                     <th scope="col" className="px-5 py-3 font-semibold">Project</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Status</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Progress</th>
@@ -216,28 +216,28 @@ function ReportsView() {
                 </thead>
                 <tbody>
                   {report.projectRows.map((row, i) => (
-                    <tr key={`${row.name}-${i}`} className="border-b border-[#F1F4F9] last:border-b-0">
-                      <td className="max-w-[220px] truncate px-5 py-3 font-semibold text-[#0F172A]">{row.name}</td>
+                    <tr key={`${row.name}-${i}`} className="border-b border-line last:border-b-0">
+                      <td className="max-w-[220px] truncate px-5 py-3 font-semibold text-text">{row.name}</td>
                       <td className="px-3 py-3">
                         <StatusPillForStatus status={row.status} />
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex w-32 items-center gap-2">
                           <ProgressBar value={row.progress} label={`${row.name} progress`} />
-                          <span className="w-9 shrink-0 text-xs font-bold text-[#0F172A]">{row.progress}%</span>
+                          <span className="w-9 shrink-0 text-xs font-bold text-text">{row.progress}%</span>
                         </div>
                       </td>
-                      <td className="px-3 py-3 text-center text-[13px] font-medium text-[#31405A]">
+                      <td className="px-3 py-3 text-center text-[13px] font-medium text-text">
                         {row.tasksDone}/{row.tasksTotal}
                       </td>
-                      <td className="px-5 py-3 text-right text-[13px] font-medium text-[#5B6B7F]">
+                      <td className="px-5 py-3 text-right text-[13px] font-medium text-text-soft">
                         {row.dueDate ? formatDueDate(row.dueDate) : "—"}
                       </td>
                     </tr>
                   ))}
                   {report.projectRows.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-5 py-6 text-center text-sm text-[#8A94A6]">
+                      <td colSpan={5} className="px-5 py-6 text-center text-sm text-text-faint">
                         No active projects right now.
                       </td>
                     </tr>
@@ -255,15 +255,15 @@ function ReportsView() {
             />
             <div className="max-h-[420px] overflow-y-auto px-5 py-4">
               {report.completedTasks.length === 0 ? (
-                <p className="text-sm text-[#8A94A6]">No tasks were completed in this period.</p>
+                <p className="text-sm text-text-faint">No tasks were completed in this period.</p>
               ) : (
                 <ul className="space-y-2.5">
                   {report.completedTasks.map((t, i) => (
                     <li key={`${t.title}-${i}`} className="flex items-start gap-2.5">
                       <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#12B76A]" aria-hidden="true" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium text-[#0F172A]">{t.title}</p>
-                        <p className="text-[11px] text-[#8A94A6]">
+                        <p className="truncate text-[13px] font-medium text-text">{t.title}</p>
+                        <p className="text-[11px] text-text-faint">
                           {t.projectName} · {t.date}
                         </p>
                       </div>
@@ -272,8 +272,8 @@ function ReportsView() {
                 </ul>
               )}
             </div>
-            <div className="border-t border-[#F1F4F9] px-5 py-4">
-              <p className="text-xs leading-relaxed text-[#8A94A6]">
+            <div className="border-t border-line px-5 py-4">
+              <p className="text-xs leading-relaxed text-text-faint">
                 The PDF also includes key-number tiles, new-project counts, and per-project progress bars —
                 everything you see here, formatted for print and sharing.
               </p>

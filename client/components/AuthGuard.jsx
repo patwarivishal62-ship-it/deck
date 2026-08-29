@@ -16,8 +16,8 @@ export default function AuthGuard({ children }) {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F6FA]">
-        <span className="font-mono text-xs uppercase tracking-widest text-[#8A94A6]">Loading…</span>
+      <div className="flex min-h-screen items-center justify-center bg-paper-2">
+        <span className="font-mono text-xs uppercase tracking-widest text-text-faint">Loading…</span>
       </div>
     );
   }

@@ -212,8 +212,8 @@ function ProjectDetail() {
     return (
       <AppShell>
         <div className="flex items-center gap-3 py-16">
-          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#E4E9F1] border-t-[#7C5CFF]" aria-hidden="true" />
-          <span className="text-sm font-medium text-[#8A94A6]">Loading project…</span>
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-[#7C5CFF]" aria-hidden="true" />
+          <span className="text-sm font-medium text-text-faint">Loading project…</span>
         </div>
       </AppShell>
     );
@@ -224,14 +224,14 @@ function ProjectDetail() {
       <AppShell>
         <Link
           href="/projects"
-          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal transition hover:text-signal"
         >
           <ArrowLeft size={15} strokeWidth={2} />
           Back to projects
         </Link>
-        <div className="mt-10 rounded-2xl border border-dashed border-[#E4E9F1] bg-white/60 px-6 py-12 text-center">
-          <p className="text-sm font-semibold text-[#0F172A]">{error || "Project not found."}</p>
-          <p className="mt-1 text-xs text-[#8A94A6]">It may have been deleted, or you may not have access to it.</p>
+        <div className="mt-10 rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
+          <p className="text-sm font-semibold text-text">{error || "Project not found."}</p>
+          <p className="mt-1 text-xs text-text-faint">It may have been deleted, or you may not have access to it.</p>
         </div>
       </AppShell>
     );
@@ -261,7 +261,7 @@ function ProjectDetail() {
     <AppShell>
       <Link
         href="/projects"
-        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#6D4FE0] transition hover:text-[#5B3FD1]"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal transition hover:text-signal"
       >
         <ArrowLeft size={15} strokeWidth={2} />
         Projects

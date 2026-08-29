@@ -38,7 +38,7 @@ function dateLabel(iso) {
 }
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-[#E4E9F1] bg-white px-3.5 text-sm text-[#0F172A] outline-none transition placeholder:text-[#9AA5B5] hover:border-[#D6DEE9] focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
+  "h-10 w-full rounded-xl border border-line bg-card px-3.5 text-sm text-text outline-none transition placeholder:text-text-faint hover:border-line focus:border-[#7C5CFF]/50 focus:ring-4 focus:ring-[#7C5CFF]/10";
 
 function TasksView() {
   const [entries, setEntries] = useState(null); // null = loading
@@ -231,7 +231,7 @@ function TasksView() {
       {/* Quick add */}
       <form
         onSubmit={handleAdd}
-        className="mt-6 rounded-2xl border border-[#E9EDF3] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_12px_28px_-16px_rgba(16,24,40,0.10)] sm:p-5"
+        className="mt-6 rounded-2xl border border-line bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_12px_28px_-16px_rgba(16,24,40,0.10)] sm:p-5"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="w-full sm:max-w-[220px]">
@@ -247,7 +247,7 @@ function TasksView() {
         </div>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row">
-            <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+            <label className="flex items-center gap-2 text-xs font-medium text-text-faint">
               On day
               <input
                 type="date"
@@ -258,7 +258,7 @@ function TasksView() {
               />
             </label>
             {kind === "todo" && (
-              <label className="flex items-center gap-2 text-xs font-medium text-[#8A94A6]">
+              <label className="flex items-center gap-2 text-xs font-medium text-text-faint">
                 Due
                 <input
                   type="date"
@@ -296,7 +296,7 @@ function TasksView() {
         {loading ? (
           <div className="space-y-3">
             {[0, 1].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl border border-[#E9EDF3] bg-white" />
+              <div key={i} className="h-24 animate-pulse rounded-2xl border border-line bg-card" />
             ))}
           </div>
         ) : groups.length === 0 ? (
@@ -311,17 +311,17 @@ function TasksView() {
           groups.map((group) => (
             <section key={group.date} aria-label={group.date}>
               <div className="mb-2.5 flex items-center gap-2.5">
-                <h2 className="text-[13px] font-bold tracking-tight text-[#0F172A]">{dateLabel(group.date)}</h2>
-                <span className="font-mono text-[11px] text-[#9AA5B5]">{group.date}</span>
-                <span className="h-px flex-1 bg-[#E9EDF3]" />
+                <h2 className="text-[13px] font-bold tracking-tight text-text">{dateLabel(group.date)}</h2>
+                <span className="font-mono text-[11px] text-text-faint">{group.date}</span>
+                <span className="h-px flex-1 bg-paper-2" />
               </div>
-              <ul className="overflow-hidden rounded-2xl border border-[#E9EDF3] bg-white p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-16px_rgba(16,24,40,0.10)] sm:p-2">
+              <ul className="overflow-hidden rounded-2xl border border-line bg-card p-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_24px_-16px_rgba(16,24,40,0.10)] sm:p-2">
                 {group.items.map((e) => {
                   const isOverdue = overdue(e);
                   return (
                     <li
                       key={e.id}
-                      className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-[#E9EDF3] hover:bg-[#F8FAFD]"
+                      className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-line hover:bg-paper"
                     >
                       {e.kind === "todo" ? (
                         <button
@@ -333,7 +333,7 @@ function TasksView() {
                           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
                             e.done
                               ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
-                              : "border-[#C9D3E0] bg-white hover:border-[#7C5CFF] hover:bg-[#F7F5FF]"
+                              : "border-line bg-card hover:border-[#7C5CFF] hover:bg-signal-tint"
                           }`}
                         >
                           {e.done && <Check size={12} strokeWidth={3} />}
@@ -377,7 +377,7 @@ function TasksView() {
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
-                              className="rounded-full border border-[#E4E9F1] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#5B6B7F] transition hover:bg-[#F8FAFD]"
+                              className="rounded-full border border-line bg-card px-3.5 py-1.5 text-xs font-semibold text-text-soft transition hover:bg-paper"
                             >
                               Cancel
                             </button>
@@ -388,15 +388,15 @@ function TasksView() {
                           <div className="min-w-0 flex-1">
                             <p
                               className={`truncate text-sm font-medium ${
-                                e.kind === "todo" && e.done ? "text-[#9AA5B5] line-through" : "text-[#0F172A]"
+                                e.kind === "todo" && e.done ? "text-text-faint line-through" : "text-text"
                               }`}
                             >
                               {e.text}
                             </p>
-                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[#8A94A6]">
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-faint">
                               {e.kind === "todo" ? "To-do" : "Note"}
                               {e.dueDate && (
-                                <span className={isOverdue ? "font-semibold text-[#DC3D43]" : ""}>
+                                <span className={isOverdue ? "font-semibold text-error-text" : ""}>
                                   · due {e.dueDate}
                                   {isOverdue ? " (overdue)" : ""}
                                 </span>
@@ -415,7 +415,7 @@ function TasksView() {
                               type="button"
                               onClick={() => startEdit(e)}
                               aria-label={`Edit "${e.text}"`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#F1F4F9] hover:text-[#0F172A]"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-faint transition hover:bg-paper-2 hover:text-text"
                             >
                               <Pencil size={15} strokeWidth={1.8} />
                             </button>
@@ -423,7 +423,7 @@ function TasksView() {
                               type="button"
                               onClick={() => removeEntry(e)}
                               aria-label={`Delete "${e.text}"`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94A6] transition hover:bg-[#FDEEEF] hover:text-[#DC3D43]"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-text-faint transition hover:bg-error-tint hover:text-error-text"
                             >
                               <Trash2 size={15} strokeWidth={1.8} />
                             </button>
