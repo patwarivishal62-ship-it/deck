@@ -25,10 +25,12 @@ gradle assembleRelease     # or ./gradlew if you generate a wrapper
 ```
 
 The release APK lands at `app/build/outputs/apk/release/app-release.apk`.
-Copy it to `client/public/downloads/deck.apk` so the Next.js app can serve it.
+Copy it to `client/public/downloads/deck.apk` so the Next.js app can serve it
+at `https://planyourdeck.com/downloads/deck.apk`.
 
-GitHub Actions (`.github/workflows/build-android-apk.yml`) does this on every
-change under `android/` and commits the APK back to the branch.
+A sample GitHub Actions workflow lives in `gha-build-android-apk.yml` — copy it
+to `.github/workflows/` on a branch that allows workflow files if you want CI
+to produce the APK automatically.
 
 ## Install (on a phone)
 
