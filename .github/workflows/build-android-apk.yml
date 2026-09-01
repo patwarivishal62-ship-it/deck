@@ -1,0 +1,73 @@
+name: Build Android APK
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/build-android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build signed release APK
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Stage APK for the website
+        run: |
+          mkdir -p client/public/downloads
+          cp android/app/build/outputs/apk/release/app-release.apk client/public/downloads/deck.apk
+          python3 - <<'PY'
+          import hashlib, json, os, time
+          path = "client/public/downloads/deck.apk"
+          data = open(path, "rb").read()
+          meta = {
+              "file": "/downloads/deck.apk",
+              "versionName": "1.0.0",
+              "versionCode": 1,
+              "sha256": hashlib.sha256(data).hexdigest(),
+              "sizeBytes": len(data),
+              "builtAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+          }
+          with open("client/public/downloads/android.json", "w") as f:
+              json.dump(meta, f, indent=2)
+              f.write("\n")
+          print(json.dumps(meta, indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deck-apk
+          path: |
+            client/public/downloads/deck.apk
+            client/public/downloads/android.json
+
+      - name: Commit APK into public/downloads
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/public/downloads/deck.apk client/public/downloads/android.json
+          if git diff --cached --quiet; then
+            echo "APK unchanged"
+            exit 0
+          fi
+          git commit -m "chore(android): publish sideload APK"
+          git push

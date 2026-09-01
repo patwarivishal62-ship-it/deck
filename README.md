@@ -69,8 +69,10 @@ deck-app/
     │   ├── PWAContext.jsx  # service-worker registration, install prompt, platform detection
     │   └── constants.js    # mirrors server/src/constants.js
     ├── public/
+    │   ├── downloads/      # DECK.apk (sideload) + android.json metadata
     │   ├── sw.js           # service worker (app-shell caching + offline support)
     │   └── icons/          # PWA icon set (192/512 px, any + maskable)
+├── android/              # WebView APK project (Gradle) + release keystore
     ├── next.config.js      # rewrites /api/* → http://localhost:4000/api/*
     └── tailwind.config.js  # design tokens carried over from the original HTML
 ```
@@ -134,10 +136,15 @@ npm run dev:client   # just Next.js, on :3000
 3. Express verifies the `deck_token` httpOnly cookie on every protected route, attaches `req.userId`, and
    every query is scoped to that user (`{ userId }`), so users never see each other's projects.
 
-## Installable app (PWA) — "Download DECK"
+## Installable app (PWA + Android APK) — "Download DECK"
 
-Users can install DECK as a real app on desktop and mobile. It's a Progressive Web App, so there's
-no App Store submission, no installer download — the browser installs it in one tap.
+Users can install DECK as a real app on desktop and mobile. The browser can install it as a
+Progressive Web App in one tap. **Android also has a sideloadable APK** at
+`/downloads/deck.apk` (linked from `/download`).
+
+The APK is a WebView shell (`android/`, application id `com.planyourdeck.app`) around
+https://planyourdeck.com — same account as the website. GitHub Actions rebuilds and
+publishes it when `android/` changes. See [`android/README.md`](./android/README.md).
 
 How it fits together:
 
@@ -147,7 +154,8 @@ How it fits together:
 | Service worker | `client/public/sw.js` | Registered in production by `PWAProvider`. Caches the app shell and static assets, serves pages network-first with an offline fallback, and **never** caches `/api/*` |
 | Install state | `client/lib/PWAContext.jsx` | Captures `beforeinstallprompt`, detects platform (iOS / Android / desktop) and "already installed", persists banner dismissal for 14 days |
 | Install entry points | `InstallButton`, `InstallBanner`, `InstallSteps` | Native install prompt on Chromium; step-by-step fallback instructions (Share → Add to Home Screen) on iOS Safari |
-| Landing page | `client/app/download/page.js` | `/download` — public, indexed, per-platform install guides; linked from the footer, user menu, and Settings |
+| Landing page | `client/app/download/page.js` | `/download` — public APK download + per-platform install guides; linked from the footer, user menu, and Settings |
+| Android APK | `android/` + `client/public/downloads/deck.apk` | Sideloadable WebView app (`com.planyourdeck.app`) wrapping planyourdeck.com |
 | Offline page | `client/app/offline/page.js` | What the service worker serves when a navigation fails with no cached copy |
 
 Notes:

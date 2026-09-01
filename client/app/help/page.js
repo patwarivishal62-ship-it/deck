@@ -142,11 +142,11 @@ const GUIDE = [
     icon: Smartphone,
     title: "Install the app",
     href: "/download",
-    body: "DECK is a PWA — install it on desktop and mobile for a native feel.",
+    body: "Install DECK on desktop and mobile — Android also has a direct APK download.",
     points: [
       "Chrome/Edge desktop: install icon in the address bar.",
       "iOS Safari: Share → Add to Home Screen.",
-      "Android Chrome: Add to Home Screen prompt or menu item.",
+      "Android: download DECK.apk from the Download page, or use Chrome → Install app.",
     ],
   },
 ];
