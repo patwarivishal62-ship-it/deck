@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const base = "https://planyourdeck.com";
+  const base = "https://www.planyourdeck.com";
   const now = new Date();
   return [
     {

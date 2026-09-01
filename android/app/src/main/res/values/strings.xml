@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DECK</string>
-    <string name="start_url">https://planyourdeck.com</string>
+    <string name="start_url">https://www.planyourdeck.com</string>
 </resources>

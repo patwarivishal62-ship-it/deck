@@ -120,7 +120,7 @@ STEP 5 — Put it on the website
 
 4. After deploy, open:
 
-     https://planyourdeck.com/download
+     https://www.planyourdeck.com/download
 
    Tap "Download Android APK". The file should download.
 
