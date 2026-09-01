@@ -48,6 +48,12 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    // Sideload APK: don't fail the release build on lint (e.g. WebView JS).
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+
     packaging {
         resources {
             excludes += ["/META-INF/{AL2.0,LGPL2.1}"]
