@@ -24,6 +24,6 @@ export default function robots() {
         allow: "/",
       },
     ],
-    sitemap: "https://planyourdeck.com/sitemap.xml",
+    sitemap: "https://www.planyourdeck.com/sitemap.xml",
   };
 }

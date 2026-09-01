@@ -143,7 +143,7 @@ Progressive Web App in one tap. **Android also has a sideloadable APK** at
 `/downloads/deck.apk` (linked from `/download`).
 
 The APK is a WebView shell (`android/`, application id `com.planyourdeck.app`) around
-https://planyourdeck.com — same account as the website. GitHub Actions rebuilds and
+https://www.planyourdeck.com — same account as the website. GitHub Actions rebuilds and
 publishes it when `android/` changes. See [`android/README.md`](./android/README.md).
 
 How it fits together:

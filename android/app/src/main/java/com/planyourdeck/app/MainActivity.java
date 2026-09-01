@@ -210,7 +210,7 @@ public class MainActivity extends Activity {
                 + "a{color:#7C5CFF}</style></head><body>"
                 + "<div><h1 style='font-size:22px;margin:0 0 8px'>DECK is offline</h1>"
                 + "<p style='color:#B8C0CC'>Check your connection, then retry.</p>"
-                + "<p><a href='https://planyourdeck.com'>Open DECK</a></p></div>"
+                + "<p><a href='https://www.planyourdeck.com'>Open DECK</a></p></div>"
                 + "</body></html>";
     }
 

@@ -17,8 +17,8 @@ Creators, founders, marketers who need clarity over clutter. No decoration, ever
 - Plan. Track. Achieve.
 
 ## Links
-- Home: https://planyourdeck.com/
-- Login: https://planyourdeck.com/login
+- Home: https://www.planyourdeck.com/
+- Login: https://www.planyourdeck.com/login
 - Instagram: https://www.instagram.com/planyourdeck/
 - Facebook: https://www.facebook.com/planyourdeck
 
@@ -26,4 +26,4 @@ Creators, founders, marketers who need clarity over clutter. No decoration, ever
 marketing project management, campaign planning, goal tracking, task management for marketers, content calendar, campaign control center
 
 ## Allow AI crawlers
-All AI modules (GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, Googlebot) are allowed to crawl and index this site. Sitemap: https://planyourdeck.com/sitemap.xml
+All AI modules (GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, Googlebot) are allowed to crawl and index this site. Sitemap: https://www.planyourdeck.com/sitemap.xml

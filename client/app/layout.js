@@ -16,7 +16,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  metadataBase: new URL("https://planyourdeck.com"),
+  metadataBase: new URL("https://www.planyourdeck.com"),
   title: {
     default: "DECK — Plan. Track. Achieve. | Marketing Project Tracker",
     template: "%s | DECK",
@@ -35,7 +35,7 @@ export const metadata = {
     "plan track achieve",
     "marketing ops",
   ],
-  authors: [{ name: "DECK", url: "https://planyourdeck.com" }],
+  authors: [{ name: "DECK", url: "https://www.planyourdeck.com" }],
   creator: "DECK",
   publisher: "DECK",
   formatDetection: { email: false, address: false, telephone: false },
@@ -45,7 +45,7 @@ export const metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://planyourdeck.com",
+    url: "https://www.planyourdeck.com",
     siteName: "DECK",
     title: "DECK — Plan. Track. Achieve.",
     description: "Plan campaigns, track goals by channel, achieve outcomes. Minimal, confident, intelligent.",
@@ -95,33 +95,33 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://planyourdeck.com/#organization",
+      "@id": "https://www.planyourdeck.com/#organization",
       name: "DECK",
-      url: "https://planyourdeck.com",
-      logo: "https://planyourdeck.com/favicon.png",
+      url: "https://www.planyourdeck.com",
+      logo: "https://www.planyourdeck.com/favicon.png",
       sameAs: ["https://www.instagram.com/planyourdeck/", "https://www.facebook.com/planyourdeck"],
       slogan: "Plan. Track. Achieve.",
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://planyourdeck.com/#app",
+      "@id": "https://www.planyourdeck.com/#app",
       name: "DECK",
       description: "Minimal campaign control center for marketing teams to plan projects, track goals, and achieve outcomes.",
-      url: "https://planyourdeck.com",
+      url: "https://www.planyourdeck.com",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-      publisher: { "@id": "https://planyourdeck.com/#organization" },
+      publisher: { "@id": "https://www.planyourdeck.com/#organization" },
     },
     {
       "@type": "WebSite",
-      "@id": "https://planyourdeck.com/#website",
-      url: "https://planyourdeck.com",
+      "@id": "https://www.planyourdeck.com/#website",
+      url: "https://www.planyourdeck.com",
       name: "DECK",
-      publisher: { "@id": "https://planyourdeck.com/#organization" },
+      publisher: { "@id": "https://www.planyourdeck.com/#organization" },
       potentialAction: {
         "@type": "SearchAction",
-        target: "https://planyourdeck.com/login",
+        target: "https://www.planyourdeck.com/login",
         "query-input": "required name=search_term_string",
       },
     },

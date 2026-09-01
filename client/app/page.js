@@ -123,19 +123,19 @@ function LandingPage() {
         "@type": "HowToStep",
         name: "Create a Project",
         text: "Create a project for every client or campaign (e.g., Q3 Launch — Acme). It becomes the single board for all goals and tasks.",
-        url: "https://planyourdeck.com/#how-it-works",
+        url: "https://www.planyourdeck.com/#how-it-works",
       },
       {
         "@type": "HowToStep",
         name: "Set channel Goals",
         text: "Add goals by channel — Social Media, Paid Ads, SEO, Content, Email — set a target (e.g., 20 Reels, 500 leads) and watch the meter fill as work completes.",
-        url: "https://planyourdeck.com/#how-it-works",
+        url: "https://www.planyourdeck.com/#how-it-works",
       },
       {
         "@type": "HowToStep",
         name: "Break into linked Tasks",
         text: "Break goals into tasks, link each task to its goal, assign and set due dates. Completing a task advances its goal, so progress is always tied to real, accountable work.",
-        url: "https://planyourdeck.com/#how-it-works",
+        url: "https://www.planyourdeck.com/#how-it-works",
       },
     ],
   };
