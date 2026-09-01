@@ -1,0 +1,161 @@
+HOW TO MAKE THE DECK ANDROID APP FILE (APK)
+============================================
+
+Do this on your Windows computer. You only do it once.
+Do not skip a step. Wait until each step finishes.
+
+------------------------------------------------
+STEP 1 — Get the latest code
+------------------------------------------------
+1. Open the DECK folder on your computer (the same one you use for GitHub).
+2. Make sure you have the latest files (pull / sync the branch).
+3. Find this folder:
+
+     android
+
+   That is the app. You will open THIS folder, not the whole DECK folder.
+
+------------------------------------------------
+STEP 2 — Install Android Studio (free)
+------------------------------------------------
+1. Open a browser and go to:
+
+     https://developer.android.com/studio
+
+2. Click Download Android Studio.
+3. Run the installer.
+4. Click Next, Next, Finish. Keep the default options.
+5. When it first opens, click Next until it finishes downloading.
+   This can take 10–20 minutes. Leave it alone until it is done.
+
+You do NOT need to install Java separately. Android Studio includes it.
+
+------------------------------------------------
+STEP 3 — Open the DECK Android folder
+------------------------------------------------
+1. In Android Studio, click:
+
+     File  →  Open
+
+2. Select the "android" folder inside your DECK project.
+   Example:
+
+     C:\Users\YOURNAME\...\deck\android
+
+   Click OK.
+
+3. If it asks "Trust this project?" click Trust.
+
+4. Wait for the bar at the bottom. It will say "Gradle Sync"
+   or download files. This can take several minutes.
+
+   If a popup says you need Android SDK 34, click Install / OK
+   and wait.
+
+   SUCCESS = no red errors at the bottom, and the project tree
+   on the left shows "app".
+
+------------------------------------------------
+STEP 4 — Build the installable APK
+------------------------------------------------
+1. At the top menu click:
+
+     Build  →  Generate Signed App Bundle or APK...
+
+2. Choose:
+
+     APK
+
+   Click Next.
+
+3. Choose:
+
+     Use existing keystore  (or fill the form below)
+
+   Click the folder icon and pick this file:
+
+     android\keystore\deck-release.p12
+
+   Fill in EXACTLY (copy-paste):
+
+     Key store password:  deck-release-2026
+     Key alias:           deck
+     Key password:        deck-release-2026
+
+   Click Next.
+
+4. On the next screen:
+
+     Destination folder:  leave as-is
+     Build variant:       release     ← must be "release", not debug
+
+   Click Create  (or Finish).
+
+5. Wait. A popup will say "APK(s) generated successfully".
+   Click "locate" if you see it.
+
+   The file is usually here:
+
+     android\app\release\app-release.apk
+     or
+     android\app\build\outputs\apk\release\app-release.apk
+
+   That file IS the app.
+
+------------------------------------------------
+STEP 5 — Put it on the website
+------------------------------------------------
+1. Copy that APK file.
+2. Paste it here (create the folder if needed):
+
+     client\public\downloads\deck.apk
+
+   The name MUST be:
+
+     deck.apk
+
+   all lowercase.
+
+3. Save, commit, and deploy the website as you normally do.
+
+4. After deploy, open:
+
+     https://planyourdeck.com/download
+
+   Tap "Download Android APK". The file should download.
+
+------------------------------------------------
+STEP 6 — Install it on a phone (test)
+------------------------------------------------
+1. Send deck.apk to your phone (or download it from the site).
+2. Open the file on the phone.
+3. If Android says "blocked" or "unknown source":
+      Settings → allow installs from this app (Chrome or Files)
+      then tap Install again.
+4. Open DECK. You should see planyourdeck.com inside the app.
+5. Log in with your normal DECK account.
+
+------------------------------------------------
+IF SOMETHING GOES WRONG
+------------------------------------------------
+
+"SDK 34 not found"
+  In Android Studio: Settings → Languages & Frameworks → Android SDK
+  Tick "Android 14.0 (UpsideDownCake)" API 34
+  Click Apply and wait, then try Step 4 again.
+
+"Gradle sync failed" / red errors
+  Check you opened the "android" folder, not the parent "deck" folder.
+  Need internet the first time. Click File → Sync Project with Gradle Files.
+
+"Wrong password" on the keystore
+  Use exactly:  deck-release-2026
+  Alias exactly: deck
+
+The download button on the website does nothing / 404
+  The file is not at client\public\downloads\deck.apk
+  or the site was not deployed after you added it.
+
+The phone says the app is unsafe
+  That is normal for an app not from the Play Store.
+  Only install the file from YOUR website.
