@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 import InstallButton from "@/components/InstallButton";
 import { InstallSteps, PLATFORM_LABELS } from "@/components/InstallSteps";
 import { usePWA } from "@/lib/PWAContext";
+
+const APK_HREF = "/downloads/deck.apk";
 
 const PLATFORMS = [
   {
@@ -14,7 +17,7 @@ const PLATFORMS = [
   {
     id: "android",
     title: "Android",
-    blurb: "Chrome · Install app",
+    blurb: "APK download or Chrome install",
   },
   {
     id: "desktop",
@@ -38,29 +41,52 @@ const PERKS = [
   },
   {
     title: "Always up to date",
-    sub: "Updates arrive silently in the background — nothing to download or reinstall.",
+    sub: "The website and the Android APK share the same account. Web updates arrive silently; grab a new APK when we ship one.",
     icon: <path d="M21 12a9 9 0 1 1-2.6-6.4 M21 3v5h-5" />,
   },
   {
     title: "Nothing to manage",
-    sub: "No App Store, no installers, almost no storage. It's the same DECK account everywhere.",
+    sub: "No App Store required. Install from Chrome, or download the Android APK from this page.",
     icon: <path d="M12 3v12 M7 11l5 5 5-5 M5 20h14" />,
   },
 ];
 
+const APK_STEPS = [
+  { n: "01", title: "Download DECK.apk", sub: "Use the button above — it saves the file to your phone." },
+  { n: "02", title: "Allow this source", sub: "Android may ask you to permit installs from the browser or Files app." },
+  { n: "03", title: "Open the file", sub: "Tap DECK.apk, then Install. The app lands on your home screen." },
+];
+
+function formatBytes(n) {
+  if (!n || n < 0) return null;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function DownloadPage() {
   const { platform, installed } = usePWA();
+  const [apk, setApk] = useState(null);
+
+  useEffect(() => {
+    fetch("/downloads/android.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setApk(data))
+      .catch(() => setApk(null));
+  }, []);
+
+  const apkReady = Boolean(apk?.file);
+  const apkSize = formatBytes(apk?.sizeBytes);
+  const apkVersion = apk?.versionName || "1.0.0";
 
   return (
     <div className="min-h-screen bg-paper">
       <TopBar />
 
       <main className="relative overflow-hidden">
-        {/* subtle glows */}
         <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[600px] rounded-full bg-[#7C5CFF]/[0.07] blur-[100px]" />
         <div className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[600px] rounded-full bg-[#4F7BFF]/[0.05] blur-[100px]" />
 
-        {/* Hero */}
         <section className="relative mx-auto max-w-3xl px-4 pt-14 text-center sm:px-5 sm:pt-20">
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-signal">
             Get the app
@@ -69,8 +95,8 @@ export default function DownloadPage() {
             Take DECK everywhere
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-text-soft">
-            Install DECK on your desktop or phone in one tap. Same account, same projects — in a
-            faster, full-screen app that lives next to your native ones.
+            Install DECK on your desktop or phone. On Android you can download a real APK —
+            same account, same projects, as a home-screen app.
           </p>
 
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -84,11 +110,66 @@ export default function DownloadPage() {
             ) : (
               <InstallButton label={`Install DECK — ${PLATFORM_LABELS[platform]}`} className="px-6" />
             )}
-            <p className="text-xs text-text-faint">Free · No App Store · ~10 seconds</p>
+            <a
+              href={APK_HREF}
+              download="DECK.apk"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#7C5CFF] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,92,255,0.35)] transition hover:bg-[#6A44FF]"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="M7 11l5 5 5-5" />
+                <path d="M5 20h14" />
+              </svg>
+              Download Android APK
+            </a>
+          </div>
+          <p className="mt-3 text-xs text-text-faint">
+            Free · Android APK v{apkVersion}
+            {apkSize ? ` · ${apkSize}` : ""}
+            {apkReady ? "" : " · file publishes after the Android build"}
+          </p>
+        </section>
+
+        <section className="relative mx-auto max-w-3xl px-4 pt-12 sm:px-5" aria-label="Download the Android APK">
+          <div className="rounded-2xl border border-[#7C5CFF]/40 bg-card p-5 shadow-card ring-1 ring-[#7C5CFF]/20 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C5CFF]">
+                  Direct download
+                </p>
+                <h2 className="mt-1 font-display text-lg font-semibold tracking-tight text-text">
+                  Android APK
+                </h2>
+                <p className="mt-1 max-w-md text-sm leading-relaxed text-text-soft">
+                  Sideload DECK as a real Android app. It opens planyourdeck.com in its own window —
+                  no Play Store, no Chrome install prompt required.
+                </p>
+              </div>
+              <a
+                href={APK_HREF}
+                download="DECK.apk"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#7C5CFF] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6A44FF]"
+              >
+                Download DECK.apk
+              </a>
+            </div>
+            <ol className="mt-5 grid gap-3 sm:grid-cols-3">
+              {APK_STEPS.map((step) => (
+                <li key={step.n} className="rounded-xl border border-line bg-paper px-4 py-3">
+                  <p className="font-mono text-[10px] font-semibold text-text-faint">{step.n}</p>
+                  <p className="mt-1 text-sm font-semibold text-text">{step.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-text-soft">{step.sub}</p>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-xs text-text-faint">
+              Android will warn that the app is from outside the Play Store — that&apos;s expected for a
+              direct APK. Only install from this site. Package name:{" "}
+              <span className="font-mono">com.planyourdeck.app</span>
+            </p>
           </div>
         </section>
 
-        {/* Per-platform steps */}
         <section className="relative mx-auto max-w-5xl px-4 py-14 sm:px-5 sm:py-16" aria-label="Installation steps by platform">
           <div className="grid gap-5 md:grid-cols-3">
             {PLATFORMS.map((p) => {
@@ -109,14 +190,32 @@ export default function DownloadPage() {
                     )}
                   </div>
                   <p className="mb-4 text-xs text-text-faint">{p.blurb}</p>
-                  <InstallSteps platform={p.id} />
+                  {p.id === "android" ? (
+                    <ol className="flex flex-col gap-4">
+                      <li className="flex items-start gap-3.5">
+                        <span className="mt-0.5 font-mono text-xs font-semibold text-text-faint">01</span>
+                        <span>
+                          <span className="block text-sm font-semibold text-text">Download the APK</span>
+                          <span className="block text-xs text-text-soft">fastest — button at the top of this page</span>
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-3.5">
+                        <span className="mt-0.5 font-mono text-xs font-semibold text-text-faint">02</span>
+                        <span>
+                          <span className="block text-sm font-semibold text-text">Or install from Chrome</span>
+                          <span className="block text-xs text-text-soft">⋮ menu → Install app / Add to Home screen</span>
+                        </span>
+                      </li>
+                    </ol>
+                  ) : (
+                    <InstallSteps platform={p.id} />
+                  )}
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* Why install */}
         <section className="relative mx-auto max-w-5xl px-4 pb-16 sm:px-5 sm:pb-20" aria-label="Why install the app">
           <div className="grid gap-5 sm:grid-cols-2">
             {PERKS.map((perk) => (
@@ -134,8 +233,8 @@ export default function DownloadPage() {
             ))}
           </div>
           <p className="mt-8 text-center text-xs text-text-faint">
-            DECK installs as a Progressive Web App (PWA) on this device — your account and data live in
-            the cloud and are shared with the web app at planyourdeck.com.
+            The Android APK and the browser install both use your DECK account at planyourdeck.com.
+            Your data lives in the cloud and stays in sync.
           </p>
         </section>
       </main>

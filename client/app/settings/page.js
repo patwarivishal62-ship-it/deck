@@ -257,6 +257,10 @@ function AppSection() {
         <Link href="/download" className="underline underline-offset-2 hover:text-text">
           see all platforms
         </Link>
+        , including a direct{" "}
+        <a href="/downloads/deck.apk" download="DECK.apk" className="underline underline-offset-2 hover:text-text">
+          Android APK download
+        </a>
         .
       </p>
     </SettingsCard>

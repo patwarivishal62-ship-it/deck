@@ -14,3 +14,9 @@ server/dist/
 deck-rebrand.bundle
 deck-rebrand-patches.zip
 push-*.ps1
+
+# Android local build
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
