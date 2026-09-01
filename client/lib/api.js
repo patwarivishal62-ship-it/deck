@@ -29,20 +29,122 @@ export const api = {
   login: (body) => request("/auth/login", { method: "POST", body }),
   logout: () => request("/auth/logout", { method: "POST" }),
   me: () => request("/auth/me"),
+  updateProfile: (body) => request("/auth/me", { method: "PATCH", body }),
+  changePassword: (body) => request("/auth/change-password", { method: "POST", body }),
+  forgotPassword: (body) => request("/auth/forgot-password", { method: "POST", body }),
+  resetPassword: (body) => request("/auth/reset-password", { method: "POST", body }),
+
+  // account
+  deleteAccount: (body) => request("/account/me", { method: "DELETE", body }),
+
+  // workspaces
+  listWorkspaces: () => request("/workspaces"),
+  createWorkspace: (body) => request("/workspaces", { method: "POST", body }),
+  listMembers: (workspaceId) => request(`/workspaces/${workspaceId}/members`),
+  inviteMember: (workspaceId, body) => request(`/workspaces/${workspaceId}/invite`, { method: "POST", body }),
+  updateMemberRole: (workspaceId, membershipId, role) =>
+    request(`/workspaces/${workspaceId}/members/${membershipId}`, { method: "PATCH", body: { role } }),
+  removeMember: (workspaceId, membershipId) =>
+    request(`/workspaces/${workspaceId}/members/${membershipId}`, { method: "DELETE" }),
+  previewInvite: (token) => request(`/workspaces/invites/preview?token=${encodeURIComponent(token)}`),
+  acceptInvite: (token) => request("/workspaces/invites/accept", { method: "POST", body: { token } }),
 
   // projects
-  listProjects: () => request("/projects"),
+  listProjects: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.tags && params.tags.length) query.set("tags", params.tags.join(","));
+    if (params.priority) query.set("priority", params.priority);
+    if (params.archived !== undefined) query.set("archived", String(params.archived));
+    if (params.sort) query.set("sort", params.sort);
+    const qs = query.toString();
+    return request(`/projects${qs ? `?${qs}` : ""}`);
+  },
   getProject: (id) => request(`/projects/${id}`),
   createProject: (body) => request("/projects", { method: "POST", body }),
   updateProject: (id, body) => request(`/projects/${id}`, { method: "PATCH", body }),
   deleteProject: (id) => request(`/projects/${id}`, { method: "DELETE" }),
+  getProjectAccess: (id) => request(`/projects/${id}/access`),
+  updateProjectAccess: (id, userId, grant) =>
+    request(`/projects/${id}/access`, { method: "PATCH", body: { userId, grant } }),
+
+  // comments & activity
+  listCollaborators: (projectId) => request(`/projects/${projectId}/collaborators`),
+  listComments: (projectId, taskId) =>
+    request(`/projects/${projectId}/comments${taskId ? `?taskId=${taskId}` : ""}`),
+  createComment: (projectId, body, taskId) =>
+    request(`/projects/${projectId}/comments`, { method: "POST", body: { body, taskId } }),
+  deleteComment: (projectId, commentId) =>
+    request(`/projects/${projectId}/comments/${commentId}`, { method: "DELETE" }),
+  listActivity: (projectId) => request(`/projects/${projectId}/activity`),
+
+  // milestones
+  listMilestones: (projectId) => request(`/projects/${projectId}/milestones`),
+  createMilestone: (projectId, body) =>
+    request(`/projects/${projectId}/milestones`, { method: "POST", body }),
+  updateMilestone: (projectId, milestoneId, body) =>
+    request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "PATCH", body }),
+  deleteMilestone: (projectId, milestoneId) =>
+    request(`/projects/${projectId}/milestones/${milestoneId}`, { method: "DELETE" }),
+
+  // metrics
+  listMetrics: (projectId) => request(`/projects/${projectId}/metrics`),
+  createMetric: (projectId, body) => request(`/projects/${projectId}/metrics`, { method: "POST", body }),
+  updateMetric: (projectId, metricId, body) =>
+    request(`/projects/${projectId}/metrics/${metricId}`, { method: "PATCH", body }),
+  deleteMetric: (projectId, metricId) =>
+    request(`/projects/${projectId}/metrics/${metricId}`, { method: "DELETE" }),
+  addMetricEntry: (projectId, metricId, body) =>
+    request(`/projects/${projectId}/metrics/${metricId}/entries`, { method: "POST", body }),
+  deleteMetricEntry: (projectId, metricId, entryId) =>
+    request(`/projects/${projectId}/metrics/${metricId}/entries/${entryId}`, { method: "DELETE" }),
+
+  // calendar
+  listCalendarEvents: () => request("/calendar"),
+
+  // files
+  listFiles: (projectId) => request(`/projects/${projectId}/files`),
+  deleteFile: (projectId, fileId) => request(`/projects/${projectId}/files/${fileId}`, { method: "DELETE" }),
+  // Uses a raw fetch instead of request() — file uploads are
+  // multipart/form-data, and the browser needs to set that Content-Type
+  // header itself (with its boundary string), not have it forced to JSON.
+  uploadFile: async (projectId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/api/projects/${projectId}/files`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      throw new Error(data?.error || `Upload failed (${res.status})`);
+    }
+    return data;
+  },
+
+  // personal notes & to-dos (private to the signed-in user)
+  listEntries: () => request("/personal"),
+  createEntry: (body) => request("/personal", { method: "POST", body }),
+  updateEntry: (id, body) => request(`/personal/${id}`, { method: "PATCH", body }),
+  deleteEntry: (id) => request(`/personal/${id}`, { method: "DELETE" }),
+
+  // notifications
+  listNotifications: () => request("/notifications"),
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
 
   // goals
   createGoal: (projectId, body) => request(`/projects/${projectId}/goals`, { method: "POST", body }),
   updateGoal: (projectId, goalId, body) =>
     request(`/projects/${projectId}/goals/${goalId}`, { method: "PATCH", body }),
-  nudgeGoal: (projectId, goalId, direction) =>
-    request(`/projects/${projectId}/goals/${goalId}/nudge`, { method: "PATCH", body: { direction } }),
   deleteGoal: (projectId, goalId) =>
     request(`/projects/${projectId}/goals/${goalId}`, { method: "DELETE" }),
 

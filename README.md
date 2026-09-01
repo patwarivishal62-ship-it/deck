@@ -1,5 +1,9 @@
 # Deck — Project Control Center
 
+> **Proprietary & confidential.** This repository is **not open source**.
+> All rights reserved. See [`LICENSE`](./LICENSE). Do not copy, share, or
+> republish this code.
+
 A marketing project tracker: **projects → goals (by channel/category) → tasks (optionally linked to a goal)**.
 This is a full rewrite of the original single-file `deck.html` app into a proper full-stack project.
 
@@ -9,17 +13,17 @@ This is a full rewrite of the original single-file `deck.html` app into a proper
 |----------|------|
 | Frontend | Next.js 14 (App Router) + Tailwind CSS, broken into components |
 | Backend  | Node.js + Express (REST API) |
-| Database | SQLite, via Node's built-in `node:sqlite` module |
+| Database | MongoDB Atlas, via the official `mongodb` driver |
 | Auth     | Email + password, JWT in an httpOnly cookie — each user only sees their own projects |
 
-### Why `node:sqlite` instead of Prisma?
+### Why MongoDB
 
-Prisma needs to download compiled query-engine binaries on `prisma generate`, and that download was blocked
-in the sandbox this was built in (no access to `binaries.prisma.sh`). `node:sqlite` is built into Node.js
-22.5+, needs no native compilation and no download, and is good enough for local dev. The whole database
-layer lives in `server/src/db/*.js` as plain, readable SQL — if you outgrow SQLite later, that's the only
-folder you'd need to rewrite (e.g. swapping in `pg` for Postgres). Every route calls these functions; no
-route ever touches SQL directly.
+The app was originally built on SQLite via Node's built-in `node:sqlite` module. Since Render's filesystem
+is ephemeral, that database file (and every user/project in it) was wiped on every restart or redeploy. The
+data layer was migrated to MongoDB Atlas, which is a persistent, externally hosted database, to fix this.
+Documents still use plain, app-generated string `id`s (via `nanoid`) rather than Mongo's `_id`, so the API's
+request/response shapes and the frontend are unchanged. The whole database layer lives in
+`server/src/db/*.js`; every route calls these functions, no route ever touches the MongoDB driver directly.
 
 ## Project structure
 
@@ -31,7 +35,7 @@ deck-app/
 │   │   ├── index.js       # Express app entrypoint
 │   │   ├── constants.js   # category/period/status enums (mirrored on client)
 │   │   ├── db/
-│   │   │   ├── database.js  # node:sqlite connection + schema (CREATE TABLE...)
+│   │   │   ├── mongodb.js   # MongoClient connection + index setup
 │   │   │   ├── users.js     # user queries
 │   │   │   ├── projects.js  # project queries
 │   │   │   ├── goals.js     # goal queries
@@ -42,25 +46,31 @@ deck-app/
 │   │       ├── projects.js    # project CRUD
 │   │       ├── goals.js       # goal CRUD + nudge (+/- stepper)
 │   │       └── tasks.js       # task CRUD + cycle-status
-│   ├── .env                # local config (DATABASE_PATH, JWT_SECRET, PORT)
-│   └── dev.db               # created automatically on first run (gitignored)
+│   └── .env                # local config (MONGODB_URI, JWT_SECRET, PORT)
 └── client/
     ├── app/
-    │   ├── layout.js              # wraps everything in AuthProvider
+    │   ├── layout.js              # wraps everything in AuthProvider + PWAProvider
     │   ├── page.js                 # redirects to /login or /projects
     │   ├── login/page.js           # login + signup (toggle)
+    │   ├── download/page.js        # "Get the app" landing page (per-platform install steps)
+    │   ├── offline/page.js         # offline fallback served by the service worker
     │   └── projects/
     │       ├── page.js             # dashboard: grid of project cards
     │       └── [id]/page.js        # single project: goals grid + tasks list
     ├── components/
     │   ├── TopBar.jsx, AuthGuard.jsx
+    │   ├── InstallButton.jsx, InstallBanner.jsx, InstallSteps.jsx  # PWA install UI
     │   ├── ProjectCard.jsx, GoalCard.jsx, TaskRow.jsx, Meter.jsx
     │   ├── ProjectFormModal.jsx, GoalFormModal.jsx, TaskFormModal.jsx
     │   ├── ConfirmModal.jsx, Modal.jsx, FormControls.jsx
     ├── lib/
     │   ├── api.js          # fetch wrapper, one function per API endpoint
     │   ├── AuthContext.jsx # React context: user, login, signup, logout
+    │   ├── PWAContext.jsx  # service-worker registration, install prompt, platform detection
     │   └── constants.js    # mirrors server/src/constants.js
+    ├── public/
+    │   ├── sw.js           # service worker (app-shell caching + offline support)
+    │   └── icons/          # PWA icon set (192/512 px, any + maskable)
     ├── next.config.js      # rewrites /api/* → http://localhost:4000/api/*
     └── tailwind.config.js  # design tokens carried over from the original HTML
 ```
@@ -87,7 +97,9 @@ npm run install:all
 ```bash
 cd server
 cp .env.example .env
-# Open .env and replace JWT_SECRET with a long random string
+# Open .env and set:
+#   MONGODB_URI  — your MongoDB Atlas connection string
+#   JWT_SECRET   — a long random string
 ```
 
 ### 3. Run both apps together
@@ -104,8 +116,8 @@ This starts:
 
 Open **http://localhost:3000** — you'll land on the login page. Create an account, and you're in.
 
-> The SQLite database file (`server/dev.db`) is created automatically on first run. Delete it any time to
-> reset all data.
+> Data is stored in the `deck` database in your MongoDB Atlas cluster (set via `MONGODB_URI`). Collections
+> and indexes are created automatically the first time the server connects.
 
 ### Running them separately (optional)
 
@@ -120,7 +132,33 @@ npm run dev:client   # just Next.js, on :3000
 2. Next.js's `rewrites()` config silently forwards anything under `/api/*` to the Express server on `:4000` —
    this means there's no CORS friction in dev and cookies travel naturally between the two.
 3. Express verifies the `deck_token` httpOnly cookie on every protected route, attaches `req.userId`, and
-   every query is scoped to that user (`WHERE userId = ?`), so users never see each other's projects.
+   every query is scoped to that user (`{ userId }`), so users never see each other's projects.
+
+## Installable app (PWA) — "Download DECK"
+
+Users can install DECK as a real app on desktop and mobile. It's a Progressive Web App, so there's
+no App Store submission, no installer download — the browser installs it in one tap.
+
+How it fits together:
+
+| Piece | Where | What it does |
+|-------|-------|--------------|
+| Web manifest | `client/app/manifest.js` | App name, `standalone` display, 192/512 px icons (`any` + `maskable`), app shortcuts (Projects / Calendar / Personal) |
+| Service worker | `client/public/sw.js` | Registered in production by `PWAProvider`. Caches the app shell and static assets, serves pages network-first with an offline fallback, and **never** caches `/api/*` |
+| Install state | `client/lib/PWAContext.jsx` | Captures `beforeinstallprompt`, detects platform (iOS / Android / desktop) and "already installed", persists banner dismissal for 14 days |
+| Install entry points | `InstallButton`, `InstallBanner`, `InstallSteps` | Native install prompt on Chromium; step-by-step fallback instructions (Share → Add to Home Screen) on iOS Safari |
+| Landing page | `client/app/download/page.js` | `/download` — public, indexed, per-platform install guides; linked from the footer, user menu, and Settings |
+| Offline page | `client/app/offline/page.js` | What the service worker serves when a navigation fails with no cached copy |
+
+Notes:
+
+- The service worker only registers when `NODE_ENV === "production"` — dev-server assets aren't
+  cache-stable. To test installs locally: `npm --prefix client run build && npm --prefix client run start`,
+  then use Chrome's install icon in the address bar (or DevTools → Application → Manifest →
+  "Install"). Browsers additionally require HTTPS (or `localhost`) for install prompts.
+- After a deploy, bump `VERSION` in `sw.js` so clients pick up the new shell.
+- iOS uses `apple-mobile-web-app-*` metadata (set in `app/layout.js`) plus the manual
+  "Add to Home Screen" flow — iOS Safari does not fire `beforeinstallprompt`.
 
 ## Business rules preserved from the original app
 
@@ -137,7 +175,16 @@ npm run dev:client   # just Next.js, on :3000
   `14.2.35`, the specific patched release for the December 2025 RSC CVEs. If you ever expose this beyond
   local dev, re-run `npm audit` and consider moving to a current Next 15/16 release.
 - Set a real, random `JWT_SECRET` in `server/.env` (don't reuse the placeholder).
-- Move off SQLite (or at least off `node:sqlite`, since it's still an experimental Node API) before any
-  real production use — the `server/src/db/*.js` layer is written so this is a contained change.
+- Set `MONGODB_URI` in Render's environment variables to your MongoDB Atlas connection string. The server
+  won't start without it (it connects to Mongo before it starts listening).
+- In Atlas, make sure Render's outbound IPs (or `0.0.0.0/0` if Render's IPs aren't static on your plan) are
+  allow-listed under Network Access, and that the database user in the connection string has read/write
+  access to the `deck` database.
 - Add HTTPS and set the auth cookie's `secure` flag accordingly (it already auto-enables when
   `NODE_ENV=production`).
+
+## License
+
+This project is **proprietary software**. It is not licensed for public use,
+redistribution, or contribution. Copyright (c) 2026 DECK / PlanYourDeck.
+All rights reserved. See [`LICENSE`](./LICENSE).

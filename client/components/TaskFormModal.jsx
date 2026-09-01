@@ -4,11 +4,21 @@ import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { Field, TextInput, TextArea, Select, Button } from "./FormControls";
 import { STATUSES } from "@/lib/constants";
+import { api } from "@/lib/api";
 
-const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "" };
+const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "", assigneeId: "" };
 
-export default function TaskFormModal({ open, onClose, onSubmit, initial, goals }) {
+// Used as the date input's min= — stops the calendar picker from offering
+// past dates for a NEW selection. An already-stored past due date (a task
+// that's simply become overdue with time) still displays fine; this only
+// restricts what you can newly pick.
+function todayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export default function TaskFormModal({ open, onClose, onSubmit, initial, goals, projectId }) {
   const [form, setForm] = useState(EMPTY);
+  const [collaborators, setCollaborators] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -16,12 +26,22 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
     if (open) {
       setForm(
         initial
-          ? { ...EMPTY, ...initial, goalId: initial.goalId || "", dueDate: initial.dueDate || "" }
+          ? {
+              ...EMPTY,
+              ...initial,
+              goalId: initial.goalId || "",
+              dueDate: initial.dueDate || "",
+              assigneeId: initial.assigneeId || "",
+            }
           : EMPTY
       );
       setError("");
+      api
+        .listCollaborators(projectId)
+        .then((data) => setCollaborators(data.collaborators))
+        .catch(() => setCollaborators([]));
     }
-  }, [open, initial]);
+  }, [open, initial, projectId]);
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -33,6 +53,10 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
       setError("Task title is required.");
       return;
     }
+    if (form.dueDate && form.dueDate !== initial?.dueDate && form.dueDate < todayISODate()) {
+      setError("Due date can't be in the past.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -42,6 +66,7 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
         notes: form.notes.trim(),
         goalId: form.goalId || null,
         dueDate: form.dueDate || null,
+        assigneeId: form.assigneeId || null,
       });
       onClose();
     } catch (err) {
@@ -59,7 +84,7 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
             autoFocus
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder="Shoot reel #1"
+            placeholder="Task"
           />
         </Field>
         <Field label="Notes (optional)">
@@ -75,6 +100,16 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
             ))}
           </Select>
         </Field>
+        <Field label="Assignee (optional)">
+          <Select value={form.assigneeId} onChange={(e) => set("assigneeId", e.target.value)}>
+            <option value="">Unassigned</option>
+            {collaborators.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.name || c.email}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Status">
             <Select value={form.status} onChange={(e) => set("status", e.target.value)}>
@@ -86,7 +121,12 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals 
             </Select>
           </Field>
           <Field label="Due date (optional)">
-            <TextInput type="date" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
+            <TextInput
+              type="date"
+              min={todayISODate()}
+              value={form.dueDate}
+              onChange={(e) => set("dueDate", e.target.value)}
+            />
           </Field>
         </div>
         {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}

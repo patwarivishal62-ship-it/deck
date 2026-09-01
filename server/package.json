@@ -2,21 +2,27 @@
   "name": "deck-server",
   "version": "1.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "type": "commonjs",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "preview": "node preview/server.js"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "multer": "^2.2.0",
     "nanoid": "^3.3.15"
   },
   "devDependencies": {

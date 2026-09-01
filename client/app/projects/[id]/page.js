@@ -2,31 +2,54 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
-import TopBar from "@/components/TopBar";
+import AppShell from "@/components/app/AppShell";
+import { ArrowLeft } from "lucide-react";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
+import MilestoneFormModal from "@/components/MilestoneFormModal";
+import MetricsPanel from "@/components/MetricsPanel";
 import TaskFormModal from "@/components/TaskFormModal";
+import ProjectFormModal from "@/components/ProjectFormModal";
+import ProjectAccessModal from "@/components/ProjectAccessModal";
+import CommentThread from "@/components/CommentThread";
+import FileManager from "@/components/FileManager";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import Modal from "@/components/Modal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { Button } from "@/components/FormControls";
 import Meter from "@/components/Meter";
 import { api } from "@/lib/api";
+import { PRIORITIES } from "@/lib/constants";
 
 function ProjectDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const [project, setProject] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [projectFormOpen, setProjectFormOpen] = useState(false);
+  const [accessModalOpen, setAccessModalOpen] = useState(false);
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const [goalFormOpen, setGoalFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [deleteGoalTarget, setDeleteGoalTarget] = useState(null);
 
+  const [milestoneFormOpen, setMilestoneFormOpen] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+  const [deleteMilestoneTarget, setDeleteMilestoneTarget] = useState(null);
+
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
+  const [commentTaskTarget, setCommentTaskTarget] = useState(null);
+  const [collaborators, setCollaborators] = useState([]);
 
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +58,7 @@ function ProjectDetail() {
     try {
       const data = await api.getProject(id);
       setProject(data.project);
+      setRole(data.role);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -45,7 +69,28 @@ function ProjectDetail() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    api
+      .listCollaborators(id)
+      .then((data) => setCollaborators(data.collaborators))
+      .catch(() => setCollaborators([]));
+  }, [load, id]);
+
+  // --- Project itself ---
+  async function handleProjectSubmit(values) {
+    const data = await api.updateProject(id, values);
+    setProject((p) => ({ ...p, ...data.project }));
+  }
+
+  async function handleDeleteProject() {
+    setDeletingProject(true);
+    try {
+      await api.deleteProject(id);
+      router.replace("/projects");
+    } catch (err) {
+      setError(err.message);
+      setDeletingProject(false);
+    }
+  }
 
   // --- Goals ---
   async function handleGoalSubmit(values) {
@@ -55,15 +100,6 @@ function ProjectDetail() {
     } else {
       const data = await api.createGoal(id, values);
       setProject((p) => ({ ...p, goals: [...p.goals, data.goal] }));
-    }
-  }
-
-  async function handleNudge(goal, direction) {
-    try {
-      const data = await api.nudgeGoal(id, goal.id, direction);
-      setProject((p) => ({ ...p, goals: p.goals.map((g) => (g.id === data.goal.id ? data.goal : g)) }));
-    } catch (err) {
-      setError(err.message);
     }
   }
 
@@ -78,6 +114,37 @@ function ProjectDetail() {
         tasks: p.tasks.map((t) => (t.goalId === deleteGoalTarget.id ? { ...t, goalId: null } : t)),
       }));
       setDeleteGoalTarget(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // --- Milestones ---
+  async function handleMilestoneSubmit(values) {
+    if (editingMilestone) {
+      const data = await api.updateMilestone(id, editingMilestone.id, values);
+      setProject((p) => ({
+        ...p,
+        milestones: p.milestones.map((m) => (m.id === data.milestone.id ? data.milestone : m)),
+      }));
+    } else {
+      const data = await api.createMilestone(id, values);
+      setProject((p) => ({ ...p, milestones: [...(p.milestones || []), data.milestone] }));
+    }
+  }
+
+  async function handleDeleteMilestone() {
+    if (!deleteMilestoneTarget) return;
+    setBusy(true);
+    try {
+      await api.deleteMilestone(id, deleteMilestoneTarget.id);
+      setProject((p) => ({
+        ...p,
+        milestones: p.milestones.filter((m) => m.id !== deleteMilestoneTarget.id),
+      }));
+      setDeleteMilestoneTarget(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -143,58 +210,115 @@ function ProjectDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-5 py-8">
-          <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Loading…</p>
-        </main>
-      </div>
+      <AppShell>
+        <div className="flex items-center gap-3 py-16">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-[#7C5CFF]" aria-hidden="true" />
+          <span className="text-sm font-medium text-text-faint">Loading project…</span>
+        </div>
+      </AppShell>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-paper">
-        <TopBar />
-        <main className="mx-auto max-w-6xl px-5 py-8">
-          <p className="text-sm text-signal-deep">{error || "Project not found."}</p>
-          <Link href="/projects" className="mt-3 inline-block text-sm text-signal-deep underline">
-            Back to projects
-          </Link>
-        </main>
-      </div>
+      <AppShell>
+        <Link
+          href="/projects"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal transition hover:text-signal"
+        >
+          <ArrowLeft size={15} strokeWidth={2} />
+          Back to projects
+        </Link>
+        <div className="mt-10 rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
+          <p className="text-sm font-semibold text-text">{error || "Project not found."}</p>
+          <p className="mt-1 text-xs text-text-faint">It may have been deleted, or you may not have access to it.</p>
+        </div>
+      </AppShell>
     );
   }
 
   const goalById = Object.fromEntries(project.goals.map((g) => [g.id, g]));
+  const collaboratorById = Object.fromEntries(collaborators.map((c) => [c.userId, c]));
+  // Same formula as ProjectCard on the projects list page — average of each
+  // goal's currentValue/targetValue (capped at 100% per goal), not related
+  // to task counts at all.
+  const avgGoalProgressPct =
+    project.goals.length > 0
+      ? Math.round(
+          (project.goals.reduce(
+            (sum, g) => sum + (g.targetValue > 0 ? Math.min(1, g.currentValue / g.targetValue) : 0),
+            0
+          ) /
+            project.goals.length) *
+            100
+        )
+      : 0;
+  // Admin/Owner can edit the project itself and manage goals; Members can
+  // view goals and manage tasks, but not edit goals or the project.
+  const canManage = role === "admin" || role === "owner";
 
   return (
-    <div className="min-h-screen bg-paper">
-      <TopBar />
-      <main className="mx-auto max-w-6xl px-5 py-8">
-        <Link href="/projects" className="mb-4 inline-flex items-center gap-1 text-sm text-text-soft hover:text-signal-deep">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          All projects
-        </Link>
+    <AppShell>
+      <Link
+        href="/projects"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal transition hover:text-signal"
+      >
+        <ArrowLeft size={15} strokeWidth={2} />
+        Projects
+      </Link>
 
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
+      <div className="mt-4">
+        <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="font-display text-2xl font-semibold text-text">{project.name}</h1>
             {project.description && <p className="mt-1 text-sm text-text-soft">{project.description}</p>}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span
+                className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text"
+                style={{ backgroundColor: (PRIORITIES[project.priority] || PRIORITIES.medium).color }}
+              >
+                {(PRIORITIES[project.priority] || PRIORITIES.medium).label}
+              </span>
+              {project.archived && (
+                <span className="rounded bg-line px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-faint">
+                  Archived
+                </span>
+              )}
+              {project.dueDate && (
+                <span className="text-xs text-text-faint">
+                  Due {new Date(`${project.dueDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              )}
+              {project.tags && project.tags.length > 0 && (
+                <span className="flex flex-wrap gap-1.5">
+                  {project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-line bg-paper px-2 py-0.5 text-[11px] text-text-soft"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setEditingGoal(null);
-                setGoalFormOpen(true);
-              }}
-            >
-              Edit project
-            </Button>
-            <Button variant="destructive">Delete</Button>
+            {canManage && (
+              <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
+                Edit project
+              </Button>
+            )}
+            {canManage && (
+              <Button variant="secondary" onClick={() => setAccessModalOpen(true)}>
+                Manage access
+              </Button>
+            )}
+            {canManage && (
+              <Button variant="destructive" onClick={() => setDeleteProjectOpen(true)}>
+                Delete
+              </Button>
+            )}
           </div>
         </div>
 
@@ -203,18 +327,19 @@ function ProjectDetail() {
         {/* Overall Progress Tracking */}
         {(project.goals.length > 0 || project.tasks.length > 0) && (
           <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Overall Progress Card */}
+            {/* Overall Progress Card — average progress across this project's
+                goals (currentValue/targetValue), not task completion, which
+                is what "Tasks Done"/"Open Tasks" already cover below. */}
             <div className="rounded-card border border-line bg-card p-4">
               <p className="font-mono text-xs uppercase tracking-wide text-text-faint">Overall Progress</p>
               <div className="mt-3">
-                <Meter
-                  value={project.tasks.filter((t) => t.status === "done").length}
-                  target={project.tasks.length || 1}
-                  color="#ff5a38"
-                />
+                <Meter value={avgGoalProgressPct} target={100} color="#7C5CFF" />
               </div>
               <p className="mt-2 text-sm text-text">
-                {project.tasks.filter((t) => t.status === "done").length}/{project.tasks.length}
+                {avgGoalProgressPct}%
+                <span className="ml-1 text-text-faint">
+                  {project.goals.length === 0 ? "no goals yet" : "avg across goals"}
+                </span>
               </p>
             </div>
 
@@ -259,20 +384,22 @@ function ProjectDetail() {
             <h2 className="font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
               Goals
             </h2>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setEditingGoal(null);
-                setGoalFormOpen(true);
-              }}
-            >
-              + Add goal
-            </Button>
+            {canManage && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingGoal(null);
+                  setGoalFormOpen(true);
+                }}
+              >
+                + Add goal
+              </Button>
+            )}
           </div>
 
           {project.goals.length === 0 ? (
             <p className="rounded-card border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-text-soft">
-              No goals yet. Add one to start tracking progress.
+              No goals yet. {canManage && "Add one to start tracking progress."}
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -280,7 +407,7 @@ function ProjectDetail() {
                 <GoalCard
                   key={goal.id}
                   goal={goal}
-                  onNudge={handleNudge}
+                  canManage={canManage}
                   onEdit={(g) => {
                     setEditingGoal(g);
                     setGoalFormOpen(true);
@@ -290,6 +417,88 @@ function ProjectDetail() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Milestones — named, dated events like a campaign launch */}
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+              Milestones
+            </h2>
+            {canManage && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingMilestone(null);
+                  setMilestoneFormOpen(true);
+                }}
+              >
+                + Add milestone
+              </Button>
+            )}
+          </div>
+
+          {(project.milestones || []).length === 0 ? (
+            <p className="rounded-card border border-dashed border-line bg-card px-4 py-6 text-center text-sm text-text-soft">
+              No milestones yet. {canManage && "Add a launch date or key event to see it on the calendar."}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {project.milestones.map((milestone) => (
+                <div
+                  key={milestone.id}
+                  className="flex flex-col gap-2 rounded-lg border border-line bg-card px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-text">{milestone.title}</p>
+                    {milestone.notes && (
+                      <p className="truncate text-xs text-text-faint">{milestone.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="font-mono text-xs text-text-faint">{milestone.date}</span>
+                    {canManage && (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingMilestone(milestone);
+                            setMilestoneFormOpen(true);
+                          }}
+                          aria-label="Edit milestone"
+                          className="rounded-md p-1 text-text-faint hover:bg-paper hover:text-text"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteMilestoneTarget(milestone)}
+                          aria-label="Delete milestone"
+                          className="rounded-md p-1 text-text-faint hover:bg-signal-tint hover:text-signal-deep"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Metrics — channel-specific numbers logged over time, distinct from Goals */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Metrics
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <MetricsPanel projectId={id} canManage={canManage} />
+          </div>
         </section>
 
         {/* Tasks */}
@@ -314,24 +523,90 @@ function ProjectDetail() {
               No tasks yet.
             </p>
           ) : (
-            <div className="rounded-card border border-line bg-card px-4">
+            <div className="rounded-card border border-line bg-card px-3 sm:px-4">
               {project.tasks.map((task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
                   goal={task.goalId ? goalById[task.goalId] : null}
+                  assigneeName={
+                    task.assigneeId
+                      ? collaboratorById[task.assigneeId]?.name || collaboratorById[task.assigneeId]?.email
+                      : null
+                  }
                   onCycleStatus={handleCycleStatus}
+                  canDelete={canManage}
                   onEdit={(t) => {
                     setEditingTask(t);
                     setTaskFormOpen(true);
                   }}
                   onDelete={setDeleteTaskTarget}
+                  onComment={setCommentTaskTarget}
                 />
               ))}
             </div>
           )}
         </section>
-      </main>
+
+        {/* Files — documents, images, PDFs, presentations, videos */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Files
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <FileManager projectId={id} canManage={canManage} />
+          </div>
+        </section>
+
+        {/* Comments — project-level discussion thread */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Comments
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <CommentThread projectId={id} />
+          </div>
+        </section>
+
+        {/* Activity — a running log of what's happened on this project */}
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-text-faint">
+            Activity
+          </h2>
+          <div className="rounded-card border border-line bg-card p-4">
+            <ActivityTimeline projectId={id} />
+          </div>
+        </section>
+      </div>
+
+      <Modal
+        open={!!commentTaskTarget}
+        onClose={() => setCommentTaskTarget(null)}
+        title={commentTaskTarget ? `Comments — ${commentTaskTarget.title}` : "Comments"}
+      >
+        {commentTaskTarget && <CommentThread projectId={id} taskId={commentTaskTarget.id} />}
+      </Modal>
+
+      <ProjectFormModal
+        open={projectFormOpen}
+        onClose={() => setProjectFormOpen(false)}
+        onSubmit={handleProjectSubmit}
+        initial={project}
+      />
+      <ProjectAccessModal
+        open={accessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        projectId={id}
+        projectName={project.name}
+      />
+      <ConfirmModal
+        open={deleteProjectOpen}
+        title="Delete project?"
+        message={`This will permanently delete "${project.name}" along with all of its goals and tasks.`}
+        onConfirm={handleDeleteProject}
+        onCancel={() => setDeleteProjectOpen(false)}
+        busy={deletingProject}
+      />
 
       <GoalFormModal
         open={goalFormOpen}
@@ -339,12 +614,19 @@ function ProjectDetail() {
         onSubmit={handleGoalSubmit}
         initial={editingGoal}
       />
+      <MilestoneFormModal
+        open={milestoneFormOpen}
+        onClose={() => setMilestoneFormOpen(false)}
+        onSubmit={handleMilestoneSubmit}
+        initial={editingMilestone}
+      />
       <TaskFormModal
         open={taskFormOpen}
         onClose={() => setTaskFormOpen(false)}
         onSubmit={handleTaskSubmit}
         initial={editingTask}
         goals={project.goals}
+        projectId={id}
       />
 
       <ConfirmModal
@@ -356,6 +638,14 @@ function ProjectDetail() {
         busy={busy}
       />
       <ConfirmModal
+        open={!!deleteMilestoneTarget}
+        title="Delete milestone?"
+        message={`This will permanently delete "${deleteMilestoneTarget?.title}".`}
+        onConfirm={handleDeleteMilestone}
+        onCancel={() => setDeleteMilestoneTarget(null)}
+        busy={busy}
+      />
+      <ConfirmModal
         open={!!deleteTaskTarget}
         title="Delete task?"
         message={`This will permanently delete "${deleteTaskTarget?.title}".`}
@@ -363,7 +653,7 @@ function ProjectDetail() {
         onCancel={() => setDeleteTaskTarget(null)}
         busy={busy}
       />
-    </div>
+    </AppShell>
   );
 }
 

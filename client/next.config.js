@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
+
+// API base for the /api/* rewrite. Override with API_ORIGIN for local
+// development against a different backend (e.g. a mock or localhost server).
+const API_ORIGIN = process.env.API_ORIGIN || "https://deck-dllq.onrender.com";
+
 const nextConfig = {
   async rewrites() {
     return [
       {
-        // Proxy /api/* to the Express server so the browser only ever talks
-        // to one origin (avoids CORS + makes cookies simpler in dev).
         source: "/api/:path*",
-        destination: "http://localhost:4000/api/:path*",
+        destination: `${API_ORIGIN}/api/:path*`,
       },
     ];
   },

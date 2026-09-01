@@ -3,12 +3,29 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+const { connectDB } = require("./db/mongodb");
+
 const authRoutes = require("./routes/auth");
+const accountRoutes = require("./routes/account");
 const projectRoutes = require("./routes/projects");
 const goalRoutes = require("./routes/goals");
 const taskRoutes = require("./routes/tasks");
+const commentRoutes = require("./routes/comments");
+const fileRoutes = require("./routes/files");
+const milestoneRoutes = require("./routes/milestones");
+const metricRoutes = require("./routes/metrics");
+const calendarRoutes = require("./routes/calendar");
+const notificationRoutes = require("./routes/notifications");
+const workspaceRoutes = require("./routes/workspaces");
+const brandingRoutes = require("./routes/branding");
+const personalRoutes = require("./routes/personal");
 
 const app = express();
+
+// Render sits behind a reverse proxy — without this, rate limiting (and
+// anything else relying on req.ip) would see Render's proxy IP for every
+// request instead of the real client IP.
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -16,24 +33,50 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 app.use("/api/auth", authRoutes);
+app.use("/api/account", accountRoutes);
+app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/projects", projectRoutes);
-// Goals and tasks are nested under /api/projects/:projectId/... inside their own routers.
 app.use("/api/projects", goalRoutes);
 app.use("/api/projects", taskRoutes);
+app.use("/api/projects", commentRoutes);
+app.use("/api/projects", fileRoutes);
+app.use("/api/projects", milestoneRoutes);
+app.use("/api/projects", metricRoutes);
+app.use("/api/calendar", calendarRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/branding", brandingRoutes);
+app.use("/api/personal", personalRoutes);
 
-// Centralized fallback error handler.
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: "Something went wrong on the server." });
+  res.status(500).json({
+    error: "Something went wrong on the server.",
+  });
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Deck API listening on http://localhost:${PORT}`);
-});
+
+async function startServer() {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Deck API listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to connect to MongoDB");
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+startServer();

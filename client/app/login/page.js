@@ -1,16 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { Field, TextInput, Button } from "@/components/FormControls";
+import Logo from "@/components/Logo";
+import { useTheme } from "@/lib/ThemeContext";
 
-export default function LoginPage() {
+function LoginForm() {
+  const { theme } = useTheme();
+  const logoVariant = theme === "dark" ? "light" : "dark";
   const { login, signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [mode, setMode] = useState("login"); // "login" | "signup"
-  const [email, setEmail] = useState("");
+  const [mode, setMode] = useState(searchParams.get("mode") === "signup" ? "signup" : "login");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +32,8 @@ export default function LoginPage() {
       } else {
         await signup(email.trim(), password, name.trim());
       }
-      router.replace("/projects");
+      const next = searchParams.get("next");
+      router.replace(next && next.startsWith("/") ? next : "/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -35,25 +42,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2">
-          <span className="h-2 w-2 animate-pulse_dot rounded-full bg-signal" />
-          <span className="font-display text-xl font-semibold text-white">Deck</span>
-        </div>
+    <div className="relative flex min-h-screen items-center justify-center bg-paper px-4 py-12">
+      {/* subtle glows */}
+      <div className="pointer-events-none absolute -top-40 right-0 h-[500px] w-[600px] rounded-full bg-[#7C5CFF]/[0.07] blur-[100px]" />
+      <div className="pointer-events-none absolute -bottom-40 -left-32 h-[500px] w-[600px] rounded-full bg-[#4F7BFF]/[0.05] blur-[100px]" />
 
-        <div className="rounded-card bg-card p-6 shadow-2xl">
-          <h1 className="mb-1 font-display text-lg font-semibold text-text">
+      <div className="relative w-full max-w-[400px]">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2.5 transition hover:opacity-90" aria-label="DECK home">
+          <Logo variant={logoVariant} size={36} />
+        </Link>
+
+        <div className="rounded-2xl border border-line bg-card p-7 shadow-[0_16px_48px_rgba(0,0,0,0.6)]">
+          <h1 className="font-display text-xl font-bold tracking-tight text-text">
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h1>
-          <p className="mb-5 text-sm text-text-soft">
-            {mode === "login" ? "Sign in to your projects." : "Start tracking your marketing projects."}
+          <p className="mt-1.5 text-sm leading-relaxed text-text-soft">
+            {mode === "login" ? "Sign in to your workspace." : "Start tracking your marketing projects."}
           </p>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="mt-6">
             {mode === "signup" && (
               <Field label="Name (optional)">
-                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Vishal" />
+                <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" autoComplete="name" />
               </Field>
             )}
             <Field label="Email">
@@ -63,7 +73,8 @@ export default function LoginPage() {
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="Email"
+                autoComplete="email"
               />
             </Field>
             <Field label="Password">
@@ -73,13 +84,23 @@ export default function LoginPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
             </Field>
 
-            {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}
+            {mode === "login" && (
+              <Link
+                href="/forgot-password"
+                className="mb-4 mt-[-8px] inline-block text-xs font-medium text-text-soft transition hover:text-[#7C5CFF]"
+              >
+                Forgot password?
+              </Link>
+            )}
 
-            <Button type="submit" disabled={busy} className="mt-2 w-full">
+            {error && <p className="mb-3 rounded-xl bg-[#2E1A1E] px-3 py-2 text-sm text-[#FF5D73] border border-[#FF5D73]/20">{error}</p>}
+
+            <Button type="submit" disabled={busy} className="mt-2 w-full justify-center">
               {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
             </Button>
           </form>
@@ -90,12 +111,40 @@ export default function LoginPage() {
               setMode(mode === "login" ? "signup" : "login");
               setError("");
             }}
-            className="mt-4 w-full text-center text-sm text-text-soft hover:text-signal-deep"
+            className="mt-5 w-full text-center text-sm text-text-soft transition hover:text-text"
           >
-            {mode === "login" ? "New here? Create an account" : "Already have an account? Sign in"}
+            {mode === "login" ? (
+              <>
+                New here? <span className="font-semibold text-[#7C5CFF] hover:text-[#8B6DFF]">Create an account</span>
+              </>
+            ) : (
+              <>
+                Already have an account? <span className="font-semibold text-[#7C5CFF] hover:text-[#8B6DFF]">Sign in</span>
+              </>
+            )}
           </button>
         </div>
+
+        <p className="mt-6 text-center text-xs text-text-faint">
+          By continuing you agree to our{" "}
+          <Link href="/terms" className="underline decoration-[#232A36] underline-offset-4 hover:text-text-soft">
+            Terms
+          </Link>{" "}
+          &{" "}
+          <Link href="/privacy-policy" className="underline decoration-[#232A36] underline-offset-4 hover:text-text-soft">
+            Privacy
+          </Link>
+          .
+        </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

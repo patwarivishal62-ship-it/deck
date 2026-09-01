@@ -2,26 +2,55 @@ const express = require("express");
 const projectsDb = require("../db/projects");
 const goalsDb = require("../db/goals");
 const tasksDb = require("../db/tasks");
+const membershipsDb = require("../db/memberships");
+const usersDb = require("../db/users");
+const activityLogDb = require("../db/activityLog");
 const { requireAuth } = require("../middleware/auth");
+const { attachWorkspaces } = require("../middleware/workspace");
 const { CATEGORY_KEYS, PERIODS } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
+router.use(attachWorkspaces);
 
-function ownedProject(projectId, userId) {
-  return projectsDb.findByIdForUser(projectId, userId);
+async function ownedProject(projectId, req) {
+  return projectsDb.findByIdForCaller(projectId, {
+    fullAccessWorkspaceIds: req.fullAccessWorkspaceIds,
+    restrictedWorkspaceIds: req.restrictedWorkspaceIds,
+    userId: req.userId,
+  });
 }
 
-router.post("/:projectId/goals", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+function roleFor(req, workspaceId) {
+  return req.workspaces.find((w) => w.id === workspaceId)?.role;
+}
+
+// Goals can be viewed by anyone with project access, but only created,
+// edited, or deleted by a workspace Admin/Owner — Members can see progress
+// but not change what's being measured. There's deliberately no "nudge"
+// endpoint: the only way a goal's currentValue moves is by completing an
+// actual linked task (see routes/tasks.js), so every unit of progress
+// traces back to a real, accountable record instead of an arbitrary click.
+function requireGoalManager(req, res, project) {
+  const role = roleFor(req, project.workspaceId);
+  if (!membershipsDb.hasAtLeastRole(role, "admin")) {
+    res.status(403).json({ error: "Only workspace admins or owners can manage goals." });
+    return false;
+  }
+  return true;
+}
+
+router.post("/:projectId/goals", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
   const { category, platform, label, targetValue, currentValue, unit, period, step } = req.body || {};
   if (!label || !label.trim()) {
     return res.status(400).json({ error: "Goal label is required." });
   }
 
-  const goal = goalsDb.create({
+  const goal = await goalsDb.create({
     projectId: project.id,
     category: CATEGORY_KEYS.includes(category) ? category : "other",
     platform: (platform || "").trim(),
@@ -32,14 +61,25 @@ router.post("/:projectId/goals", (req, res) => {
     period: PERIODS.includes(period) ? period : "monthly",
     step: Number(step) || 1,
   });
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "goal_created",
+    message: `${actor?.name || actor?.email} added the goal "${goal.label}"`,
+  });
+
   res.status(201).json({ goal });
 });
 
-router.patch("/:projectId/goals/:goalId", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.patch("/:projectId/goals/:goalId", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
-  const goal = goalsDb.findByIdInProject(req.params.goalId, project.id);
+  const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
   if (!goal) return res.status(404).json({ error: "Goal not found." });
 
   const { category, platform, label, targetValue, currentValue, unit, period, step } = req.body || {};
@@ -47,7 +87,7 @@ router.patch("/:projectId/goals/:goalId", (req, res) => {
     return res.status(400).json({ error: "Goal label is required." });
   }
 
-  const updated = goalsDb.update(goal.id, {
+  const updated = await goalsDb.update(goal.id, {
     ...(category !== undefined ? { category: CATEGORY_KEYS.includes(category) ? category : "other" } : {}),
     ...(platform !== undefined ? { platform: platform.trim() } : {}),
     ...(label !== undefined ? { label: label.trim() } : {}),
@@ -60,34 +100,27 @@ router.patch("/:projectId/goals/:goalId", (req, res) => {
   res.json({ goal: updated });
 });
 
-// PATCH /api/projects/:projectId/goals/:goalId/nudge  { direction: "inc" | "dec" }
-// Powers the +/- stepper buttons on the goal card.
-router.patch("/:projectId/goals/:goalId/nudge", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
+router.delete("/:projectId/goals/:goalId", async (req, res) => {
+  const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
+  if (!requireGoalManager(req, res, project)) return;
 
-  const goal = goalsDb.findByIdInProject(req.params.goalId, project.id);
-  if (!goal) return res.status(404).json({ error: "Goal not found." });
-
-  const { direction } = req.body || {};
-  const step = Number(goal.step) || 1;
-  const nextValue =
-    direction === "inc" ? goal.currentValue + step : Math.max(0, goal.currentValue - step);
-
-  const updated = goalsDb.setCurrentValue(goal.id, nextValue);
-  res.json({ goal: updated });
-});
-
-router.delete("/:projectId/goals/:goalId", (req, res) => {
-  const project = ownedProject(req.params.projectId, req.userId);
-  if (!project) return res.status(404).json({ error: "Project not found." });
-
-  const goal = goalsDb.findByIdInProject(req.params.goalId, project.id);
+  const goal = await goalsDb.findByIdInProject(req.params.goalId, project.id);
   if (!goal) return res.status(404).json({ error: "Goal not found." });
 
   // Tasks linked to this goal stay, but unlink so they stop counting toward it.
-  tasksDb.unlinkGoal(goal.id);
-  goalsDb.remove(goal.id);
+  await tasksDb.unlinkGoal(goal.id);
+  await goalsDb.remove(goal.id);
+
+  const actor = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "goal_deleted",
+    message: `${actor?.name || actor?.email} deleted the goal "${goal.label}"`,
+  });
+
   res.json({ ok: true });
 });
 
