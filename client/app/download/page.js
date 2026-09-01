@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 import InstallButton from "@/components/InstallButton";
 import { usePWA } from "@/lib/PWAContext";
@@ -8,31 +7,13 @@ import { usePWA } from "@/lib/PWAContext";
 const APK_HREF = "/downloads/deck.apk";
 
 const APK_STEPS = [
-  { n: "01", title: "Download DECK.apk", sub: "Use the button above — it saves the file to your phone." },
-  { n: "02", title: "Allow this source", sub: "Android may ask you to permit installs from the browser or Files app." },
-  { n: "03", title: "Open the file", sub: "Tap DECK.apk, then Install. The app lands on your home screen." },
+  { n: "01", title: "Download", sub: "Tap the button above — the file saves to your phone." },
+  { n: "02", title: "Allow install", sub: "If Android asks, allow installs from your browser." },
+  { n: "03", title: "Open DECK", sub: "Open the file, tap Install — DECK lands on your home screen." },
 ];
-
-function formatBytes(n) {
-  if (!n || n < 0) return null;
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default function DownloadPage() {
   const { installed } = usePWA();
-  const [apk, setApk] = useState(null);
-
-  useEffect(() => {
-    fetch("/downloads/android.json", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setApk(data))
-      .catch(() => setApk(null));
-  }, []);
-
-  const apkSize = formatBytes(apk?.sizeBytes);
-  const apkVersion = apk?.versionName || "1.0.0";
 
   return (
     <div className="min-h-screen bg-paper">
@@ -49,7 +30,8 @@ export default function DownloadPage() {
             Download DECK
           </h1>
           <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-text-soft">
-            Install DECK from your browser, or grab the Android APK — same account, same projects.
+            Install DECK from your browser, or download the app for Android —
+            same account, same projects.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -73,13 +55,9 @@ export default function DownloadPage() {
                 <path d="M7 11l5 5 5-5" />
                 <path d="M5 20h14" />
               </svg>
-              Download Android APK
+              Download DECK
             </a>
           </div>
-          <p className="mt-3 text-xs text-text-faint">
-            Free · Android APK v{apkVersion}
-            {apkSize ? ` · ${apkSize}` : ""}
-          </p>
 
           <ol className="mx-auto mt-12 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
             {APK_STEPS.map((step) => (
@@ -91,11 +69,7 @@ export default function DownloadPage() {
             ))}
           </ol>
 
-          <p className="mt-8 text-xs leading-relaxed text-text-faint">
-            On iPhone, iPad, or desktop, use the Install button above and follow the steps shown.
-            Android will warn that the APK is from outside the Play Store — that&apos;s expected for a
-            direct download. Only install from this site.
-          </p>
+          <p className="mt-10 text-xs text-text-faint">Free · Phone and desktop</p>
         </section>
       </main>
     </div>
