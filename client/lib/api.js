@@ -156,4 +156,22 @@ export const api = {
     request(`/projects/${projectId}/tasks/${taskId}/cycle-status`, { method: "PATCH" }),
   deleteTask: (projectId, taskId) =>
     request(`/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" }),
+
+  // voice AI
+  voiceContext: () => request("/voice/context"),
+  voiceParse: (body) => request("/voice/parse", { method: "POST", body }),
+  voiceExecute: (body) => request("/voice/execute", { method: "POST", body }),
+  voiceNotes: () => request("/voice/notes"),
+  deleteVoiceNote: (id) => request(`/voice/notes/${id}`, { method: "DELETE" }),
+
+  // reminders & push
+  listReminders: (includeSent = false) => request(`/reminders${includeSent ? "?includeSent=true" : ""}`),
+  createReminder: (body) => request("/reminders", { method: "POST", body }),
+  updateReminder: (id, body) => request(`/reminders/${id}`, { method: "PATCH", body }),
+  deleteReminder: (id) => request(`/reminders/${id}`, { method: "DELETE" }),
+  seedReminders: () => request("/reminders/seed", { method: "POST" }),
+  processDueReminders: () => request("/reminders/process-due", { method: "POST" }),
+  pushSubscribe: (body) => request("/reminders/push/subscribe", { method: "POST", body }),
+  pushUnsubscribe: (body) => request("/reminders/push/unsubscribe", { method: "POST", body }),
+  listPushSubs: () => request("/reminders/push"),
 };

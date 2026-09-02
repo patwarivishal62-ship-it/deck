@@ -2,6 +2,7 @@ const express = require("express");
 const projectsDb = require("../db/projects");
 const entriesDb = require("../db/personalEntries");
 const notificationsDb = require("../db/notifications");
+const remindersDb = require("../db/reminders");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
 
@@ -91,7 +92,33 @@ async function computePersonalTodoReminders(req) {
   return reminders;
 }
 
+// Process due scheduled reminders into real notifications
+async function processDueRemindersForUser(userId) {
+  try {
+    const due = await remindersDb.listDue(new Date().toISOString());
+    const userDue = due.filter((r) => r.userId === userId);
+    for (const reminder of userDue) {
+      await notificationsDb.create({
+        userId: reminder.userId,
+        workspaceId: reminder.workspaceId,
+        projectId: reminder.projectId,
+        type: reminder.type,
+        message: reminder.message,
+        link: reminder.link,
+      });
+      await remindersDb.markSent(reminder.id);
+    }
+    return userDue.length;
+  } catch (err) {
+    console.error("Failed to process due reminders:", err);
+    return 0;
+  }
+}
+
 router.get("/", async (req, res) => {
+  // Process any due scheduled reminders first
+  await processDueRemindersForUser(req.userId);
+
   const [stored, deadlineReminders, todoReminders] = await Promise.all([
     notificationsDb.listForUser(req.userId),
     computeDeadlineReminders(req),
@@ -122,6 +149,26 @@ router.patch("/:id/read", async (req, res) => {
 router.post("/read-all", async (req, res) => {
   await notificationsDb.markAllRead(req.userId);
   res.json({ ok: true });
+});
+
+// GET /api/notifications/stats — for debugging / analytics
+router.get("/stats", async (req, res) => {
+  try {
+    const [stored, deadlineReminders, todoReminders] = await Promise.all([
+      notificationsDb.listForUser(req.userId),
+      computeDeadlineReminders(req),
+      computePersonalTodoReminders(req),
+    ]);
+    const dueReminders = await remindersDb.listForUser(req.userId, false);
+    res.json({
+      storedCount: stored.length,
+      unreadStored: stored.filter((n) => !n.read).length,
+      synthetic: deadlineReminders.length + todoReminders.length,
+      scheduledPending: dueReminders.length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch stats" });
+  }
 });
 
 module.exports = router;

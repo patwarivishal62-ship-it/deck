@@ -11,6 +11,8 @@ import {
   FileText,
   Settings,
   CircleHelp,
+  Mic,
+  Bell,
 } from "lucide-react";
 import Logo from "@/components/Logo";
 
@@ -23,6 +25,7 @@ const PRIMARY_NAV = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/voice", label: "Voice AI", icon: Mic, badge: "NEW" },
 ];
 
 const BOTTOM_NAV = [
@@ -39,14 +42,21 @@ function NavItem({ item, pathname, onNavigate }) {
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition duration-150 ${
+      className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition duration-150 ${
         active
           ? "bg-gradient-to-r from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)]"
           : "text-slate-400 hover:bg-white/[0.06] hover:text-white"
       }`}
     >
-      {icon}
-      {item.label}
+      <span className="flex items-center gap-3">
+        {icon}
+        {item.label}
+      </span>
+      {item.badge && (
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white text-[#7C5CFF]" : "bg-[#7C5CFF] text-white"}`}>
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }

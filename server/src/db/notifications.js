@@ -11,7 +11,7 @@ function toNotification(doc) {
   return notification;
 }
 
-// type: project_created | task_assigned | comment | mention | workspace_invite
+// type: project_created | task_assigned | comment | mention | workspace_invite | voice_processed | task_progress | general_nudge
 async function create({ userId, workspaceId, projectId, type, message, link }) {
   const notification = {
     id: nanoid(),
@@ -25,7 +25,54 @@ async function create({ userId, workspaceId, projectId, type, message, link }) {
     createdAt: new Date().toISOString(),
   };
   await collection().insertOne(notification);
-  return toNotification(notification);
+  const saved = toNotification(notification);
+
+  // Try to send real push notification if VAPID is configured
+  // Fire-and-forget, don't block notification creation
+  try {
+    const pushLib = require("../lib/push");
+    if (pushLib.canSendPush()) {
+      const payload = {
+        title: getPushTitle(type),
+        body: message,
+        message,
+        type,
+        link: link || "/dashboard",
+        tag: `${type}-${saved.id}`,
+        icon: "/icons/icon-192.png",
+      };
+      // Don't await, but log
+      pushLib.sendPushToUser(userId, payload).catch(() => {});
+    }
+  } catch {}
+
+  return saved;
+}
+
+function getPushTitle(type) {
+  switch (type) {
+    case "task_assigned":
+      return "New task assigned 👤";
+    case "task_completed":
+      return "Task completed ✅";
+    case "deadline_approaching":
+      return "Deadline approaching ⏰";
+    case "task_progress":
+      return "Update your progress 📋";
+    case "goal_checkin":
+      return "Goal check-in 🎯";
+    case "general_nudge":
+      return "Deck reminder 💡";
+    case "voice_processed":
+      return "Voice note processed 🎤";
+    case "comment":
+    case "mention":
+      return "New comment 💬";
+    case "project_created":
+      return "New project 📁";
+    default:
+      return "Deck notification 🔔";
+  }
 }
 
 // Notifications are per-recipient records, so fan-out to several people is
