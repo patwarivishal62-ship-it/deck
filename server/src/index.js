@@ -19,6 +19,8 @@ const notificationRoutes = require("./routes/notifications");
 const workspaceRoutes = require("./routes/workspaces");
 const brandingRoutes = require("./routes/branding");
 const personalRoutes = require("./routes/personal");
+const voiceRoutes = require("./routes/voice");
+const reminderRoutes = require("./routes/reminders");
 
 const app = express();
 
@@ -55,6 +57,8 @@ app.use("/api/calendar", calendarRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/branding", brandingRoutes);
 app.use("/api/personal", personalRoutes);
+app.use("/api/voice", voiceRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -68,6 +72,38 @@ const PORT = process.env.PORT || 4000;
 async function startServer() {
   try {
     await connectDB();
+
+    // Background job: process due reminders every 60 seconds
+    // Works even on free tier because it's an interval inside the server process,
+    // not a separate cron. When the server restarts, it resumes.
+    try {
+      const remindersDb = require("./db/reminders");
+      const notificationsDb = require("./db/notifications");
+      setInterval(async () => {
+        try {
+          const due = await remindersDb.listDue(new Date().toISOString());
+          for (const reminder of due) {
+            await notificationsDb.create({
+              userId: reminder.userId,
+              workspaceId: reminder.workspaceId,
+              projectId: reminder.projectId,
+              type: reminder.type,
+              message: reminder.message,
+              link: reminder.link,
+            });
+            await remindersDb.markSent(reminder.id);
+          }
+          if (due.length > 0) {
+            console.log(`⏰ Processed ${due.length} due reminders`);
+          }
+        } catch (e) {
+          console.error("Reminder background job failed:", e);
+        }
+      }, 60 * 1000);
+      console.log("⏰ Reminder background job scheduled (every 60s)");
+    } catch (e) {
+      console.warn("Could not start reminder job:", e.message);
+    }
 
     app.listen(PORT, () => {
       console.log(`🚀 Deck API listening on port ${PORT}`);

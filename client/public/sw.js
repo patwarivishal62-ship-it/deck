@@ -1,6 +1,7 @@
 /*
  * DECK service worker — makes the app installable (PWA) and keeps the shell
- * usable offline.
+ * usable offline. Now also handles push notifications and periodic reminders
+ * for the Voice AI / task progress nudges.
  *
  * Strategy:
  *  - Navigations (pages): network-first, fall back to cache, then /offline.
@@ -9,7 +10,7 @@
  *  - /api/* is never cached or intercepted — data always comes from the network.
  */
 
-const VERSION = "v1";
+const VERSION = "v2-voice";
 const STATIC_CACHE = `deck-static-${VERSION}`;
 const PAGES_CACHE = `deck-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -48,6 +49,19 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
+  // Allow client to trigger a local notification (used for reminders)
+  if (event.data && event.data.type === "SHOW_NOTIFICATION") {
+    const { title, body, url } = event.data;
+    event.waitUntil(
+      self.registration.showNotification(title || "Deck", {
+        body: body || "",
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        data: { url: url || "/dashboard" },
+        vibrate: [200, 100, 200],
+      })
+    );
+  }
 });
 
 /* Pages: network-first → cache → offline shell. */
@@ -112,5 +126,81 @@ self.addEventListener("fetch", (event) => {
   }
   if (url.pathname === "/manifest.webmanifest" || /\.(png|jpe?g|svg|webp|avif|ico|woff2?)$/.test(url.pathname)) {
     event.respondWith(staleWhileRevalidate(request));
+  }
+});
+
+// Push notifications — for timely mobile reminders (task progress, nudges, voice)
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Deck", body: event.data ? event.data.text() : "You have a new reminder" };
+  }
+
+  const title = data.title || data.message || "Deck Reminder";
+  const options = {
+    body: data.body || data.message || "Tap to open Deck and stay organized",
+    icon: data.icon || "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: {
+      url: data.link || data.url || "/dashboard",
+    },
+    vibrate: [200, 100, 200],
+    tag: data.tag || "deck-reminder",
+    renotify: true,
+    actions: data.actions || [
+      { action: "open", title: "Open Deck" },
+      { action: "dismiss", title: "Dismiss" },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "dismiss") return;
+
+  const url = event.notification.data?.url || "/dashboard";
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      // If Deck is already open, focus it and navigate
+      for (const client of allClients) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          await client.focus();
+          if ("navigate" in client) {
+            try {
+              await client.navigate(url);
+            } catch {}
+          }
+          return;
+        }
+      }
+      // Otherwise open a new window
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(url);
+      }
+    })()
+  );
+});
+
+// Background sync for reminders (if supported) — periodic check
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "deck-reminders") {
+    event.waitUntil(
+      (async () => {
+        try {
+          // Try to fetch notifications — this will also process due reminders on server
+          const clients = await self.clients.matchAll({ type: "window" });
+          if (clients.length > 0) {
+            clients[0].postMessage({ type: "CHECK_REMINDERS" });
+          }
+        } catch {}
+      })()
+    );
   }
 });

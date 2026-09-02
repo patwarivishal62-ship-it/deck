@@ -57,6 +57,13 @@ async function connectDB() {
   await db.collection("branding").createIndex({ id: 1 }, { unique: true });
   await db.collection("entries").createIndex({ id: 1 }, { unique: true });
   await db.collection("entries").createIndex({ userId: 1, date: 1 });
+  await db.collection("voiceNotes").createIndex({ id: 1 }, { unique: true });
+  await db.collection("voiceNotes").createIndex({ userId: 1, createdAt: -1 });
+  await db.collection("reminders").createIndex({ id: 1 }, { unique: true });
+  await db.collection("reminders").createIndex({ userId: 1, scheduledAt: 1 });
+  await db.collection("reminders").createIndex({ scheduledAt: 1, sent: 1 });
+  await db.collection("pushSubscriptions").createIndex({ id: 1 }, { unique: true });
+  await db.collection("pushSubscriptions").createIndex({ userId: 1, endpoint: 1 }, { unique: true });
 
   console.log("✅ Connected to MongoDB");
 

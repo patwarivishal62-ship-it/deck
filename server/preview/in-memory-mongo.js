@@ -56,6 +56,10 @@ function matchValue(value, cond) {
 
 function matches(doc, query) {
   if (!query || Object.keys(query).length === 0) return true;
+  // Primitive query handling for $pull with primitive cond (e.g., { $pull: { memberAccess: "userId" } })
+  if (typeof query !== "object" || isRegExp(query) || Array.isArray(query)) {
+    return matchValue(doc, query);
+  }
   for (const [key, cond] of Object.entries(query)) {
     if (key === "$and") {
       if (!cond.every((q) => matches(doc, q))) return false;
@@ -209,7 +213,19 @@ function applyUpdate(doc, update) {
       case "$pull":
         Object.entries(fields).forEach(([k, cond]) => {
           if (!Array.isArray(doc[k])) return;
-          doc[k] = doc[k].filter((item) => !matches(item, cond));
+          // Support both primitive and query object for $pull
+          if (typeof cond !== "object" || cond instanceof RegExp) {
+            doc[k] = doc[k].filter((item) => item !== cond);
+          } else {
+            doc[k] = doc[k].filter((item) => {
+              // If cond is a simple value query, matchValue handles it
+              // If it's an object query, use matches
+              if (typeof item === "object" && item !== null) {
+                return !matches(item, cond);
+              }
+              return !matchValue(item, cond);
+            });
+          }
         });
         break;
       case "$addToSet":
@@ -231,7 +247,20 @@ class MemoryDb {
     this.store = {};
   }
   collection(name) {
-    return new Collection(this.store, name);
+    // Alias personalEntries -> entries for compatibility with older preview code
+    const actualName = name === "personalEntries" ? "entries" : name;
+    if (!this.store[actualName]) this.store[actualName] = [];
+    // Ensure both keys point to same array for compatibility
+    if (name === "personalEntries") {
+      this.store["personalEntries"] = this.store["entries"];
+    }
+    if (name === "entries") {
+      this.store["entries"] = this.store["entries"];
+      if (this.store["personalEntries"] && this.store["personalEntries"] !== this.store["entries"]) {
+        // merge if needed
+      }
+    }
+    return new Collection(this.store, actualName);
   }
 }
 

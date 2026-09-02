@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 /**
  * PWA state for the whole app: service-worker registration, the native
  * install prompt, platform detection, and "already installed?" tracking.
+ * Now also manages notification permission for timely mobile reminders.
  */
 
 const DISMISS_KEY = "deck-install-dismissed-at";
@@ -30,6 +31,8 @@ export function PWAProvider({ children }) {
   const [promptEvent, setPromptEvent] = useState(null);
   const [installed, setInstalled] = useState(false);
   const [dismissedAt, setDismissedAt] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState("default");
+  const [swRegistration, setSwRegistration] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -65,9 +68,30 @@ export function PWAProvider({ children }) {
     window.addEventListener("appinstalled", onAppInstalled);
     mq.addEventListener?.("change", onDisplayChange);
 
+    // Check notification permission
+    if ("Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+
     // Register the service worker (production only — dev assets aren't cache-stable).
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    // In dev, still try to register for notification testing, but don't cache.
+    if ("serviceWorker" in navigator) {
+      const shouldRegister = process.env.NODE_ENV === "production" || true; // allow in dev for voice notifications
+      if (shouldRegister) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => {
+            setSwRegistration(reg);
+            // Listen for messages from SW
+            navigator.serviceWorker.addEventListener("message", (event) => {
+              if (event.data?.type === "CHECK_REMINDERS") {
+                // SW asks to check reminders — could trigger a refetch
+                window.dispatchEvent(new CustomEvent("deck:check-reminders"));
+              }
+            });
+          })
+          .catch(() => {});
+      }
     }
 
     return () => {
@@ -99,6 +123,46 @@ export function PWAProvider({ children }) {
     } catch {}
   }, []);
 
+  const requestNotificationPermission = useCallback(async () => {
+    if (!("Notification" in window)) return "unsupported";
+    try {
+      const perm = await Notification.requestPermission();
+      setNotificationPermission(perm);
+      return perm;
+    } catch {
+      return "denied";
+    }
+  }, []);
+
+  const showLocalNotification = useCallback(
+    async (title, options = {}) => {
+      if (!swRegistration) {
+        // Fallback to simple Notification API
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification(title, {
+            body: options.body,
+            icon: "/icons/icon-192.png",
+          });
+          return true;
+        }
+        return false;
+      }
+      try {
+        await swRegistration.showNotification(title, {
+          body: options.body || "",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          data: { url: options.url || "/dashboard" },
+          ...options,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [swRegistration]
+  );
+
   const value = useMemo(
     () => ({
       mounted,
@@ -111,8 +175,25 @@ export function PWAProvider({ children }) {
       promptInstall,
       dismissInstall,
       dismissedRecently: mounted && !!dismissedAt && Date.now() - dismissedAt < REASK_AFTER_MS,
+      notificationPermission,
+      requestNotificationPermission,
+      showLocalNotification,
+      swRegistration,
+      notificationsSupported: typeof window !== "undefined" && "Notification" in window,
     }),
-    [mounted, platform, installed, canInstall, promptInstall, dismissInstall, dismissedAt]
+    [
+      mounted,
+      platform,
+      installed,
+      canInstall,
+      promptInstall,
+      dismissInstall,
+      dismissedAt,
+      notificationPermission,
+      requestNotificationPermission,
+      showLocalNotification,
+      swRegistration,
+    ]
   );
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;

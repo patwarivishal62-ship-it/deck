@@ -258,7 +258,7 @@ function ProjectDetail() {
   const canManage = role === "admin" || role === "owner";
 
   return (
-    <AppShell>
+    <AppShell projectId={id}>
       <Link
         href="/projects"
         className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-signal transition hover:text-signal"

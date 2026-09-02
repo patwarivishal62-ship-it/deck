@@ -38,6 +38,8 @@ const metricsDb = require("../src/db/metrics");
 const personalDb = require("../src/db/personalEntries");
 const notificationsDb = require("../src/db/notifications");
 const activityDb = require("../src/db/activityLog");
+const remindersDb = require("../src/db/reminders");
+const voiceNotesDb = require("../src/db/voiceNotes");
 
 const nanoid = () => Math.random().toString(36).slice(2, 12);
 
@@ -237,7 +239,55 @@ async function seed() {
   await activityDb.log({ workspaceId: workspace.id, projectId: p1.id, actorUserId: user.id, type: "task_completed", message: "Vishal Kumar completed “Schedule 12 teaser posts”" });
   await activityDb.log({ workspaceId: workspace.id, projectId: p2.id, actorUserId: user.id, type: "metric_entry", message: "Vishal Kumar logged ₹57,500 spend" });
 
-  console.log("Seed complete — demo@planyourdeck.com / demo1234");
+  // ---- Voice notes & reminders (new) ----
+  await voiceNotesDb.create({
+    userId: user.id,
+    workspaceId: workspace.id,
+    projectId: p1.id,
+    transcript: "Create a task to design landing page for tomorrow and assign to Sarah high priority",
+    summary: "1 task from voice input",
+    actions: { tasks: [{ title: "design landing page" }], goals: [], notes: [] },
+    rawActions: [],
+  });
+  await voiceNotesDb.create({
+    userId: user.id,
+    workspaceId: workspace.id,
+    projectId: p2.id,
+    transcript: "Add a goal to increase Instagram followers to 10k and remind me daily to update task progress",
+    summary: "1 goal, 1 reminder from voice",
+    actions: { tasks: [], goals: [{ label: "Increase Instagram followers to 10k" }], notes: [] },
+    rawActions: [],
+  });
+  await remindersDb.create({
+    userId: user.id,
+    workspaceId: workspace.id,
+    projectId: p1.id,
+    type: "task_progress",
+    message: "📋 Update your task progress to keep team aligned",
+    link: `/projects/${p1.id}`,
+    scheduledAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    frequency: "daily",
+  });
+  await remindersDb.create({
+    userId: user.id,
+    workspaceId: workspace.id,
+    type: "general_nudge",
+    message: "💡 Quick tip: Use voice notes to capture tasks 3x faster. Try the mic button!",
+    link: "/voice",
+    scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    frequency: "once",
+  });
+  await remindersDb.create({
+    userId: user.id,
+    workspaceId: workspace.id,
+    type: "goal_checkin",
+    message: "🚀 Stay organized — review your goals and keep momentum going!",
+    link: "/dashboard",
+    scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    frequency: "weekdays",
+  });
+
+  console.log("Seed complete — demo@planyourdeck.com / demo1234 (with voice & reminders)");
 }
 
 // Start the real app, then seed.

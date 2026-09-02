@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import VoiceAssistant from "@/components/voice/VoiceAssistant";
 
 // Shared shell for every signed-in screen — the deep-navy sidebar (fixed on
 // desktop lg+, slide-in drawer on mobile), the sticky header, and the content
@@ -18,6 +19,7 @@ export default function AppShell({
   search = "",
   onSearchChange,
   searchPlaceholder = "Search projects or tasks…",
+  projectId,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -61,6 +63,9 @@ export default function AppShell({
           {children}
         </main>
       </div>
+
+      {/* Global Voice AI Assistant — available on every signed-in screen */}
+      <VoiceAssistant projectId={projectId} />
     </div>
   );
 }
