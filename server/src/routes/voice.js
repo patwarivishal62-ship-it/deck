@@ -12,15 +12,76 @@ const membershipsDb = require("../db/memberships");
 const entriesDb = require("../db/personalEntries");
 const activityLogDb = require("../db/activityLog");
 const { collaboratorsFor } = require("../lib/collaborators");
-const { smartParse, parseTranscript } = require("../lib/aiParser");
-const { CATEGORY_KEYS, PERIODS } = require("../constants");
+const {
+  smartParse,
+  normalizeActions,
+  matchCollaborator,
+  localISODate,
+} = require("../lib/aiParser");
+const { CATEGORY_KEYS, PRIORITY_KEYS, PERIODS, STATUSES } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
 router.use(attachWorkspaces);
 
-function todayISODate() {
-  return new Date().toISOString().slice(0, 10);
+const MAX_TRANSCRIPT = 5000;
+// Reminders default to 9am in the *user's* zone, not 9am UTC.
+const DEFAULT_REMINDER_HOUR = Number(process.env.VOICE_REMINDER_HOUR) || 9;
+
+/**
+ * Accept an IANA zone name from the browser and ignore anything bogus rather
+ * than letting Intl throw mid-request.
+ */
+function sanitizeTimeZone(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value.trim() });
+    return value.trim();
+  } catch {
+    return null;
+  }
+}
+
+/** Milliseconds between UTC and `timeZone` at a given instant. */
+function zoneOffsetMs(instant, timeZone) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(instant)
+      .map((p) => [p.type, p.value])
+  );
+  const asUTC = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour) % 24,
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return asUTC - instant.getTime();
+}
+
+/**
+ * Wall-clock time on a calendar day, in the user's zone, as an ISO instant.
+ * Two offset passes so a DST boundary inside the day still lands correctly.
+ */
+function localTimeToISO(isoDate, hour, timeZone) {
+  if (!isoDate || !timeZone) return null;
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const guess = Date.UTC(y, m - 1, d, hour, 0, 0);
+  // Fixed point on `guess`, not a running subtraction: t(n+1) = guess - offset(t(n)).
+  // Two passes so a DST shift between the guess and the answer still converges.
+  const first = guess - zoneOffsetMs(new Date(guess), timeZone);
+  const second = guess - zoneOffsetMs(new Date(first), timeZone);
+  return new Date(second).toISOString();
 }
 
 async function getContextForUser(req) {
@@ -48,29 +109,14 @@ async function getContextForUser(req) {
   return { projects, collaborators };
 }
 
+/**
+ * Resolve a spoken name to a teammate. Delegates to the parser's matcher so
+ * voice parsing and voice execution can never disagree about who "Sarah" is.
+ * Returns null rather than guessing: a confidently wrong assignment notifies
+ * the wrong person.
+ */
 function resolveAssigneeByHint(hint, collaborators) {
-  if (!hint) return null;
-  const lowerHint = hint.toLowerCase().trim();
-  // Exact email match
-  const byEmail = collaborators.find((c) => c.email && c.email.toLowerCase() === lowerHint);
-  if (byEmail) return byEmail;
-  // Exact name match
-  const byName = collaborators.find((c) => c.name && c.name.toLowerCase() === lowerHint);
-  if (byName) return byName;
-  // First name match
-  const firstName = lowerHint.split(" ")[0];
-  const byFirst = collaborators.find((c) => {
-    const name = (c.name || "").toLowerCase();
-    return name.startsWith(firstName) || name.split(" ")[0] === firstName;
-  });
-  if (byFirst) return byFirst;
-  // Partial
-  const partial = collaborators.find((c) => {
-    const name = (c.name || "").toLowerCase();
-    const email = (c.email || "").toLowerCase();
-    return name.includes(lowerHint) || email.includes(lowerHint);
-  });
-  return partial || null;
+  return matchCollaborator(hint, collaborators);
 }
 
 function resolveProjectByHint(hint, projects, fallbackProjectId) {
@@ -88,17 +134,19 @@ function resolveProjectByHint(hint, projects, fallbackProjectId) {
 
 // POST /api/voice/parse — parse transcript without executing
 router.post("/parse", async (req, res) => {
-  const { transcript, projectId, workspaceId } = req.body || {};
+  const { transcript, projectId, timeZone } = req.body || {};
   if (!transcript || !transcript.trim()) {
     return res.status(400).json({ error: "Transcript is required." });
   }
-  if (transcript.length > 5000) {
-    return res.status(400).json({ error: "Transcript too long (max 5000 chars)." });
+  if (transcript.length > MAX_TRANSCRIPT) {
+    return res.status(400).json({ error: `Transcript too long (max ${MAX_TRANSCRIPT} chars).` });
   }
 
   try {
     const context = await getContextForUser(req);
     if (projectId) context.currentProjectId = projectId;
+    context.timeZone = sanitizeTimeZone(timeZone);
+    context.todayISO = localISODate(new Date(), context.timeZone);
 
     const result = await smartParse(transcript, context);
 
@@ -112,6 +160,9 @@ router.post("/parse", async (req, res) => {
           enrichedAction.assignee = resolved;
           enrichedAction.assigneeId = resolved.userId;
         }
+        // Explicitly false beats absent: the UI must be able to say "not found"
+        // instead of quietly showing the hint as if it had resolved.
+        enrichedAction.assigneeResolved = Boolean(resolved);
       }
       if (action.projectHint || action.projectId || projectId) {
         const proj = resolveProjectByHint(action.projectHint || action.projectId || projectId, context.projects, projectId);
@@ -138,6 +189,9 @@ router.post("/parse", async (req, res) => {
       summary: result.summary,
       actions: enriched,
       source: result.source || "rule-based",
+      degraded: Boolean(result.degraded),
+      diagnostics: result.diagnostics || null,
+      todayISO: context.todayISO,
       projects: context.projects.slice(0, 10).map((p) => ({ id: p.id, name: p.name, workspaceId: p.workspaceId })),
       collaborators: context.collaborators.slice(0, 20),
     });
@@ -149,20 +203,49 @@ router.post("/parse", async (req, res) => {
 
 // POST /api/voice/execute — parse and execute actions
 router.post("/execute", async (req, res) => {
-  const { transcript, actions, projectId, workspaceId } = req.body || {};
+  const { transcript, actions, projectId, workspaceId, timeZone } = req.body || {};
   if (!transcript || !transcript.trim()) {
     return res.status(400).json({ error: "Transcript is required." });
+  }
+  if (transcript.length > MAX_TRANSCRIPT) {
+    return res.status(400).json({ error: `Transcript too long (max ${MAX_TRANSCRIPT} chars).` });
   }
 
   try {
     const context = await getContextForUser(req);
+    context.timeZone = sanitizeTimeZone(timeZone);
+    context.todayISO = localISODate(new Date(), context.timeZone);
+
     let actionsToExecute = actions;
+    let parseSummary = null;
+    let diagnostics = null;
 
     // If no actions provided, parse transcript now
     if (!actionsToExecute || actionsToExecute.length === 0) {
       const parsed = await smartParse(transcript, { ...context, currentProjectId: projectId });
       actionsToExecute = parsed.actions;
+      parseSummary = parsed.summary;
+      diagnostics = parsed.diagnostics;
     }
+
+    // Client-supplied actions are user-editable, so they get the same gate as
+    // freshly parsed ones: enums clamped, dates validated, junk dropped.
+    const gate = normalizeActions(actionsToExecute, {
+      source: diagnostics?.source || "rule-based",
+      todayISO: context.todayISO,
+      transcript,
+    });
+    // Carry the ids the client resolved during /parse back through the gate.
+    const originalById = new Map((Array.isArray(actions) ? actions : []).map((a, i) => [i, a]));
+    const validated = gate.actions.map((action, i) => {
+      const src = originalById.get(i) || {};
+      return {
+        ...action,
+        assigneeId: action.assigneeId || src.assigneeId || null,
+        projectId: action.projectId || src.projectId || null,
+        taskId: action.taskId || src.taskId || null,
+      };
+    });
 
     const results = {
       notes: [],
@@ -171,13 +254,18 @@ router.post("/execute", async (req, res) => {
       reminders: [],
       assignments: [],
       errors: [],
+      rejected: gate.rejected,
     };
+
+    for (const dropped of gate.rejected) {
+      results.errors.push({ action: dropped, error: `Action dropped: ${dropped.reason}` });
+    }
 
     // Resolve default workspace
     const defaultWorkspaceId = workspaceId || req.workspaces.find((w) => w.personal)?.id || req.workspaceIds[0];
     const defaultProject = context.projects.find((p) => p.id === projectId) || context.projects[0] || null;
 
-    for (const action of actionsToExecute) {
+    for (const action of validated) {
       try {
         // Resolve project for this action
         let targetProject = null;
@@ -199,13 +287,13 @@ router.post("/execute", async (req, res) => {
 
         switch (action.type) {
           case "create_note": {
-            const text = action.text || action.title || transcript.slice(0, 500);
+            const text = action.text || transcript.slice(0, 500);
             // Save as personal entry + voice note
             const entry = await entriesDb.create({
               userId: req.userId,
               kind: "note",
               text,
-              date: todayISODate(),
+              date: context.todayISO,
             });
             results.notes.push(entry);
             break;
@@ -216,25 +304,23 @@ router.post("/execute", async (req, res) => {
               results.errors.push({ action, error: "No project available to create task in. Create a project first." });
               break;
             }
-            // Check due date not in past unless it's today
-            let dueDate = action.dueDate || null;
-            if (dueDate && dueDate < todayISODate()) {
-              // If it's a past date but user said it, keep it but don't block — voice should be forgiving
-              // For MVP, allow past dates from voice (user might be dictating old tasks)
-            }
+            const actor = await usersDb.findById(req.userId);
+            // Past due dates are allowed on purpose — people dictate backlog.
             const task = await tasksDb.create({
               projectId: targetProject.id,
               title: (action.title || "Voice task").slice(0, 200).trim(),
               notes: (action.notes || "").trim(),
               goalId: action.goalId || null,
-              status: action.status || "todo",
-              dueDate,
+              status: STATUSES.includes(action.status) ? action.status : "todo",
+              dueDate: action.dueDate || null,
               completedAt: null,
               assigneeId,
+              // Previously the parser extracted priority and this call dropped
+              // it on the floor — "high priority" never reached the database.
+              priority: PRIORITY_KEYS.includes(action.priority) ? action.priority : "medium",
             });
 
             // Activity log
-            const actor = await usersDb.findById(req.userId);
             await activityLogDb.log({
               workspaceId: targetProject.workspaceId,
               projectId: targetProject.id,
@@ -269,11 +355,12 @@ router.post("/execute", async (req, res) => {
               results.errors.push({ action, error: `Only admins can create goals in ${targetProject.name}` });
               break;
             }
+            const actor = await usersDb.findById(req.userId);
             const goal = await goalsDb.create({
               projectId: targetProject.id,
               category: CATEGORY_KEYS.includes(action.category) ? action.category : "other",
               platform: (action.platform || "").trim(),
-              label: (action.label || action.title || "Voice goal").slice(0, 120).trim(),
+              label: (action.label || "Voice goal").slice(0, 120).trim(),
               targetValue: Number(action.targetValue) || 0,
               currentValue: Number(action.currentValue) || 0,
               unit: (action.unit || "").trim(),
@@ -281,7 +368,6 @@ router.post("/execute", async (req, res) => {
               step: Number(action.step) || 1,
             });
 
-            const actor = await usersDb.findById(req.userId);
             await activityLogDb.log({
               workspaceId: targetProject.workspaceId,
               projectId: targetProject.id,
@@ -320,7 +406,7 @@ router.post("/execute", async (req, res) => {
               break;
             }
             if (!assigneeId) {
-              results.errors.push({ action, error: "Could not resolve assignee." });
+              results.errors.push({ action, error: `Could not resolve assignee "${action.assigneeHint || ""}".` });
               break;
             }
             const updated = await tasksDb.update(taskToAssign.id, { assigneeId });
@@ -338,15 +424,17 @@ router.post("/execute", async (req, res) => {
           }
 
           case "create_reminder": {
+            // 9am in the user's own zone; a fixed T09:00:00Z fired at 2:30pm IST.
             const scheduledAt = action.dueDate
-              ? new Date(`${action.dueDate}T09:00:00Z`).toISOString()
+              ? localTimeToISO(action.dueDate, DEFAULT_REMINDER_HOUR, context.timeZone) ||
+                new Date(`${action.dueDate}T09:00:00Z`).toISOString()
               : new Date(Date.now() + 60 * 60 * 1000).toISOString(); // default 1 hour
             const reminder = await remindersDb.create({
               userId: req.userId,
               workspaceId: targetProject?.workspaceId || defaultWorkspaceId,
               projectId: targetProject?.id || null,
               type: action.frequency === "once" ? "custom" : "task_progress",
-              message: (action.message || action.text || "Voice reminder").slice(0, 200),
+              message: (action.message || "Voice reminder").slice(0, 200),
               link: targetProject ? `/projects/${targetProject.id}` : "/dashboard",
               scheduledAt,
               frequency: action.frequency || "once",
@@ -364,15 +452,25 @@ router.post("/execute", async (req, res) => {
       }
     }
 
+    const created = [
+      `${results.tasks.length} task${results.tasks.length === 1 ? "" : "s"}`,
+      `${results.goals.length} goal${results.goals.length === 1 ? "" : "s"}`,
+      `${results.notes.length} note${results.notes.length === 1 ? "" : "s"}`,
+      `${results.reminders.length} reminder${results.reminders.length === 1 ? "" : "s"}`,
+      `${results.assignments.length} assignment${results.assignments.length === 1 ? "" : "s"}`,
+    ].join(", ");
+    const failedCount = results.errors.length;
+
     // Save voice note history
     const voiceNote = await voiceNotesDb.create({
       userId: req.userId,
       workspaceId: defaultWorkspaceId,
       projectId: projectId || defaultProject?.id || null,
       transcript,
-      summary: `${results.tasks.length} tasks, ${results.goals.length} goals, ${results.notes.length} notes from voice`,
+      // Keep what the AI actually understood, not just a tally of rows written.
+      summary: parseSummary ? `${parseSummary} — created ${created}` : `Created ${created}`,
       actions: results,
-      rawActions: actionsToExecute,
+      rawActions: validated,
     });
 
     // Also create a general notification that voice processing completed
@@ -390,7 +488,10 @@ router.post("/execute", async (req, res) => {
     res.json({
       voiceNote,
       results,
-      summary: `Created ${results.tasks.length} tasks, ${results.goals.length} goals, ${results.notes.length} notes`,
+      // A partial failure must not read as success in the UI.
+      summary: failedCount > 0 ? `Created ${created} — ${failedCount} item${failedCount === 1 ? "" : "s"} failed` : `Created ${created}`,
+      failedCount,
+      diagnostics,
     });
   } catch (err) {
     console.error("Voice execute error:", err);
@@ -432,6 +533,7 @@ router.get("/context", async (req, res) => {
       })),
       collaborators: context.collaborators.slice(0, 30),
       workspaces: req.workspaces.map((w) => ({ id: w.id, name: w.name, role: w.role })),
+      aiEnabled: Boolean(process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY !== "sk-your-openai-key",
     });
   } catch (err) {
     console.error(err);
@@ -440,3 +542,6 @@ router.get("/context", async (req, res) => {
 });
 
 module.exports = router;
+module.exports.localTimeToISO = localTimeToISO;
+module.exports.zoneOffsetMs = zoneOffsetMs;
+module.exports.sanitizeTimeZone = sanitizeTimeZone;

@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Mic, MicOff, Sparkles, X, Check, Loader2, Trash2, Clock, User, Target, FileText, Bell, Play, Pause, Wand2 } from "lucide-react";
+import { Mic, MicOff, Sparkles, X, Check, Loader2, Trash2, Clock, User, Target, FileText, Bell, Play, Pause, Wand2, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api";
+
+// Sent with every parse/execute so the server resolves "tomorrow" and reminder
+// times against the user's actual calendar day instead of UTC.
+function userTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 const EXAMPLE_PROMPTS = [
   "Create a task to design landing page for tomorrow and assign to Sarah",
@@ -124,6 +134,11 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
           {action.confidence !== undefined && (
             <span className="text-[10px] text-text-faint">{Math.round(action.confidence * 100)}%</span>
           )}
+          {action.needsReview && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+              <AlertTriangle size={10} /> check this
+            </span>
+          )}
         </div>
         <button
           onClick={() => onRemove(index)}
@@ -162,7 +177,13 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
             {action.assigneeHint && (
               <div className="flex items-center gap-1.5 text-xs text-text-soft">
                 <User size={12} /> Assign to: <span className="font-medium text-text">{action.assignee?.name || action.assigneeHint}</span>
-                {action.assignee && <span className="text-[10px] text-emerald-400">✓ resolved</span>}
+                {action.assigneeResolved === false ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-400">
+                    <AlertTriangle size={10} /> no teammate matched — will be unassigned
+                  </span>
+                ) : (
+                  action.assignee && <span className="text-[10px] text-emerald-400">✓ resolved</span>
+                )}
               </div>
             )}
             {action.project && (
@@ -268,6 +289,9 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
   const [successMsg, setSuccessMsg] = useState("");
   const [voiceNotes, setVoiceNotes] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  // Which stage produced the last parse, so the UI never presents a degraded
+  // rule-based parse as if the model had analysed it.
+  const [analysis, setAnalysis] = useState(null);
 
   const speech = useSpeechRecognition();
   const transcriptRef = useRef(null);
@@ -295,10 +319,17 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
     setParsing(true);
     setError("");
     setSuccessMsg("");
+    setAnalysis(null);
     try {
-      const result = await api.voiceParse({ transcript: transcript.trim(), projectId });
+      const result = await api.voiceParse({ transcript: transcript.trim(), projectId, timeZone: userTimeZone() });
       setParsedActions(result.actions || []);
       setSummary(result.summary || "");
+      setAnalysis({
+        source: result.source,
+        degraded: Boolean(result.degraded),
+        reason: result.diagnostics?.reason || null,
+        rejected: result.diagnostics?.rejected || [],
+      });
       if (result.actions?.length === 0) {
         setError("Couldn't detect any tasks or goals. Try rephrasing — e.g., 'Create a task to...'");
       }
@@ -317,19 +348,32 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
     setExecuting(true);
     setError("");
     try {
-      const result = await api.voiceExecute({ transcript, actions: parsedActions, projectId });
+      const result = await api.voiceExecute({ transcript, actions: parsedActions, projectId, timeZone: userTimeZone() });
+      const failures = result.results?.errors || [];
       setSuccessMsg(result.summary || `Created ${result.results?.tasks?.length || 0} tasks, ${result.results?.goals?.length || 0} goals`);
+      // A partial failure must not read as a clean success.
+      if (failures.length > 0 || result.failedCount > 0) {
+        const reasons = failures.map((f) => f.error).filter(Boolean).slice(0, 3);
+        setError(
+          `${failures.length} item${failures.length === 1 ? "" : "s"} could not be created${
+            reasons.length ? `: ${reasons.join("; ")}` : "."
+          }`
+        );
+      }
       setParsedActions([]);
+      setAnalysis(null);
       setTranscript("");
       speech.reset();
       // Refresh voice notes
       api.voiceNotes().then((d) => setVoiceNotes(d.notes || [])).catch(() => {});
       if (onSuccess) onSuccess(result);
-      // Auto close after 2s
-      setTimeout(() => {
-        setSuccessMsg("");
-        setOpen(false);
-      }, 2000);
+      // Auto close after 2s only when everything actually landed
+      if (!failures.length && !result.failedCount) {
+        setTimeout(() => {
+          setSuccessMsg("");
+          setOpen(false);
+        }, 2000);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -517,7 +561,32 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
                     {summary && parsedActions.length > 0 && (
                       <div className="mt-3 rounded-xl bg-signal-tint px-3 py-2 text-xs text-text-soft border border-line">
                         <span className="font-medium text-text">AI Summary:</span> {summary}
+                        {analysis && (
+                          <span className="ml-2 rounded-full border border-line bg-card px-2 py-0.5 text-[10px] text-text-faint">
+                            {analysis.source === "llm" ? "model parsed" : "rule-based"}
+                            {analysis.degraded ? " · degraded" : ""}
+                          </span>
+                        )}
                       </div>
+                    )}
+
+                    {analysis?.degraded && parsedActions.length > 0 && (
+                      <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                        <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                        <span>
+                          The AI model was unavailable, so this was parsed with Deck&apos;s built-in rules — dates and
+                          assignments may be less accurate. Check the cards below before creating.
+                          {analysis.reason ? <span className="block text-[11px] text-amber-400/70">({analysis.reason})</span> : null}
+                        </span>
+                      </div>
+                    )}
+
+                    {analysis?.rejected?.length > 0 && (
+                      <p className="mt-2 text-[11px] text-text-faint">
+                        {analysis.rejected.length} fragment
+                        {analysis.rejected.length === 1 ? "" : "s"} ignored
+                        {analysis.rejected[0]?.reason ? ` (${analysis.rejected[0].reason})` : ""}.
+                      </p>
                     )}
                   </div>
 
@@ -536,6 +605,11 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
                           <div className="mt-4 rounded-xl border border-line bg-card px-3 py-2 text-xs text-text-soft">
                             <div>📁 {context.projects?.length || 0} projects available</div>
                             <div>👥 {context.collaborators?.length || 0} teammates can be assigned</div>
+                            <div className={context.aiEnabled ? "text-emerald-400" : "text-amber-400"}>
+                              {context.aiEnabled
+                                ? "✨ AI model connected"
+                                : "⚠️ AI model not configured — rule-based parsing only"}
+                            </div>
                           </div>
                         )}
                       </div>
