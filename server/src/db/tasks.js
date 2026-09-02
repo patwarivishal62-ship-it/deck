@@ -24,7 +24,10 @@ async function findByIdInProject(id, projectId) {
   return toTask(await collection().findOne({ id, projectId }));
 }
 
-async function create({ projectId, title, notes, goalId, status, dueDate, completedAt, assigneeId }) {
+// `priority` uses the same enum as projects (see constants.js PRIORITY_KEYS).
+// Tasks created before this field existed simply have no priority and render as
+// medium; reads must treat undefined as "medium".
+async function create({ projectId, title, notes, goalId, status, dueDate, completedAt, assigneeId, priority }) {
   const task = {
     id: nanoid(),
     projectId,
@@ -36,13 +39,14 @@ async function create({ projectId, title, notes, goalId, status, dueDate, comple
     createdAt: new Date().toISOString(),
     completedAt: completedAt || null,
     assigneeId: assigneeId || null,
+    priority: priority || "medium",
   };
   await collection().insertOne(task);
   return toTask(task);
 }
 
 async function update(id, fields) {
-  const allowed = ["title", "notes", "goalId", "status", "dueDate", "completedAt", "assigneeId"];
+  const allowed = ["title", "notes", "goalId", "status", "dueDate", "completedAt", "assigneeId", "priority"];
   const keys = Object.keys(fields).filter((k) => allowed.includes(k));
   if (keys.length === 0) return findById(id);
 
