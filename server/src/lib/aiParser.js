@@ -1,5 +1,5 @@
 /**
- * Echo — Deck's voice AI parser
+ * Echo — voice parser
  *
  * Two-stage pipeline:
  *   1. LLM parse — used when a model is configured (see lib/aiConfig.js).
@@ -947,7 +947,7 @@ function buildPrompt(transcript, context, todayISO) {
   const weekday = WEEKDAYS[weekdayOf(todayISO)];
   const zone = context.timeZone || "UTC";
 
-  return `You are Echo, Deck's voice assistant and project management copilot. Convert a voice transcript into structured actions.
+  return `You are Echo, a project management copilot. Convert a voice transcript into structured actions.
 
 TODAY IS ${todayISO}, which is a ${weekday}. The user's time zone is ${zone}.
 Resolve every relative date ("tomorrow", "next Friday", "end of month") against that date and return it as YYYY-MM-DD.

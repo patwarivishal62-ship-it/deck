@@ -64,7 +64,7 @@ export default function AppShell({
         </main>
       </div>
 
-      {/* Echo — Deck's voice assistant, available on every signed-in screen */}
+      {/* Echo — available on every signed-in screen */}
       <VoiceAssistant projectId={projectId} />
     </div>
   );

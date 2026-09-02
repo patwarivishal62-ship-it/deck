@@ -197,9 +197,9 @@ This project is **proprietary software**. It is not licensed for public use,
 redistribution, or contribution. Copyright (c) 2026 DECK / PlanYourDeck.
 All rights reserved. See [`LICENSE`](./LICENSE).
 
-## Echo — the voice assistant
+## Echo
 
-Echo is Deck's voice AI. Speak, and it turns the transcript into structured
+Speak, and Echo turns the transcript into structured
 projects, goals, tasks, assignments, notes and reminders.
 
 ### Configuring the model
