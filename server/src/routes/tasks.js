@@ -9,7 +9,7 @@ const notificationsDb = require("../db/notifications");
 const { collaboratorsFor } = require("../lib/collaborators");
 const { requireAuth } = require("../middleware/auth");
 const { attachWorkspaces } = require("../middleware/workspace");
-const { STATUSES } = require("../constants");
+const { STATUSES, PRIORITY_KEYS } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -98,9 +98,13 @@ router.post("/:projectId/tasks", async (req, res) => {
   const project = await ownedProject(req.params.projectId, req);
   if (!project) return res.status(404).json({ error: "Project not found." });
 
-  const { title, notes, goalId, status, dueDate, assigneeId } = req.body || {};
+  const { title, notes, goalId, status, dueDate, assigneeId, priority } = req.body || {};
   if (!title || !title.trim()) {
     return res.status(400).json({ error: "Task title is required." });
+  }
+  // Same enum + validation rule as projects (routes/projects.js).
+  if (priority !== undefined && priority !== "" && !PRIORITY_KEYS.includes(priority)) {
+    return res.status(400).json({ error: "Invalid priority." });
   }
   const finalStatus = STATUSES.includes(status) ? status : "todo";
 
@@ -132,6 +136,7 @@ router.post("/:projectId/tasks", async (req, res) => {
     dueDate: dueDate || null,
     completedAt: finalStatus === "done" ? new Date().toISOString() : null,
     assigneeId: assignee.assigneeId,
+    priority: priority || "medium",
   });
 
   if (finalStatus === "done" && goalId) {
@@ -159,9 +164,12 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
   const task = await tasksDb.findByIdInProject(req.params.taskId, project.id);
   if (!task) return res.status(404).json({ error: "Task not found." });
 
-  const { title, notes, goalId, status, dueDate, assigneeId } = req.body || {};
+  const { title, notes, goalId, status, dueDate, assigneeId, priority } = req.body || {};
   if (title !== undefined && !title.trim()) {
     return res.status(400).json({ error: "Task title is required." });
+  }
+  if (priority !== undefined && priority !== "" && !PRIORITY_KEYS.includes(priority)) {
+    return res.status(400).json({ error: "Invalid priority." });
   }
   // Only validate when the due date is actually being changed to something
   // new — an existing task that's already overdue (because time passed,
@@ -192,6 +200,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
     ...(goalId !== undefined ? { goalId: goalId || null } : {}),
     ...(dueDate !== undefined ? { dueDate: dueDate || null } : {}),
     ...(assigneeId !== undefined ? { assigneeId: assignee.assigneeId } : {}),
+    ...(priority !== undefined && priority !== "" ? { priority } : {}),
     status: newStatus,
     completedAt: newStatus === "done" ? task.completedAt || new Date().toISOString() : null,
   });

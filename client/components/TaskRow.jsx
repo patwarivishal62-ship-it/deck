@@ -1,6 +1,6 @@
 "use client";
 
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, PRIORITIES } from "@/lib/constants";
 
 const STATUS_STYLES = {
   todo: "bg-ink-2 text-text-soft border-line",
@@ -11,6 +11,10 @@ const STATUS_LABELS = { todo: "To do", in_progress: "In progress", done: "Done" 
 
 export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdit, onDelete, onComment, canDelete = true }) {
   const meta = goal ? CATEGORIES[goal.category] || CATEGORIES.other : null;
+  // Tasks created before the field existed have no priority — treat as medium,
+  // same rule as the server (db/tasks.js) and the voice parser.
+  const priority = PRIORITIES[task.priority] || PRIORITIES.medium;
+  const done = task.status === "done";
 
   return (
     <div className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-3">
@@ -25,10 +29,23 @@ export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdi
         </button>
 
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm font-medium ${task.status === "done" ? "line-through text-text-faint" : "text-text"}`}>
+          <p className={`truncate text-sm font-medium ${done ? "line-through text-text-faint" : "text-text"}`}>
             {task.title}
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide ${
+                done ? "border-line text-text-faint" : "text-text-soft"
+              }`}
+              style={done ? undefined : { borderColor: `${priority.color}55` }}
+              title={`${priority.label} priority`}
+            >
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: priority.color, opacity: done ? 0.5 : 1 }}
+              />
+              {priority.label}
+            </span>
             {goal && (
               <span className="inline-flex items-center gap-1 font-mono text-[10px] text-text-faint">
                 <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
