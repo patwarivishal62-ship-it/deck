@@ -12,8 +12,8 @@ const membershipsDb = require("../db/memberships");
 const entriesDb = require("../db/personalEntries");
 const activityLogDb = require("../db/activityLog");
 const { collaboratorsFor } = require("../lib/collaborators");
-const { smartParse, parseTranscript } = require("../lib/aiParser");
-const { CATEGORY_KEYS, PERIODS } = require("../constants");
+const { smartParse } = require("../lib/aiParser");
+const { CATEGORY_KEYS, PERIODS, PRIORITY_KEYS } = require("../constants");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -73,17 +73,110 @@ function resolveAssigneeByHint(hint, collaborators) {
   return partial || null;
 }
 
-function resolveProjectByHint(hint, projects, fallbackProjectId) {
-  if (fallbackProjectId) {
-    const found = projects.find((p) => p.id === fallbackProjectId);
+// Strict lookup: a hint only resolves to a project it actually names (id,
+// exact name, or a name contained in / containing the hint). Returns null
+// otherwise — the caller decides what "no project" means. It must NOT fall
+// back to projects[0]: that is how every voice task used to land in
+// whichever project happened to be listed first.
+function resolveProjectByHint(hint, projects) {
+  if (!hint || !Array.isArray(projects) || projects.length === 0) return null;
+  const raw = String(hint).trim();
+  if (!raw) return null;
+  const byId = projects.find((p) => p.id === raw);
+  if (byId) return byId;
+
+  const lower = raw.toLowerCase();
+  const exact = projects.find((p) => (p.name || "").toLowerCase() === lower);
+  if (exact) return exact;
+
+  // Only consider reasonably specific names for fuzzy containment — a
+  // two-letter project name would otherwise match almost any hint.
+  const fuzzy = projects.filter((p) => {
+    const name = (p.name || "").toLowerCase();
+    if (name.length < 3) return false;
+    return name.includes(lower) || lower.includes(name);
+  });
+  if (fuzzy.length === 1) return fuzzy[0];
+  if (fuzzy.length > 1) {
+    // Prefer the longest (most specific) matching name.
+    return fuzzy.sort((a, b) => (b.name || "").length - (a.name || "").length)[0];
+  }
+  return null;
+}
+
+// Which project an action should land in. Order of precedence:
+//   1. an explicit projectId that the caller can see
+//   2. a projectHint that names a real project (or the project we just created)
+//   3. the project the user is currently looking at (projectId from the UI)
+//   4. a project created earlier in this same voice command
+//   5. nothing — never "the first project in the list"
+function resolveTargetProject(action, projects, { currentProjectId, createdProject } = {}) {
+  if (action.projectId) {
+    const found = projects.find((p) => p.id === action.projectId);
+    if (found) return found;
+    if (createdProject && createdProject.id === action.projectId) return createdProject;
+  }
+  // The UI marks actions that were pointed at the project being created in
+  // this same command — honour that even if the name was edited afterwards.
+  if (action.project?.isNew && createdProject) return createdProject;
+  if (action.projectHint) {
+    const pool = createdProject ? [createdProject, ...projects] : projects;
+    const found = resolveProjectByHint(action.projectHint, pool);
     if (found) return found;
   }
-  if (!hint) return projects[0] || null; // default to first project if no hint
-  const lower = hint.toLowerCase();
-  const byId = projects.find((p) => p.id === hint);
-  if (byId) return byId;
-  const byName = projects.find((p) => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase()));
-  return byName || projects[0] || null;
+  if (currentProjectId) {
+    const found = projects.find((p) => p.id === currentProjectId);
+    if (found) return found;
+  }
+  if (createdProject) return createdProject;
+  return null;
+}
+
+function roleFor(req, workspaceId) {
+  return req.workspaces.find((w) => w.id === workspaceId)?.role;
+}
+
+async function createProjectFromAction(req, action, { workspaceId }) {
+  const name = String(action.name || action.title || "").trim().slice(0, 80);
+  if (!name) throw new Error("Project name is required.");
+  const role = roleFor(req, workspaceId);
+  if (!role) throw new Error("You don't have access to that workspace.");
+
+  const project = await projectsDb.create({
+    workspaceId,
+    userId: req.userId,
+    name,
+    description: String(action.description || "").trim(),
+    tags: Array.isArray(action.tags) ? action.tags.map((t) => String(t).trim()).filter(Boolean) : [],
+    priority: PRIORITY_KEYS.includes(action.priority) ? action.priority : "medium",
+    dueDate: action.dueDate || null,
+    memberAccess: role === "member" ? [req.userId] : [],
+  });
+
+  const creator = await usersDb.findById(req.userId);
+  await activityLogDb.log({
+    workspaceId,
+    projectId: project.id,
+    actorUserId: req.userId,
+    type: "project_created",
+    message: `${creator?.name || creator?.email} created this project via voice`,
+  });
+
+  const workspaceMembers = await membershipsDb.listByWorkspace(workspaceId);
+  const notifyRecipients = workspaceMembers
+    .filter((m) => m.status === "active" && m.userId && m.userId !== req.userId)
+    .filter((m) => m.role === "owner" || m.role === "admin")
+    .map((m) => ({
+      userId: m.userId,
+      workspaceId,
+      projectId: project.id,
+      type: "project_created",
+      message: `${creator?.name || creator?.email} created "${project.name}" via voice`,
+      link: `/projects/${project.id}`,
+    }));
+  await notificationsDb.createMany(notifyRecipients);
+
+  return project;
 }
 
 // POST /api/voice/parse — parse transcript without executing
@@ -102,7 +195,14 @@ router.post("/parse", async (req, res) => {
 
     const result = await smartParse(transcript, context);
 
-    // Enrich actions with resolved entities
+    // A project created in this transcript becomes the default home for the
+    // goals/tasks spoken alongside it. It doesn't exist yet, so those actions
+    // keep the *name* as projectHint and the execute step resolves it after
+    // the project row is inserted.
+    const newProjectAction = result.actions.find((a) => a.type === "create_project");
+    const newProjectName = newProjectAction && !newProjectAction.needsName ? String(newProjectAction.name || "").trim() : null;
+    const isNewProjectHint = (hint) => Boolean(newProjectName && hint && String(hint).trim().toLowerCase() === newProjectName.toLowerCase());
+
     const enriched = result.actions.map((action) => {
       const enrichedAction = { ...action };
 
@@ -113,20 +213,36 @@ router.post("/parse", async (req, res) => {
           enrichedAction.assigneeId = resolved.userId;
         }
       }
-      if (action.projectHint || action.projectId || projectId) {
-        const proj = resolveProjectByHint(action.projectHint || action.projectId || projectId, context.projects, projectId);
+
+      if (action.type === "create_project") {
+        enrichedAction.workspaceId = workspaceId || req.workspaces.find((w) => w.personal)?.id || req.workspaceIds[0];
+        return enrichedAction;
+      }
+
+      if (action.type === "create_task" || action.type === "create_goal" || action.type === "create_reminder") {
+        if (isNewProjectHint(action.projectHint)) {
+          // Keep the hint as the (not yet existing) project's name.
+          enrichedAction.projectHint = newProjectName;
+          enrichedAction.project = { id: null, name: newProjectName, isNew: true };
+          delete enrichedAction.projectId;
+          delete enrichedAction.workspaceId;
+          return enrichedAction;
+        }
+
+        const proj = resolveTargetProject(action, context.projects, { currentProjectId: projectId });
         if (proj) {
           enrichedAction.project = { id: proj.id, name: proj.name };
           enrichedAction.projectId = proj.id;
           enrichedAction.workspaceId = proj.workspaceId;
-        }
-      }
-      // For tasks/goals without project, assign first available
-      if ((action.type === "create_task" || action.type === "create_goal") && !enrichedAction.projectId) {
-        if (context.projects.length > 0) {
-          enrichedAction.projectId = context.projects[0].id;
-          enrichedAction.project = { id: context.projects[0].id, name: context.projects[0].name };
-          enrichedAction.workspaceId = context.projects[0].workspaceId;
+        } else if (newProjectName) {
+          enrichedAction.projectHint = newProjectName;
+          enrichedAction.project = { id: null, name: newProjectName, isNew: true };
+          delete enrichedAction.projectId;
+        } else {
+          // No project named, none open, none being created: leave it
+          // unassigned so the UI can ask instead of silently guessing.
+          delete enrichedAction.projectId;
+          enrichedAction.project = null;
         }
       }
 
@@ -135,8 +251,10 @@ router.post("/parse", async (req, res) => {
 
     res.json({
       transcript,
+      cleaned: result.cleaned || transcript,
       summary: result.summary,
       actions: enriched,
+      newProjectName,
       source: result.source || "rule-based",
       projects: context.projects.slice(0, 10).map((p) => ({ id: p.id, name: p.name, workspaceId: p.workspaceId })),
       collaborators: context.collaborators.slice(0, 20),
@@ -165,6 +283,7 @@ router.post("/execute", async (req, res) => {
     }
 
     const results = {
+      projects: [],
       notes: [],
       tasks: [],
       goals: [],
@@ -175,20 +294,38 @@ router.post("/execute", async (req, res) => {
 
     // Resolve default workspace
     const defaultWorkspaceId = workspaceId || req.workspaces.find((w) => w.personal)?.id || req.workspaceIds[0];
-    const defaultProject = context.projects.find((p) => p.id === projectId) || context.projects[0] || null;
+    // The project the user is currently viewing (if any). This is the ONLY
+    // implicit default — we never fall back to "first project in the list".
+    const currentProject = projectId ? context.projects.find((p) => p.id === projectId) || null : null;
 
-    for (const action of actionsToExecute) {
+    // First pass: create any new project(s) so the goals/tasks that follow
+    // can be attached to them by name.
+    let createdProject = null;
+    const projectActions = actionsToExecute.filter((a) => a && a.type === "create_project");
+    const otherActions = actionsToExecute.filter((a) => a && a.type !== "create_project");
+    const createdProjects = [];
+    for (const action of projectActions) {
+      try {
+        const project = await createProjectFromAction(req, action, {
+          workspaceId: action.workspaceId || defaultWorkspaceId,
+        });
+        createdProjects.push(project);
+        context.projects.unshift(project);
+        if (!createdProject) createdProject = project;
+      } catch (innerErr) {
+        console.error("Project create error:", innerErr);
+        results.errors.push({ action, error: innerErr.message });
+      }
+    }
+    results.projects = createdProjects.map((p) => ({ id: p.id, name: p.name, workspaceId: p.workspaceId }));
+
+    for (const action of otherActions) {
       try {
         // Resolve project for this action
-        let targetProject = null;
-        if (action.projectId) {
-          targetProject = context.projects.find((p) => p.id === action.projectId);
-        } else if (action.projectHint) {
-          targetProject = resolveProjectByHint(action.projectHint, context.projects);
-        } else if (projectId) {
-          targetProject = context.projects.find((p) => p.id === projectId);
-        }
-        if (!targetProject) targetProject = defaultProject;
+        const targetProject = resolveTargetProject(action, context.projects, {
+          currentProjectId: currentProject?.id || null,
+          createdProject,
+        });
 
         // Resolve assignee
         let assigneeId = action.assigneeId || null;
@@ -213,15 +350,17 @@ router.post("/execute", async (req, res) => {
 
           case "create_task": {
             if (!targetProject) {
-              results.errors.push({ action, error: "No project available to create task in. Create a project first." });
+              results.errors.push({
+                action,
+                error: action.projectHint
+                  ? `Couldn't find a project matching "${action.projectHint}" for task "${action.title}".`
+                  : `No project chosen for task "${action.title}". Say the project name or open a project first.`,
+              });
               break;
             }
-            // Check due date not in past unless it's today
-            let dueDate = action.dueDate || null;
-            if (dueDate && dueDate < todayISODate()) {
-              // If it's a past date but user said it, keep it but don't block — voice should be forgiving
-              // For MVP, allow past dates from voice (user might be dictating old tasks)
-            }
+            // Voice is forgiving about dates: a past date is kept as spoken
+            // (the user may be dictating something already overdue).
+            const dueDate = action.dueDate || null;
             const task = await tasksDb.create({
               projectId: targetProject.id,
               title: (action.title || "Voice task").slice(0, 200).trim(),
@@ -261,7 +400,12 @@ router.post("/execute", async (req, res) => {
 
           case "create_goal": {
             if (!targetProject) {
-              results.errors.push({ action, error: "No project available to create goal in." });
+              results.errors.push({
+                action,
+                error: action.projectHint
+                  ? `Couldn't find a project matching "${action.projectHint}" for goal "${action.label}".`
+                  : `No project chosen for goal "${action.label}". Say the project name or open a project first.`,
+              });
               break;
             }
             const role = req.workspaces.find((w) => w.id === targetProject.workspaceId)?.role;
@@ -323,7 +467,9 @@ router.post("/execute", async (req, res) => {
               results.errors.push({ action, error: "Could not resolve assignee." });
               break;
             }
-            const updated = await tasksDb.update(taskToAssign.id, { assigneeId });
+            const assignPatch = { assigneeId };
+            if (action.dueDate) assignPatch.dueDate = action.dueDate;
+            const updated = await tasksDb.update(taskToAssign.id, assignPatch);
             const actor = await usersDb.findById(req.userId);
             await notificationsDb.create({
               userId: assigneeId,
@@ -364,33 +510,43 @@ router.post("/execute", async (req, res) => {
       }
     }
 
+    const homeProject = createdProject || currentProject || null;
+    const summaryParts = [];
+    if (results.projects.length) summaryParts.push(`${results.projects.length} project${results.projects.length > 1 ? "s" : ""}`);
+    if (results.goals.length) summaryParts.push(`${results.goals.length} goal${results.goals.length > 1 ? "s" : ""}`);
+    if (results.tasks.length) summaryParts.push(`${results.tasks.length} task${results.tasks.length > 1 ? "s" : ""}`);
+    if (results.notes.length) summaryParts.push(`${results.notes.length} note${results.notes.length > 1 ? "s" : ""}`);
+    if (results.reminders.length) summaryParts.push(`${results.reminders.length} reminder${results.reminders.length > 1 ? "s" : ""}`);
+    if (results.assignments.length) summaryParts.push(`${results.assignments.length} assignment${results.assignments.length > 1 ? "s" : ""}`);
+    const summary = summaryParts.length ? `Created ${summaryParts.join(", ")}` : "Nothing was created";
+
     // Save voice note history
     const voiceNote = await voiceNotesDb.create({
       userId: req.userId,
-      workspaceId: defaultWorkspaceId,
-      projectId: projectId || defaultProject?.id || null,
+      workspaceId: homeProject?.workspaceId || defaultWorkspaceId,
+      projectId: homeProject?.id || null,
       transcript,
-      summary: `${results.tasks.length} tasks, ${results.goals.length} goals, ${results.notes.length} notes from voice`,
+      summary: `${summary} from voice`,
       actions: results,
       rawActions: actionsToExecute,
     });
 
     // Also create a general notification that voice processing completed
-    if (results.tasks.length > 0 || results.goals.length > 0) {
+    if (results.tasks.length > 0 || results.goals.length > 0 || results.projects.length > 0) {
       await notificationsDb.create({
         userId: req.userId,
-        workspaceId: defaultWorkspaceId,
-        projectId: defaultProject?.id || null,
+        workspaceId: homeProject?.workspaceId || defaultWorkspaceId,
+        projectId: homeProject?.id || null,
         type: "voice_processed",
-        message: `Voice note processed: ${results.tasks.length} tasks, ${results.goals.length} goals created`,
-        link: defaultProject ? `/projects/${defaultProject.id}` : "/dashboard",
+        message: `Voice note processed: ${summary.replace(/^Created /, "")}`,
+        link: homeProject ? `/projects/${homeProject.id}` : "/dashboard",
       });
     }
 
     res.json({
       voiceNote,
       results,
-      summary: `Created ${results.tasks.length} tasks, ${results.goals.length} goals, ${results.notes.length} notes`,
+      summary: results.errors.length ? `${summary} (${results.errors.length} skipped)` : summary,
     });
   } catch (err) {
     console.error("Voice execute error:", err);

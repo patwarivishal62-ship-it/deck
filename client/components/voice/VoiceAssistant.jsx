@@ -1,256 +1,277 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Mic, MicOff, Sparkles, X, Check, Loader2, Trash2, Clock, User, Target, FileText, Bell, Play, Pause, Wand2 } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Sparkles,
+  X,
+  Check,
+  Loader2,
+  Trash2,
+  FolderKanban,
+  Target,
+  ListTodo,
+  StickyNote,
+  Bell,
+  User,
+  CalendarDays,
+  AlertTriangle,
+} from "lucide-react";
 import { api } from "@/lib/api";
 
-const EXAMPLE_PROMPTS = [
-  "Create a task to design landing page for tomorrow and assign to Sarah",
-  "Add a goal to increase Instagram followers to 10k",
-  "Note that client meeting went well, need to follow up on proposal",
-  "Remind me daily to update task progress at 9am",
-  "Create tasks: write blog post, design social media, schedule email campaign",
+// Short chip label → full sentence dropped into the textarea.
+const QUICK_PROMPTS = [
+  {
+    label: "New project + goals + tasks",
+    text:
+      "Create a project called Sports Nutrition, add goals like Instagram followers monthly 500 and blog posts weekly 3, research and writing deadlines for 4th of September, postings shall be done by 10th of September",
+  },
+  { label: "Task for a teammate", text: "Create a task to design the landing page by tomorrow and assign to Sarah, high priority" },
+  { label: "Goal", text: "Add a goal to increase Instagram followers to 10k this month" },
+  { label: "Task list", text: "Create tasks: write blog post, design social media graphics, schedule email campaign" },
+  { label: "Daily reminder", text: "Remind me daily at 9am to update task progress" },
+  { label: "Note", text: "Note that the client wants a darker theme on the homepage" },
 ];
+
+const TYPE_META = {
+  create_project: { label: "Project", Icon: FolderKanban, tone: "text-sky-400 bg-sky-500/10" },
+  create_goal: { label: "Goal", Icon: Target, tone: "text-emerald-400 bg-emerald-500/10" },
+  create_task: { label: "Task", Icon: ListTodo, tone: "text-violet-400 bg-violet-500/10" },
+  create_note: { label: "Note", Icon: StickyNote, tone: "text-blue-400 bg-blue-500/10" },
+  create_reminder: { label: "Reminder", Icon: Bell, tone: "text-pink-400 bg-pink-500/10" },
+  assign_task: { label: "Assign", Icon: User, tone: "text-amber-400 bg-amber-500/10" },
+};
+
+const TITLE_FIELD = {
+  create_project: "name",
+  create_goal: "label",
+  create_task: "title",
+  create_note: "text",
+  create_reminder: "message",
+  assign_task: "taskHint",
+};
+
+function formatDue(iso) {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
+}
 
 function useSpeechRecognition() {
   const [isSupported, setIsSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [interimTranscript, setInterimTranscript] = useState("");
+  const [finalText, setFinalText] = useState("");
+  const [interimText, setInterimText] = useState("");
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      setIsSupported(true);
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = "en-US";
+    if (!SpeechRecognition) return;
+    setIsSupported(true);
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-IN";
 
-      recognition.onresult = (event) => {
-        let interim = "";
-        let final = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            final += result[0].transcript + " ";
-          } else {
-            interim += result[0].transcript;
-          }
-        }
-        if (final) {
-          setTranscript((prev) => (prev + " " + final).trim());
-        }
-        setInterimTranscript(interim);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        setInterimTranscript("");
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
+    recognition.onresult = (event) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) final += result[0].transcript + " ";
+        else interim += result[0].transcript;
+      }
+      if (final) setFinalText((prev) => `${prev} ${final}`.trim());
+      setInterimText(interim);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimText("");
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    return () => {
+      try {
+        recognition.stop();
+      } catch {}
+    };
   }, []);
 
   const start = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
-      setTranscript("");
-      setInterimTranscript("");
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    if (!recognitionRef.current || isListening) return;
+    setFinalText("");
+    setInterimText("");
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch {}
   }, [isListening]);
 
   const stop = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
+    if (!recognitionRef.current || !isListening) return;
+    recognitionRef.current.stop();
+    setIsListening(false);
   }, [isListening]);
 
   const reset = useCallback(() => {
-    setTranscript("");
-    setInterimTranscript("");
+    setFinalText("");
+    setInterimText("");
   }, []);
 
-  return { isSupported, isListening, transcript, interimTranscript, start, stop, reset, setTranscript };
+  return { isSupported, isListening, finalText, interimText, start, stop, reset };
 }
 
-function ActionCard({ action, index, onUpdate, onRemove }) {
-  const typeIcons = {
-    create_task: <FileText size={14} />,
-    create_goal: <Target size={14} />,
-    create_note: <FileText size={14} />,
-    assign_task: <User size={14} />,
-    create_reminder: <Bell size={14} />,
-  };
+function Chip({ children, tone = "border-line bg-paper-2 text-text-soft", title, onClick, as: Tag = "span", ...rest }) {
+  const cls = `inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4 ${tone} ${
+    onClick ? "cursor-pointer hover:border-[#7C5CFF]/40" : ""
+  }`;
+  return (
+    <Tag className={cls} title={title} onClick={onClick} {...rest}>
+      {children}
+    </Tag>
+  );
+}
 
-  const typeLabels = {
-    create_task: "Task",
-    create_goal: "Goal",
-    create_note: "Note",
-    assign_task: "Assignment",
-    create_reminder: "Reminder",
-  };
+function DueChip({ value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="date"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value || null)}
+        onBlur={() => setEditing(false)}
+        className="rounded-full border border-[#7C5CFF]/40 bg-paper-2 px-2 py-0.5 text-[11px] text-text focus:outline-none"
+      />
+    );
+  }
+  return (
+    <Chip
+      as="button"
+      type="button"
+      onClick={() => setEditing(true)}
+      title="Change due date"
+      tone={value ? "border-line bg-paper-2 text-text" : "border-dashed border-line bg-transparent text-text-faint"}
+    >
+      <CalendarDays size={11} />
+      {value ? formatDue(value) : "No date"}
+    </Chip>
+  );
+}
 
-  const typeColors = {
-    create_task: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    create_goal: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    create_note: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    assign_task: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    create_reminder: "bg-pink-500/10 text-pink-400 border-pink-500/20",
-  };
+function ProjectChip({ action, projects, newProjectName, onChange }) {
+  const isNew = action.project?.isNew || (!action.projectId && newProjectName && action.projectHint === newProjectName);
+  const options = [
+    ...(newProjectName ? [{ id: "__new__", name: `${newProjectName} (new)` }] : []),
+    ...(projects || []),
+  ];
+  const current = isNew ? "__new__" : action.projectId || "";
+  const missing = !current;
+  return (
+    <label
+      className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-4 ${
+        missing ? "border-amber-500/40 bg-amber-500/10 text-amber-400" : "border-line bg-paper-2 text-text-soft"
+      }`}
+      title="Project this will be created in"
+    >
+      {missing ? <AlertTriangle size={11} /> : <FolderKanban size={11} />}
+      <select
+        value={current}
+        onChange={(e) => onChange(e.target.value)}
+        className="max-w-[160px] cursor-pointer truncate bg-transparent text-[11px] focus:outline-none"
+      >
+        <option value="">Pick a project…</option>
+        {options.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ActionCard({ action, index, projects, newProjectName, onUpdate, onRemove }) {
+  const meta = TYPE_META[action.type] || { label: action.type, Icon: Sparkles, tone: "text-text-soft bg-paper-2" };
+  const { Icon } = meta;
+  const field = TITLE_FIELD[action.type] || "title";
+  const needsProject = action.type === "create_task" || action.type === "create_goal";
+
+  function handleProjectChange(value) {
+    if (value === "__new__") {
+      onUpdate(index, { projectId: undefined, projectHint: newProjectName, project: { id: null, name: newProjectName, isNew: true } });
+      return;
+    }
+    const proj = (projects || []).find((p) => p.id === value);
+    onUpdate(index, {
+      projectId: proj ? proj.id : undefined,
+      projectHint: proj ? proj.id : null,
+      project: proj ? { id: proj.id, name: proj.name } : null,
+      workspaceId: proj ? proj.workspaceId : undefined,
+    });
+  }
 
   return (
-    <div className="group relative rounded-xl border border-line bg-card p-3 transition hover:border-line">
-      <div className="flex items-start justify-between gap-2">
+    <div className="group flex items-start gap-3 rounded-xl border border-line bg-card px-3 py-2.5">
+      <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${meta.tone}`} title={meta.label}>
+        <Icon size={15} />
+      </span>
+
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${typeColors[action.type] || "bg-card border-line text-text-soft"}`}>
-            {typeIcons[action.type]}
-            {typeLabels[action.type] || action.type}
-          </span>
-          {action.confidence !== undefined && (
-            <span className="text-[10px] text-text-faint">{Math.round(action.confidence * 100)}%</span>
-          )}
-        </div>
-        <button
-          onClick={() => onRemove(index)}
-          className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full bg-card text-text-faint transition hover:bg-error-tint hover:text-error-text"
-        >
-          <X size={12} />
-        </button>
-      </div>
-
-      <div className="mt-2.5 space-y-2">
-        {action.type === "create_task" && (
-          <>
-            <input
-              value={action.title || ""}
-              onChange={(e) => onUpdate(index, { title: e.target.value })}
-              placeholder="Task title"
-              className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none"
-            />
-            <div className="flex gap-2">
-              <input
-                value={action.dueDate || ""}
-                onChange={(e) => onUpdate(index, { dueDate: e.target.value })}
-                type="date"
-                className="flex-1 rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              />
-              <select
-                value={action.priority || "medium"}
-                onChange={(e) => onUpdate(index, { priority: e.target.value })}
-                className="rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            {action.assigneeHint && (
-              <div className="flex items-center gap-1.5 text-xs text-text-soft">
-                <User size={12} /> Assign to: <span className="font-medium text-text">{action.assignee?.name || action.assigneeHint}</span>
-                {action.assignee && <span className="text-[10px] text-emerald-400">✓ resolved</span>}
-              </div>
-            )}
-            {action.project && (
-              <div className="text-xs text-text-soft">Project: <span className="font-medium text-text">{action.project.name}</span></div>
-            )}
-          </>
-        )}
-
-        {action.type === "create_goal" && (
-          <>
-            <input
-              value={action.label || ""}
-              onChange={(e) => onUpdate(index, { label: e.target.value })}
-              placeholder="Goal label"
-              className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none"
-            />
-            <div className="flex gap-2">
-              <input
-                value={action.targetValue || ""}
-                onChange={(e) => onUpdate(index, { targetValue: e.target.value })}
-                placeholder="Target"
-                type="number"
-                className="flex-1 rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              />
-              <select
-                value={action.category || "other"}
-                onChange={(e) => onUpdate(index, { category: e.target.value })}
-                className="flex-1 rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              >
-                <option value="social">Social</option>
-                <option value="ads">Ads</option>
-                <option value="seo">SEO</option>
-                <option value="content">Content</option>
-                <option value="email">Email</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </>
-        )}
-
-        {action.type === "create_note" && (
-          <textarea
-            value={action.text || ""}
-            onChange={(e) => onUpdate(index, { text: e.target.value })}
-            placeholder="Note content"
-            rows={2}
-            className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none resize-none"
+          <input
+            value={action[field] || ""}
+            onChange={(e) => onUpdate(index, { [field]: e.target.value })}
+            placeholder={`${meta.label} title`}
+            className="w-full min-w-0 truncate bg-transparent text-sm font-medium text-text placeholder:text-text-faint focus:outline-none"
           />
-        )}
+          <button
+            type="button"
+            onClick={() => onRemove(index)}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-faint opacity-60 transition hover:bg-error-tint hover:text-error-text group-hover:opacity-100"
+            aria-label="Remove"
+          >
+            <X size={12} />
+          </button>
+        </div>
 
-        {action.type === "create_reminder" && (
-          <>
-            <input
-              value={action.message || ""}
-              onChange={(e) => onUpdate(index, { message: e.target.value })}
-              placeholder="Reminder message"
-              className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none"
-            />
-            <div className="flex gap-2">
-              <input
-                value={action.dueDate || ""}
-                onChange={(e) => onUpdate(index, { dueDate: e.target.value })}
-                type="date"
-                className="flex-1 rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              />
-              <select
-                value={action.frequency || "once"}
-                onChange={(e) => onUpdate(index, { frequency: e.target.value })}
-                className="flex-1 rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
-              >
-                <option value="once">Once</option>
-                <option value="daily">Daily</option>
-                <option value="weekdays">Weekdays</option>
-                <option value="weekly">Weekly</option>
-                <option value="hourly">Hourly</option>
-              </select>
-            </div>
-          </>
-        )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {action.type === "create_project" && <Chip tone="border-sky-500/30 bg-sky-500/10 text-sky-400">New project</Chip>}
 
-        {action.type === "assign_task" && (
-          <div className="text-sm text-text">
-            <div>Task: <span className="font-medium">{action.taskHint || "—"}</span></div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-text-soft">
-              <User size={12} /> To: <span className="font-medium text-text">{action.assignee?.name || action.assigneeHint || "—"}</span>
-            </div>
-          </div>
-        )}
+          {(action.type === "create_task" || action.type === "create_reminder") && (
+            <DueChip value={action.dueDate} onChange={(dueDate) => onUpdate(index, { dueDate })} />
+          )}
+
+          {action.type === "create_goal" && (
+            <Chip tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              {Number(action.targetValue) || 0}
+              {action.unit ? action.unit : ""} · {action.period || "monthly"}
+            </Chip>
+          )}
+
+          {needsProject && <ProjectChip action={action} projects={projects} newProjectName={newProjectName} onChange={handleProjectChange} />}
+
+          {(action.assignee?.name || action.assigneeHint) && (
+            <Chip title={action.assignee ? "Teammate found" : "No matching teammate — will stay unassigned"}>
+              <User size={11} />
+              {action.assignee?.name || action.assigneeHint}
+              {!action.assignee && <span className="text-amber-400">?</span>}
+            </Chip>
+          )}
+
+          {action.type === "create_task" && action.priority && action.priority !== "medium" && (
+            <Chip tone={action.priority === "high" ? "border-rose-500/30 bg-rose-500/10 text-rose-400" : "border-line bg-paper-2 text-text-faint"}>
+              {action.priority} priority
+            </Chip>
+          )}
+
+          {action.type === "create_reminder" && action.frequency && action.frequency !== "once" && <Chip>{action.frequency}</Chip>}
+        </div>
       </div>
     </div>
   );
@@ -261,46 +282,68 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
   const [transcript, setTranscript] = useState("");
   const [parsing, setParsing] = useState(false);
   const [executing, setExecuting] = useState(false);
-  const [parsedActions, setParsedActions] = useState([]);
-  const [summary, setSummary] = useState("");
+  const [actions, setActions] = useState([]);
+  const [newProjectName, setNewProjectName] = useState(null);
   const [context, setContext] = useState(null);
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [voiceNotes, setVoiceNotes] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [result, setResult] = useState(null);
 
   const speech = useSpeechRecognition();
-  const transcriptRef = useRef(null);
+  const typedBeforeMicRef = useRef("");
+  const textareaRef = useRef(null);
 
-  // Load context and voice notes when opening
   useEffect(() => {
-    if (open && !context) {
-      api.voiceContext().then(setContext).catch(() => {});
-      api.voiceNotes().then((d) => setVoiceNotes(d.notes || [])).catch(() => {});
-    }
+    if (open && !context) api.voiceContext().then(setContext).catch(() => {});
   }, [open, context]);
 
-  // Sync speech transcript to main transcript
+  // Speech appends to whatever was already typed when the mic was started.
   useEffect(() => {
-    if (speech.transcript) {
-      setTranscript(speech.transcript + (speech.interimTranscript ? " " + speech.interimTranscript : ""));
-    }
-  }, [speech.transcript, speech.interimTranscript]);
+    if (!speech.isListening && !speech.finalText) return;
+    const spoken = `${speech.finalText} ${speech.interimText}`.trim();
+    if (!spoken) return;
+    setTranscript(`${typedBeforeMicRef.current} ${spoken}`.trim());
+  }, [speech.finalText, speech.interimText, speech.isListening]);
 
-  async function handleParse() {
-    if (!transcript.trim()) {
-      setError("Please speak or type something first");
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  function toggleMic() {
+    if (speech.isListening) {
+      speech.stop();
       return;
     }
+    typedBeforeMicRef.current = transcript.trim();
+    speech.start();
+  }
+
+  function resetAll() {
+    setTranscript("");
+    setActions([]);
+    setNewProjectName(null);
+    setError("");
+    setResult(null);
+    speech.reset();
+  }
+
+  async function handleUnderstand() {
+    if (!transcript.trim()) {
+      setError("Say or type what you want to create first.");
+      return;
+    }
+    if (speech.isListening) speech.stop();
     setParsing(true);
     setError("");
-    setSuccessMsg("");
+    setResult(null);
     try {
-      const result = await api.voiceParse({ transcript: transcript.trim(), projectId });
-      setParsedActions(result.actions || []);
-      setSummary(result.summary || "");
-      if (result.actions?.length === 0) {
-        setError("Couldn't detect any tasks or goals. Try rephrasing — e.g., 'Create a task to...'");
+      const res = await api.voiceParse({ transcript: transcript.trim(), projectId });
+      setActions(res.actions || []);
+      setNewProjectName(res.newProjectName || null);
+      if (!res.actions || res.actions.length === 0) {
+        setError("Couldn't find anything to create. Try “Create a task to …” or “Add a goal …”.");
       }
     } catch (err) {
       setError(err.message);
@@ -309,27 +352,22 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
     }
   }
 
-  async function handleExecute() {
-    if (parsedActions.length === 0) {
-      setError("No actions to execute");
-      return;
-    }
+  async function handleCreate() {
+    if (actions.length === 0) return;
     setExecuting(true);
     setError("");
     try {
-      const result = await api.voiceExecute({ transcript, actions: parsedActions, projectId });
-      setSuccessMsg(result.summary || `Created ${result.results?.tasks?.length || 0} tasks, ${result.results?.goals?.length || 0} goals`);
-      setParsedActions([]);
-      setTranscript("");
-      speech.reset();
-      // Refresh voice notes
-      api.voiceNotes().then((d) => setVoiceNotes(d.notes || [])).catch(() => {});
-      if (onSuccess) onSuccess(result);
-      // Auto close after 2s
-      setTimeout(() => {
-        setSuccessMsg("");
-        setOpen(false);
-      }, 2000);
+      const res = await api.voiceExecute({ transcript: transcript.trim(), actions, projectId });
+      setResult(res);
+      setActions([]);
+      if (onSuccess) onSuccess(res);
+      const hadErrors = (res.results?.errors || []).length > 0;
+      if (!hadErrors) {
+        setTimeout(() => {
+          resetAll();
+          setOpen(false);
+        }, 1600);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -337,237 +375,241 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
     }
   }
 
-  function handleUpdateAction(index, updates) {
-    setParsedActions((prev) => prev.map((a, i) => (i === index ? { ...a, ...updates } : a)));
+  function updateAction(index, patch) {
+    setActions((prev) => {
+      const target = prev[index];
+      const renamedProject = target?.type === "create_project" && typeof patch.name === "string" ? patch.name : null;
+      return prev.map((a, i) => {
+        if (i === index) return { ...a, ...patch };
+        // Renaming the new project keeps the goals/tasks pointed at it.
+        if (renamedProject !== null && a.project?.isNew) {
+          return { ...a, projectHint: renamedProject, project: { ...a.project, name: renamedProject } };
+        }
+        return a;
+      });
+    });
+    if (typeof patch.name === "string" && actions[index]?.type === "create_project") setNewProjectName(patch.name);
   }
 
-  function handleRemoveAction(index) {
-    setParsedActions((prev) => prev.filter((_, i) => i !== index));
+  function removeAction(index) {
+    setActions((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleExampleClick(example) {
-    setTranscript(example);
+  function useQuickPrompt(text) {
+    setTranscript(text);
+    setActions([]);
+    setResult(null);
+    setError("");
+    textareaRef.current?.focus();
   }
+
+  const hasActions = actions.length > 0;
+  const missingProject = actions.some((a) => (a.type === "create_task" || a.type === "create_goal") && !a.projectId && !a.project?.isNew);
+  const errors = result?.results?.errors || [];
 
   return (
     <>
-      {/* Floating Mic Button */}
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_24px_rgba(124,92,255,0.4)] transition hover:scale-105 hover:shadow-[0_12px_32px_rgba(124,92,255,0.5)] active:scale-95"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_24px_rgba(124,92,255,0.4)] transition hover:scale-105 active:scale-95"
         aria-label="Open voice assistant"
       >
         <Mic size={24} />
-        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white animate-pulse">
-          AI
-        </span>
       </button>
 
-      {/* Modal */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          
-          <div className="relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[20px] sm:rounded-[20px] border border-line bg-paper-2 shadow-2xl">
+
+          <div className="relative flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[20px] border border-line bg-paper-2 shadow-2xl sm:rounded-[20px]">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white">
-                  <Sparkles size={18} />
+            <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white">
+                  <Sparkles size={15} />
                 </span>
                 <div>
                   <h2 className="text-[15px] font-semibold text-text">Deck Voice AI</h2>
-                  <p className="text-xs text-text-soft">Speak to create tasks, goals, notes & assign work</p>
+                  <p className="text-[11px] text-text-soft">Projects, goals, tasks, notes & reminders — in one go</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-soft hover:text-text"
-                >
-                  <Clock size={16} />
-                </button>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-soft hover:text-text"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-soft hover:bg-card hover:text-text"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
             </div>
 
-            <div className="flex flex-1 flex-col overflow-hidden">
-              {showHistory ? (
-                <div className="flex-1 overflow-y-auto p-5">
-                  <h3 className="mb-3 text-sm font-semibold text-text">Recent voice notes</h3>
-                  {voiceNotes.length === 0 ? (
-                    <p className="text-sm text-text-soft">No voice notes yet. Your history will appear here.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {voiceNotes.map((note) => (
-                        <div key={note.id} className="rounded-xl border border-line bg-card p-3">
-                          <p className="text-sm text-text line-clamp-2">{note.transcript}</p>
-                          <p className="mt-1 text-xs text-text-faint">{new Date(note.createdAt).toLocaleString()} • {note.summary}</p>
-                        </div>
-                      ))}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {/* Transcript */}
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={transcript}
+                  onChange={(e) => {
+                    setTranscript(e.target.value);
+                    if (hasActions) setActions([]);
+                  }}
+                  placeholder="Tap the mic or type… e.g. “Create a project called Sports Nutrition, add goals like Instagram followers monthly 500, research and writing deadlines 4th of September”"
+                  rows={6}
+                  className="w-full resize-y rounded-2xl border border-line bg-card px-4 py-3 pb-12 text-[15px] leading-relaxed text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]/20"
+                />
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                  <span className="text-[11px] text-text-faint">
+                    {speech.isListening ? (
+                      <span className="flex items-center gap-1.5 font-medium text-emerald-400">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Listening…
+                      </span>
+                    ) : transcript ? (
+                      `${transcript.length} chars`
+                    ) : speech.isSupported ? (
+                      "Speak naturally — filler words are fine"
+                    ) : (
+                      "Voice not supported in this browser — type instead"
+                    )}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {transcript && (
+                      <button
+                        type="button"
+                        onClick={resetAll}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-text-faint hover:bg-paper-2 hover:text-text"
+                        aria-label="Clear"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleMic}
+                      disabled={!speech.isSupported}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full text-white transition disabled:opacity-40 ${
+                        speech.isListening
+                          ? "animate-pulse bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                          : "bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] shadow-md hover:scale-105"
+                      }`}
+                      aria-label={speech.isListening ? "Stop listening" : "Start listening"}
+                    >
+                      {speech.isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick chips */}
+              {!hasActions && !result && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {QUICK_PROMPTS.map((q) => (
+                    <button
+                      key={q.label}
+                      type="button"
+                      onClick={() => useQuickPrompt(q.text)}
+                      className="rounded-full border border-line bg-card px-3 py-1 text-xs text-text-soft transition hover:border-[#7C5CFF]/40 hover:text-text"
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Parsed actions */}
+              {hasActions && (
+                <div className="mt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-text-faint">
+                      I understood {actions.length} item{actions.length > 1 ? "s" : ""}
+                    </h3>
+                    <span className="text-[11px] text-text-faint">Tap to edit · × to drop</span>
+                  </div>
+                  <div className="space-y-2">
+                    {actions.map((action, idx) => (
+                      <ActionCard
+                        key={`${action.type}-${idx}`}
+                        action={action}
+                        index={idx}
+                        projects={context?.projects || []}
+                        newProjectName={newProjectName}
+                        onUpdate={updateAction}
+                        onRemove={removeAction}
+                      />
+                    ))}
+                  </div>
+                  {missingProject && (
+                    <p className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-400">
+                      <AlertTriangle size={12} /> Some items have no project yet — pick one, or they'll be skipped.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Result */}
+              {result && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2 rounded-xl border border-good-line bg-good-tint px-3 py-2 text-sm text-good-text">
+                    <Check size={15} /> {result.summary}
+                  </div>
+                  {errors.length > 0 && (
+                    <div className="rounded-xl border border-warn-line bg-warn-tint px-3 py-2 text-xs text-warn-text">
+                      <div className="mb-1 font-semibold">Skipped</div>
+                      <ul className="list-disc space-y-0.5 pl-4">
+                        {errors.map((e, i) => (
+                          <li key={i}>{e.error}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
-                  <button onClick={() => setShowHistory(false)} className="mt-4 text-sm font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">← Back to assistant</button>
                 </div>
-              ) : (
-                <>
-                  {/* Transcript Area */}
-                  <div className="border-b border-line bg-card p-5">
-                    <div className="mb-3 flex items-center justify-between">
-                      <label className="text-xs font-medium uppercase tracking-wide text-text-faint">Voice Input</label>
-                      <div className="flex items-center gap-2">
-                        {speech.isListening && (
-                          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Listening...
-                          </span>
-                        )}
-                        <span className="text-[10px] text-text-faint">{transcript.length} chars</span>
-                      </div>
-                    </div>
-
-                    <div className="relative">
-                      <textarea
-                        ref={transcriptRef}
-                        value={transcript}
-                        onChange={(e) => setTranscript(e.target.value)}
-                        placeholder="Tap mic and speak, or type... e.g., 'Create a task to design homepage for tomorrow and assign to John'"
-                        rows={3}
-                        className="w-full resize-none rounded-xl border border-line bg-paper-2 px-4 py-3 pr-12 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]/20"
-                      />
-                      <div className="absolute bottom-2 right-2 flex gap-1.5">
-                        {transcript && (
-                          <button
-                            onClick={() => { setTranscript(""); speech.reset(); setParsedActions([]); }}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-text-faint hover:text-text"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                        <button
-                          onClick={speech.isListening ? speech.stop : speech.start}
-                          disabled={!speech.isSupported}
-                          className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                            speech.isListening
-                              ? "bg-red-500 text-white animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.4)]"
-                              : "bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-md hover:scale-105"
-                          } disabled:opacity-40`}
-                        >
-                          {speech.isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {!speech.isSupported && (
-                      <p className="mt-2 text-xs text-amber-400">🎤 Voice recognition not supported in this browser. You can still type your command.</p>
-                    )}
-
-                    {parsedActions.length === 0 && (
-                      <div className="mt-3">
-                        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-text-faint">Try saying:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {EXAMPLE_PROMPTS.slice(0, 3).map((ex, i) => (
-                            <button
-                              key={i}
-                              onClick={() => handleExampleClick(ex)}
-                              className="rounded-full border border-line bg-paper-2 px-3 py-1 text-xs text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
-                            >
-                              {ex.slice(0, 50)}...
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={handleParse}
-                        disabled={parsing || !transcript.trim()}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)] transition hover:bg-[#6A4AF0] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {parsing ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-                        {parsing ? "Analyzing..." : "Parse with AI"}
-                      </button>
-                      {parsedActions.length > 0 && (
-                        <button
-                          onClick={handleExecute}
-                          disabled={executing}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.5)] transition hover:bg-emerald-700 disabled:opacity-50"
-                        >
-                          {executing ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                          {executing ? "Creating..." : `Create ${parsedActions.length} item${parsedActions.length > 1 ? "s" : ""}`}
-                        </button>
-                      )}
-                    </div>
-
-                    {error && (
-                      <div className="mt-3 rounded-xl border border-error-line bg-error-tint px-3 py-2 text-sm text-error-text">
-                        {error}
-                      </div>
-                    )}
-                    {successMsg && (
-                      <div className="mt-3 rounded-xl border border-good-line bg-good-tint px-3 py-2 text-sm text-good-text">
-                        ✅ {successMsg}
-                      </div>
-                    )}
-                    {summary && parsedActions.length > 0 && (
-                      <div className="mt-3 rounded-xl bg-signal-tint px-3 py-2 text-xs text-text-soft border border-line">
-                        <span className="font-medium text-text">AI Summary:</span> {summary}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Parsed Actions */}
-                  <div className="flex-1 overflow-y-auto p-5">
-                    {parsedActions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
-                          <Sparkles size={22} />
-                        </span>
-                        <p className="mt-3 text-sm font-medium text-text">Voice AI Ready</p>
-                        <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
-                          Speak naturally. I'll extract tasks, goals, notes, assignments and reminders. Edit before creating.
-                        </p>
-                        {context && (
-                          <div className="mt-4 rounded-xl border border-line bg-card px-3 py-2 text-xs text-text-soft">
-                            <div>📁 {context.projects?.length || 0} projects available</div>
-                            <div>👥 {context.collaborators?.length || 0} teammates can be assigned</div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-3 flex items-center justify-between">
-                          <h3 className="text-sm font-semibold text-text">Detected actions ({parsedActions.length})</h3>
-                          <span className="text-xs text-text-faint">Edit before creating</span>
-                        </div>
-                        <div className="space-y-3">
-                          {parsedActions.map((action, idx) => (
-                            <ActionCard
-                              key={idx}
-                              action={action}
-                              index={idx}
-                              onUpdate={handleUpdateAction}
-                              onRemove={handleRemoveAction}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </>
               )}
+
+              {error && <div className="mt-3 rounded-xl border border-error-line bg-error-tint px-3 py-2 text-sm text-error-text">{error}</div>}
             </div>
 
-            {/* Footer tips */}
-            <div className="border-t border-line bg-card px-5 py-3">
-              <p className="text-[11px] leading-relaxed text-text-faint">
-                💡 <span className="font-medium">Pro tip:</span> Say "assign to [name]" to assign tasks, "due tomorrow" for dates, "high priority" for urgency. Voice makes you 3x faster!
-              </p>
+            {/* Footer action */}
+            <div className="border-t border-line px-5 py-3">
+              {hasActions ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleUnderstand}
+                    disabled={parsing || executing}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-medium text-text-soft transition hover:text-text disabled:opacity-50"
+                  >
+                    {parsing ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    Re-read
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={executing || parsing}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.5)] transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {executing ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                    {executing ? "Creating…" : `Create ${actions.length}`}
+                  </button>
+                </div>
+              ) : result ? (
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6A4AF0]"
+                >
+                  <Mic size={15} /> New command
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleUnderstand}
+                  disabled={parsing || !transcript.trim()}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)] transition hover:bg-[#6A4AF0] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {parsing ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                  {parsing ? "Understanding…" : "Understand"}
+                </button>
+              )}
             </div>
           </div>
         </div>
