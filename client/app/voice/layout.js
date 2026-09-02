@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Voice AI - Deck",
-  description: "Voice AI assistant to create tasks, goals and assign work faster",
+  title: "Echo",
+  description: "Create tasks, goals and assign work just by speaking",
 };
 
 export default function VoiceLayout({ children }) {

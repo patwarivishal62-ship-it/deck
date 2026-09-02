@@ -1,7 +1,7 @@
 /*
  * DECK service worker — makes the app installable (PWA) and keeps the shell
  * usable offline. Now also handles push notifications and periodic reminders
- * for the Voice AI / task progress nudges.
+ * for Echo / task progress nudges.
  *
  * Strategy:
  *  - Navigations (pages): network-first, fall back to cache, then /offline.
@@ -14,7 +14,7 @@
 // app"). The activate handler below deletes every cache whose name doesn't
 // carry the current VERSION, so installed/cached clients drop the stale shell
 // and load the fresh build instead of the old UI.
-const VERSION = "v4-voice-removed";
+const VERSION = "v5-echo";
 const STATIC_CACHE = `deck-static-${VERSION}`;
 const PAGES_CACHE = `deck-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";

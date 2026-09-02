@@ -427,7 +427,7 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_24px_rgba(124,92,255,0.4)] transition hover:scale-105 hover:shadow-[0_12px_32px_rgba(124,92,255,0.5)] active:scale-95"
-        aria-label="Open voice assistant"
+        aria-label="Open Echo"
       >
         <Mic size={24} />
         <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white animate-pulse">
@@ -448,7 +448,7 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
                   <Sparkles size={18} />
                 </span>
                 <div>
-                  <h2 className="text-[15px] font-semibold text-text">Deck Voice AI</h2>
+                  <h2 className="text-[15px] font-semibold text-text">Echo</h2>
                   <p className="text-xs text-text-soft">Speak to create tasks, goals, notes & assign work</p>
                 </div>
               </div>
@@ -625,7 +625,7 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
                         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
                           <Sparkles size={22} />
                         </span>
-                        <p className="mt-3 text-sm font-medium text-text">Voice AI Ready</p>
+                        <p className="mt-3 text-sm font-medium text-text">Echo is ready</p>
                         <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
                           Speak naturally. I'll extract tasks, goals, notes, assignments and reminders. Edit before creating.
                         </p>
@@ -635,8 +635,8 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
                             <div>👥 {context.collaborators?.length || 0} teammates can be assigned</div>
                             <div className={context.aiEnabled ? "text-emerald-400" : "text-amber-400"}>
                               {context.aiEnabled
-                                ? "✨ AI model connected"
-                                : "⚠️ AI model not configured — rule-based parsing only"}
+                                ? `✨ ${context.ai?.model || "AI model"} via ${context.ai?.providerLabel || "provider"}`
+                                : "⚠️ No model configured — rule-based parsing only"}
                             </div>
                           </div>
                         )}

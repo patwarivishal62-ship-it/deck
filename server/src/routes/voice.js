@@ -19,6 +19,7 @@ const {
   localISODate,
 } = require("../lib/aiParser");
 const { CATEGORY_KEYS, PRIORITY_KEYS, PERIODS, STATUSES } = require("../constants");
+const { describeModelConfig } = require("../lib/aiConfig");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -578,7 +579,9 @@ router.get("/context", async (req, res) => {
       })),
       collaborators: context.collaborators.slice(0, 30),
       workspaces: req.workspaces.map((w) => ({ id: w.id, name: w.name, role: w.role })),
-      aiEnabled: Boolean(process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY !== "sk-your-openai-key",
+      aiEnabled: describeModelConfig().enabled,
+      ai: describeModelConfig(),
+      assistantName: "Echo",
     });
   } catch (err) {
     console.error(err);

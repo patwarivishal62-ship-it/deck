@@ -126,7 +126,10 @@ const express = require(path.join(BASE, "..", "node_modules", "express"));
 const router = require(path.join(BASE, "routes", "voice"));
 
 (async () => {
-  delete process.env.OPENAI_API_KEY; // deterministic rule-based
+  // deterministic rule-based: strip every key Echo could pick up
+  for (const k of ["ECHO_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "TOGETHER_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"]) {
+    delete process.env[k];
+  }
   const app = express();
   app.use(express.json());
   app.use("/api/voice", router);
@@ -145,7 +148,7 @@ const router = require(path.join(BASE, "routes", "voice"));
   check("priority", t.priority, "high");
   check("assignee resolved", t.assignee?.name, "Sarah Khan");
   check("degraded flag", parsed.body.degraded, true);
-  check("diagnostics reason", /OPENAI_API_KEY/.test(parsed.body.diagnostics.reason), true);
+  check("diagnostics reason", /Echo model not configured/.test(parsed.body.diagnostics.reason), true);
 
   console.log("\n[7] /execute — re-gate, priority persists, reminder in IST");
   captured.tasks.length = 0; captured.reminders.length = 0;

@@ -1,8 +1,9 @@
 /**
- * Deck Voice AI Parser
+ * Echo — voice parser
  *
  * Two-stage pipeline:
- *   1. LLM parse — used when OPENAI_API_KEY is set. Understands free-form speech.
+ *   1. LLM parse — used when a model is configured (see lib/aiConfig.js).
+ *      Understands free-form speech, on any OpenAI-compatible provider.
  *   2. Rule-based fallback — regex heuristics, used when the LLM is missing,
  *      unreachable, timed out, or returned something we cannot use.
  *
@@ -17,6 +18,7 @@
  */
 
 const { CATEGORY_KEYS, PRIORITY_KEYS, PERIODS, STATUSES } = require("../constants");
+const { getModelConfig } = require("./aiConfig");
 
 const ACTION_TYPES = ["create_project", "create_task", "create_goal", "create_note", "assign_task", "create_reminder"];
 const FREQUENCIES = ["once", "daily", "weekdays", "weekly", "hourly"];
@@ -945,7 +947,7 @@ function buildPrompt(transcript, context, todayISO) {
   const weekday = WEEKDAYS[weekdayOf(todayISO)];
   const zone = context.timeZone || "UTC";
 
-  return `You are Deck AI, a project management assistant. Convert a voice transcript into structured actions.
+  return `You are Echo, a project management copilot. Convert a voice transcript into structured actions.
 
 TODAY IS ${todayISO}, which is a ${weekday}. The user's time zone is ${zone}.
 Resolve every relative date ("tomorrow", "next Friday", "end of month") against that date and return it as YYYY-MM-DD.
@@ -980,35 +982,42 @@ Rules:
 
 const RETRYABLE_STATUS = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 
-async function callOpenAI({ apiKey, model, prompt, timeoutMs }) {
+async function callModel({ config, prompt, timeoutMs }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const body = {
+      model: config.model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+    };
+    if (config.jsonMode) body.response_format = { type: "json_object" };
+
+    const res = await fetch(config.endpoint, {
       method: "POST",
       signal: controller.signal,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
-        max_tokens: 1200,
-        response_format: { type: "json_object" },
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      const error = new Error(`OpenAI responded ${res.status}${body ? `: ${body.slice(0, 200)}` : ""}`);
+      const text = await res.text().catch(() => "");
+      const error = new Error(
+        `${config.providerLabel} responded ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`
+      );
       error.status = res.status;
       throw error;
     }
 
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error("OpenAI returned no content");
+    if (!content) throw new Error(`${config.providerLabel} returned no content`);
     const parsed = extractJSON(content);
-    if (!parsed) throw new Error("OpenAI response was not valid JSON");
+    if (!parsed) throw new Error(`${config.providerLabel} response was not valid JSON`);
     return parsed;
   } finally {
     clearTimeout(timer);
@@ -1020,22 +1029,22 @@ async function callOpenAI({ apiKey, model, prompt, timeoutMs }) {
  * "no API key" apart from "the model failed" apart from "the output was junk".
  */
 async function parseWithLLM(transcript, context = {}, options = {}) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "sk-your-openai-key") {
-    return { ok: false, error: "OPENAI_API_KEY is not configured" };
+  const config = getModelConfig();
+  if (!config.configured) {
+    return { ok: false, error: `Echo model not configured — ${config.problems.join("; ")}` };
   }
 
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-  const timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
-  const retries = Number.isFinite(options.retries) ? options.retries : DEFAULT_RETRIES;
+  const model = config.model;
+  const timeoutMs = options.timeoutMs || config.timeoutMs || DEFAULT_TIMEOUT_MS;
+  const retries = Number.isFinite(options.retries) ? options.retries : config.retries;
   const todayISO = context.todayISO || localISODate(new Date(), context.timeZone);
   const prompt = buildPrompt(transcript, context, todayISO);
 
   let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const data = await callOpenAI({ apiKey, model, prompt, timeoutMs });
-      return { ok: true, data, model };
+      const data = await callModel({ config, prompt, timeoutMs });
+      return { ok: true, data, model, provider: config.provider };
     } catch (err) {
       lastError = err;
       const retryable = err.name === "AbortError" || RETRYABLE_STATUS.has(err.status);
@@ -1045,7 +1054,7 @@ async function parseWithLLM(transcript, context = {}, options = {}) {
   }
 
   const message = lastError?.name === "AbortError" ? `timed out after ${timeoutMs}ms` : lastError?.message || "unknown error";
-  return { ok: false, error: message, model };
+  return { ok: false, error: message, model, provider: config.provider };
 }
 
 /* ------------------------------------------------------------------ *
