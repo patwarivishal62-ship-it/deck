@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { Check, Inbox } from "lucide-react";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, PRIORITIES } from "@/lib/constants";
 import { projectCategoryKey, todayISO } from "@/lib/dashboard";
 
 // One task row: checkbox + title + related-project indicator + due chip.
+// Only HIGH priority gets a marker here — the dashboard list is meant to stay
+// scannable, and medium is the default for every task anyway.
 function TaskItem({ task, onToggle, busy }) {
   const done = task.status === "done";
   const categoryKey = projectCategoryKey(task.project);
   const categoryColor = categoryKey ? CATEGORIES[categoryKey].color : "#7C5CFF";
   const overdue = !done && task.dueDate && task.dueDate < todayISO();
+  const highPriority = !done && task.priority === "high";
 
   return (
     <li className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition duration-150 hover:border-line hover:bg-paper">
@@ -31,11 +34,19 @@ function TaskItem({ task, onToggle, busy }) {
 
       <div className="min-w-0 flex-1">
         <p
-          className={`truncate text-sm font-medium ${
+          className={`flex min-w-0 items-center gap-1.5 text-sm font-medium ${
             done ? "text-text-faint line-through" : "text-text"
           }`}
         >
-          {task.title}
+          {highPriority && (
+            <span
+              className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: PRIORITIES.high.color }}
+              title="High priority"
+              aria-label="High priority"
+            />
+          )}
+          <span className="truncate">{task.title}</span>
         </p>
         {/* Project indicator on very small screens lives under the title */}
         <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-text-faint sm:hidden">

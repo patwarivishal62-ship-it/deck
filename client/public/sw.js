@@ -10,7 +10,11 @@
  *  - /api/* is never cached or intercepted — data always comes from the network.
  */
 
-const VERSION = "v2-voice";
+// Bump on every deploy that changes the app shell (see README → "Installable
+// app"). The activate handler below deletes every cache whose name doesn't
+// carry the current VERSION, so installed/cached clients drop the stale shell
+// and load the fresh build instead of the old UI.
+const VERSION = "v3-voice-overhaul";
 const STATIC_CACHE = `deck-static-${VERSION}`;
 const PAGES_CACHE = `deck-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";

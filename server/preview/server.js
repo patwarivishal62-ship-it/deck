@@ -133,9 +133,9 @@ async function seed() {
   await goal(p1.id, { category: "email", platform: "Mailchimp", label: "Open rate 42%", targetValue: 42, currentValue: 38, unit: "percent", period: "weekly", step: 1 });
   await task(p1.id, { title: "Finalize hero creative set", status: "done", completedDaysAgo: 3, createdDaysAgo: 20 });
   await task(p1.id, { title: "Schedule 12 teaser posts", status: "done", completedDaysAgo: 2, createdDaysAgo: 15 });
-  await task(p1.id, { title: "Write launch-day email copy", status: "in_progress", dueDate: daysFromNow(1), createdDaysAgo: 10 });
+  await task(p1.id, { title: "Write launch-day email copy", status: "in_progress", dueDate: daysFromNow(1), createdDaysAgo: 10, priority: "high" });
   await task(p1.id, { title: "QA email render across clients", status: "todo", dueDate: daysFromNow(2), createdDaysAgo: 8 });
-  await task(p1.id, { title: "Brief influencers (8 confirmed)", status: "todo", dueDate: daysFromNow(4), createdDaysAgo: 6 });
+  await task(p1.id, { title: "Brief influencers (8 confirmed)", status: "todo", dueDate: daysFromNow(4), createdDaysAgo: 6, priority: "low" });
   await milestonesDb.create({ projectId: p1.id, createdBy: user.id, title: "Teaser phase live", date: daysFromNow(-6), notes: "All channels posting on cadence." });
   await milestonesDb.create({ projectId: p1.id, createdBy: user.id, title: "Launch day", date: daysFromNow(9), notes: "Full blast across social + email + ads." });
 
@@ -153,7 +153,7 @@ async function seed() {
   await task(p2.id, { title: "Ship 3 new UGC video variants", status: "done", completedDaysAgo: 5, createdDaysAgo: 14 });
   await task(p2.id, { title: "Rebalance budget to top 2 ad sets", status: "done", completedDaysAgo: 1, createdDaysAgo: 9 });
   await task(p2.id, { title: "Set up lead-quality feedback loop", status: "in_progress", dueDate: daysFromNow(0), createdDaysAgo: 7 });
-  await task(p2.id, { title: "Kill fatigued creatives (CTR < 1%)", status: "todo", dueDate: daysFromNow(-2), createdDaysAgo: 12 });
+  await task(p2.id, { title: "Kill fatigued creatives (CTR < 1%)", status: "todo", dueDate: daysFromNow(-2), createdDaysAgo: 12, priority: "high" });
 
   // ---- Project 3: SEO foundation, early ----
   const p3 = await createProject({
@@ -169,7 +169,7 @@ async function seed() {
   await task(p3.id, { title: "Fix Core Web Vitals on template pages", status: "done", completedDaysAgo: 8, createdDaysAgo: 16 });
   await task(p3.id, { title: "Outline remaining 5 pillar articles", status: "in_progress", dueDate: daysFromNow(3), createdDaysAgo: 11 });
   await task(p3.id, { title: "Draft 'Choosing a marketing tracker' pillar", status: "todo", dueDate: daysFromNow(6), createdDaysAgo: 5 });
-  await task(p3.id, { title: "Internal-linking pass on cluster 1", status: "todo", createdDaysAgo: 4 });
+  await task(p3.id, { title: "Internal-linking pass on cluster 1", status: "todo", createdDaysAgo: 4, priority: "low" });
 
   // ---- Project 4: content calendar, pending ----
   const p4 = await createProject({

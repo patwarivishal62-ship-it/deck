@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { Field, TextInput, TextArea, Select, Button } from "./FormControls";
-import { STATUSES } from "@/lib/constants";
+import { STATUSES, PRIORITIES, PRIORITY_KEYS } from "@/lib/constants";
 import { api } from "@/lib/api";
 
-const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "", assigneeId: "" };
+const EMPTY = { title: "", notes: "", goalId: "", status: "todo", dueDate: "", assigneeId: "", priority: "medium" };
 
 // Used as the date input's min= — stops the calendar picker from offering
 // past dates for a NEW selection. An already-stored past due date (a task
@@ -32,6 +32,9 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
               goalId: initial.goalId || "",
               dueDate: initial.dueDate || "",
               assigneeId: initial.assigneeId || "",
+              // Older tasks predate the field — show them as medium, matching
+              // how the server and TaskRow treat a missing priority.
+              priority: PRIORITY_KEYS.includes(initial.priority) ? initial.priority : "medium",
             }
           : EMPTY
       );
@@ -120,15 +123,24 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
               ))}
             </Select>
           </Field>
-          <Field label="Due date (optional)">
-            <TextInput
-              type="date"
-              min={todayISODate()}
-              value={form.dueDate}
-              onChange={(e) => set("dueDate", e.target.value)}
-            />
+          <Field label="Priority">
+            <Select value={form.priority} onChange={(e) => set("priority", e.target.value)}>
+              {PRIORITY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {PRIORITIES[key].label}
+                </option>
+              ))}
+            </Select>
           </Field>
         </div>
+        <Field label="Due date (optional)">
+          <TextInput
+            type="date"
+            min={todayISODate()}
+            value={form.dueDate}
+            onChange={(e) => set("dueDate", e.target.value)}
+          />
+        </Field>
         {error && <p className="mb-2 text-sm text-signal-deep">{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
