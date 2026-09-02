@@ -5,11 +5,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 /**
  * PWA state for the whole app: service-worker registration, the native
  * install prompt, platform detection, and "already installed?" tracking.
- * Now also manages notification permission for timely mobile reminders.
+ * Now also manages real push notifications via VAPID + Android native bridge.
  */
 
 const DISMISS_KEY = "deck-install-dismissed-at";
-// Re-offer the install banner two weeks after the user dismissed it.
 const REASK_AFTER_MS = 14 * 24 * 60 * 60 * 1000;
 
 const PWAContext = createContext(null);
@@ -17,7 +16,6 @@ const PWAContext = createContext(null);
 function detectPlatform() {
   if (typeof navigator === "undefined") return "desktop";
   const ua = navigator.userAgent || "";
-  // iPadOS 13+ masquerades as desktop Safari — detect via touch points.
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (isIOS) return "ios";
@@ -33,6 +31,7 @@ export function PWAProvider({ children }) {
   const [dismissedAt, setDismissedAt] = useState(0);
   const [notificationPermission, setNotificationPermission] = useState("default");
   const [swRegistration, setSwRegistration] = useState(null);
+  const [isAndroidApp, setIsAndroidApp] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -45,15 +44,14 @@ export function PWAProvider({ children }) {
     const isStandalone = () =>
       window.matchMedia("(display-mode: standalone)").matches ||
       window.matchMedia("(display-mode: minimal-ui)").matches ||
-      window.navigator.standalone === true; // iOS Safari
+      window.navigator.standalone === true;
     setInstalled(isStandalone());
 
     const mq = window.matchMedia("(display-mode: standalone)");
     const onDisplayChange = () => setInstalled(isStandalone());
 
-    // Chromium fires beforeinstallprompt once the PWA is installable.
     const onBeforeInstallPrompt = (e) => {
-      e.preventDefault(); // keep our own UI in control
+      e.preventDefault();
       setPromptEvent(e);
     };
     const onAppInstalled = () => {
@@ -68,30 +66,37 @@ export function PWAProvider({ children }) {
     window.addEventListener("appinstalled", onAppInstalled);
     mq.addEventListener?.("change", onDisplayChange);
 
-    // Check notification permission
     if ("Notification" in window) {
       setNotificationPermission(Notification.permission);
     }
 
-    // Register the service worker (production only — dev assets aren't cache-stable).
-    // In dev, still try to register for notification testing, but don't cache.
-    if ("serviceWorker" in navigator) {
-      const shouldRegister = process.env.NODE_ENV === "production" || true; // allow in dev for voice notifications
-      if (shouldRegister) {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            setSwRegistration(reg);
-            // Listen for messages from SW
-            navigator.serviceWorker.addEventListener("message", (event) => {
-              if (event.data?.type === "CHECK_REMINDERS") {
-                // SW asks to check reminders — could trigger a refetch
-                window.dispatchEvent(new CustomEvent("deck:check-reminders"));
-              }
-            });
-          })
-          .catch(() => {});
+    // Detect Android native app bridge
+    if (typeof window !== "undefined") {
+      if (window.DeckAndroid || window.isDeckAndroidApp || navigator.userAgent.includes("DeckApp")) {
+        setIsAndroidApp(true);
       }
+      // Poll for bridge injection after WebView loads
+      const interval = setInterval(() => {
+        if (window.DeckAndroid) {
+          setIsAndroidApp(true);
+          clearInterval(interval);
+        }
+      }, 500);
+      setTimeout(() => clearInterval(interval), 10000);
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          setSwRegistration(reg);
+          navigator.serviceWorker.addEventListener("message", (event) => {
+            if (event.data?.type === "CHECK_REMINDERS") {
+              window.dispatchEvent(new CustomEvent("deck:check-reminders"));
+            }
+          });
+        })
+        .catch(() => {});
     }
 
     return () => {
@@ -108,8 +113,8 @@ export function PWAProvider({ children }) {
     try {
       promptEvent.prompt();
       const { outcome } = await promptEvent.userChoice;
-      setPromptEvent(null); // the deferred event can only be used once
-      return outcome; // "accepted" | "dismissed"
+      setPromptEvent(null);
+      return outcome;
     } catch {
       return "dismissed";
     }
@@ -124,6 +129,20 @@ export function PWAProvider({ children }) {
   }, []);
 
   const requestNotificationPermission = useCallback(async () => {
+    // Android native app has its own permission flow via bridge
+    if (typeof window !== "undefined" && window.DeckAndroid?.requestNotificationPermission) {
+      try {
+        window.DeckAndroid.requestNotificationPermission();
+        // Check after a short delay
+        setTimeout(() => {
+          if (window.DeckAndroid?.isNotificationEnabled?.()) {
+            setNotificationPermission("granted");
+          }
+        }, 1000);
+        return "granted";
+      } catch {}
+    }
+
     if (!("Notification" in window)) return "unsupported";
     try {
       const perm = await Notification.requestPermission();
@@ -136,14 +155,25 @@ export function PWAProvider({ children }) {
 
   const showLocalNotification = useCallback(
     async (title, options = {}) => {
-      if (!swRegistration) {
-        // Fallback to simple Notification API
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification(title, {
-            body: options.body,
-            icon: "/icons/icon-192.png",
-          });
+      // Android native bridge — real push via NotificationManager
+      if (typeof window !== "undefined" && window.DeckAndroid?.showNotification) {
+        try {
+          window.DeckAndroid.showNotification(title, options.body || "", options.url || "/dashboard");
           return true;
+        } catch {}
+      }
+
+      if (!swRegistration) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification(title, {
+              body: options.body,
+              icon: "/icons/icon-192.png",
+            });
+            return true;
+          } catch {
+            return false;
+          }
         }
         return false;
       }
@@ -153,6 +183,7 @@ export function PWAProvider({ children }) {
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
           data: { url: options.url || "/dashboard" },
+          vibrate: [200, 100, 200],
           ...options,
         });
         return true;
@@ -170,6 +201,7 @@ export function PWAProvider({ children }) {
       isIOS: platform === "ios",
       isAndroid: platform === "android",
       isDesktop: platform === "desktop",
+      isAndroidApp,
       installed,
       canInstall,
       promptInstall,
@@ -179,11 +211,13 @@ export function PWAProvider({ children }) {
       requestNotificationPermission,
       showLocalNotification,
       swRegistration,
-      notificationsSupported: typeof window !== "undefined" && "Notification" in window,
+      notificationsSupported: typeof window !== "undefined" && ("Notification" in window || window.DeckAndroid),
+      realPushSupported: typeof window !== "undefined" && ("PushManager" in window || window.DeckAndroid),
     }),
     [
       mounted,
       platform,
+      isAndroidApp,
       installed,
       canInstall,
       promptInstall,

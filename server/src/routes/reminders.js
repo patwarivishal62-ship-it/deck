@@ -4,6 +4,7 @@ const { attachWorkspaces } = require("../middleware/workspace");
 const remindersDb = require("../db/reminders");
 const notificationsDb = require("../db/notifications");
 const pushSubscriptionsDb = require("../db/pushSubscriptions");
+const pushLib = require("../lib/push");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -96,7 +97,6 @@ router.post("/seed", async (req, res) => {
 });
 
 // POST /api/reminders/process-due — internal endpoint to process due reminders into notifications
-// This is called automatically on notifications fetch, but also can be triggered manually
 router.post("/process-due", async (req, res) => {
   try {
     const now = new Date().toISOString();
@@ -104,7 +104,6 @@ router.post("/process-due", async (req, res) => {
 
     const notifications = [];
     for (const reminder of due) {
-      // Only process reminders for this user unless called internally
       if (req.body?.all !== true && reminder.userId !== req.userId) continue;
 
       await notificationsDb.create({
@@ -128,18 +127,53 @@ router.post("/process-due", async (req, res) => {
 
 // Push subscription management
 
-// POST /api/reminders/push/subscribe
+// GET /api/reminders/push/vapid-key — returns public VAPID key for client subscription
+router.get("/push/vapid-key", async (req, res) => {
+  const key = pushLib.getVapidPublicKey();
+  if (!key) {
+    return res.status(404).json({ error: "Push not configured on server. Set VAPID_PUBLIC_KEY." });
+  }
+  res.json({ publicKey: key });
+});
+
+// POST /api/reminders/push/subscribe — save push subscription (real mobile push)
 router.post("/push/subscribe", async (req, res) => {
-  const { endpoint, keys, userAgent } = req.body || {};
-  if (!endpoint) return res.status(400).json({ error: "Endpoint required." });
+  const { endpoint, keys, userAgent, subscription } = req.body || {};
+  // Support both { endpoint, keys } and { subscription: { endpoint, keys } } formats
+  let finalEndpoint = endpoint;
+  let finalKeys = keys;
+
+  if (subscription) {
+    finalEndpoint = subscription.endpoint;
+    finalKeys = subscription.keys;
+  }
+
+  if (!finalEndpoint) return res.status(400).json({ error: "Endpoint required." });
+  if (!finalKeys) return res.status(400).json({ error: "Keys required." });
+
   try {
     const sub = await pushSubscriptionsDb.upsert({
       userId: req.userId,
-      endpoint,
-      keys,
+      endpoint: finalEndpoint,
+      keys: finalKeys,
       userAgent: userAgent || req.headers["user-agent"],
     });
-    res.json({ subscription: sub });
+
+    // Send a welcome push to confirm it works (real push)
+    if (pushLib.canSendPush()) {
+      try {
+        await pushLib.sendToSubscription(sub, {
+          title: "Deck push enabled! 🔔",
+          body: "You'll get timely nudges to stay organized and aligned, even when Deck is closed.",
+          message: "Deck push enabled! You'll get timely nudges.",
+          type: "general_nudge",
+          link: "/dashboard",
+          tag: "welcome-push",
+        });
+      } catch {}
+    }
+
+    res.json({ subscription: sub, pushEnabled: pushLib.canSendPush() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not save subscription." });
@@ -160,9 +194,29 @@ router.post("/push/unsubscribe", async (req, res) => {
 router.get("/push", async (req, res) => {
   try {
     const subs = await pushSubscriptionsDb.listForUser(req.userId);
-    res.json({ subscriptions: subs });
+    res.json({ subscriptions: subs, vapidConfigured: !!pushLib.getVapidPublicKey() });
   } catch (err) {
     res.status(500).json({ error: "Could not fetch subscriptions." });
+  }
+});
+
+// POST /api/reminders/push/test — send a test push to current user (real mobile push)
+router.post("/push/test", async (req, res) => {
+  try {
+    const { message } = req.body || {};
+    const payload = {
+      title: "Test push from Deck 🔔",
+      body: message || "This is a real push notification! Your mobile will receive it even when Deck is closed.",
+      message: message || "Test push — if you see this on your phone, real push is working!",
+      type: "general_nudge",
+      link: "/dashboard",
+      tag: "test-push",
+    };
+    const sent = await pushLib.sendPushToUser(req.userId, payload);
+    res.json({ ok: true, sent, pushConfigured: pushLib.canSendPush() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not send test push." });
   }
 });
 

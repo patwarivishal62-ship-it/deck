@@ -1,8 +1,14 @@
 package com.planyourdeck.app;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
@@ -10,6 +16,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -21,13 +28,22 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+
 /**
  * Thin WebView shell around the live DECK web app at planyourdeck.com.
  * Same account as the website; this APK is a sideloadable home-screen icon.
+ * Now with real push support via native NotificationManager + JS bridge
+ * for timely task progress and voice AI reminders.
  */
 public class MainActivity extends Activity {
     private static final String HOST = "planyourdeck.com";
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 1002;
+    private static final String CHANNEL_ID = "deck-reminders";
+    private static final String CHANNEL_NAME = "Deck Reminders";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -37,6 +53,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        createNotificationChannel();
+        requestNotificationPermissionIfNeeded();
+
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(0xFF0B0F14);
         root.setLayoutParams(new FrameLayout.LayoutParams(
@@ -45,7 +64,7 @@ public class MainActivity extends Activity {
         ));
 
         webView = new WebView(this);
-        webView.setBackgroundColor(0xFF0B0F14);
+        webView.setBackgroundColor(0xFF0F172A);
         root.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -71,6 +90,34 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Timely reminders for tasks, goals, and team alignment");
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{200, 100, 200});
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_REQUEST);
+            }
+        }
+    }
+
     private void configureWebView() {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -93,6 +140,9 @@ public class MainActivity extends Activity {
         }
         CookieManager.getInstance().setAcceptCookie(true);
 
+        // JS Bridge for real native push from web
+        webView.addJavascriptInterface(new DeckBridge(), "DeckAndroid");
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -114,6 +164,11 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
                 CookieManager.getInstance().flush();
+                // Inject helper to detect Android bridge
+                view.evaluateJavascript(
+                        "window.isDeckAndroidApp = true; console.log('Deck Android bridge ready');",
+                        null
+                );
             }
 
             @Override
@@ -267,5 +322,72 @@ public class MainActivity extends Activity {
             webView = null;
         }
         super.onDestroy();
+    }
+
+    // JS Bridge for real native notifications — called from web as DeckAndroid.showNotification(title, body, url)
+    public class DeckBridge {
+        @JavascriptInterface
+        public void showNotification(String title, String body, String url) {
+            runOnUiThread(() -> {
+                showNativeNotification(title, body, url);
+            });
+        }
+
+        @JavascriptInterface
+        public boolean isNotificationEnabled() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS)
+                        == PackageManager.PERMISSION_GRANTED;
+            }
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            return nm != null && nm.areNotificationsEnabled();
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            requestNotificationPermissionIfNeeded();
+        }
+
+        @JavascriptInterface
+        public String getAppInfo() {
+            return "{\"isAndroid\":true,\"supportsNativePush\":true,\"version\":\"1.1-voice\"}";
+        }
+    }
+
+    private void showNativeNotification(String title, String body, String url) {
+        try {
+            String safeTitle = title != null ? title : "Deck";
+            String safeBody = body != null ? body : "You have a new reminder";
+            String safeUrl = url != null ? url : "https://www.planyourdeck.com/dashboard";
+
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setData(Uri.parse(safeUrl));
+            intent.setAction(Intent.ACTION_VIEW);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, flags);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle(safeTitle)
+                    .setContentText(safeBody)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(safeBody))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    .setVibrate(new long[]{200, 100, 200});
+
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                int id = (int) (System.currentTimeMillis() % 10000);
+                manager.notify(id, builder.build());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

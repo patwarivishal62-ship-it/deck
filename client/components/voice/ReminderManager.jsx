@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Plus, Trash2, Clock, Calendar, Repeat, X, Check } from "lucide-react";
+import { Bell, Plus, Trash2, Clock, Repeat, X, Smartphone, CheckCircle, Send } from "lucide-react";
 import { api } from "@/lib/api";
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export default function ReminderManager() {
   const [reminders, setReminders] = useState([]);
@@ -17,21 +28,33 @@ export default function ReminderManager() {
   const [creating, setCreating] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [vapidConfigured, setVapidConfigured] = useState(false);
+  const [testPushSending, setTestPushSending] = useState(false);
+  const [testResult, setTestResult] = useState("");
 
   async function load() {
     setLoading(true);
     try {
-      const data = await api.listReminders(true);
-      setReminders(data.reminders || []);
+      const [remData, pushData] = await Promise.all([
+        api.listReminders(true),
+        api.listPushSubs().catch(() => ({ subscriptions: [], vapidConfigured: false })),
+      ]);
+      setReminders(remData.reminders || []);
+      setVapidConfigured(pushData.vapidConfigured || false);
+      // If we have subscriptions, push is enabled
+      if (pushData.subscriptions && pushData.subscriptions.length > 0) {
+        setPushEnabled(true);
+      }
     } catch {}
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-    // Check push permission
     if (typeof window !== "undefined" && "Notification" in window) {
-      setPushEnabled(Notification.permission === "granted");
+      if (Notification.permission === "granted") {
+        setPushEnabled(true);
+      }
     }
   }, []);
 
@@ -76,36 +99,113 @@ export default function ReminderManager() {
       alert("Notifications not supported in this browser");
       return;
     }
+    if (!("serviceWorker" in navigator)) {
+      alert("Service Worker not supported — needed for push");
+      return;
+    }
+    if (!("PushManager" in window)) {
+      alert("Push Manager not supported in this browser");
+      return;
+    }
+
     setPushLoading(true);
+    setTestResult("");
     try {
       const permission = await Notification.requestPermission();
-      setPushEnabled(permission === "granted");
+      if (permission !== "granted") {
+        alert("Permission denied. Please enable notifications in browser settings.");
+        setPushLoading(false);
+        return;
+      }
 
-      if (permission === "granted" && "serviceWorker" in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        // Try to subscribe to push if VAPID key available (optional)
-        // For now just show a local notification as proof
-        reg.showNotification("Deck reminders enabled! 🔔", {
-          body: "You'll get timely nudges to stay organized and aligned.",
+      const reg = await navigator.serviceWorker.ready;
+
+      // Get VAPID public key from server for real push
+      let vapidKey = null;
+      try {
+        const vapidData = await api.request ? null : await fetch("/api/reminders/push/vapid-key", { credentials: "include" }).then((r) => r.json());
+        // Use api wrapper
+        const vd = await api.listPushSubs().then(() => {}).catch(() => {});
+        // Actually fetch via api
+        const res = await fetch("/api/reminders/push/vapid-key", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          vapidKey = data.publicKey;
+        }
+      } catch (e) {
+        console.warn("Could not get VAPID key, trying without:", e);
+      }
+
+      // Try to get existing subscription or create new one with VAPID key
+      let subscription = await reg.pushManager.getSubscription();
+      if (!subscription) {
+        const subscribeOptions = {
+          userVisibleOnly: true,
+        };
+        if (vapidKey) {
+          subscribeOptions.applicationServerKey = urlBase64ToUint8Array(vapidKey);
+        }
+        subscription = await reg.pushManager.subscribe(subscribeOptions);
+      }
+
+      // Save to server
+      await api.pushSubscribe({
+        endpoint: subscription.endpoint,
+        keys: subscription.toJSON().keys,
+        userAgent: navigator.userAgent,
+      });
+
+      setPushEnabled(true);
+      setVapidConfigured(!!vapidKey);
+      setTestResult("✅ Real push enabled! You will get notifications even when Deck is closed.");
+
+      // Show local confirmation
+      try {
+        await reg.showNotification("Deck real push enabled! 🔔", {
+          body: "Timely nudges will arrive on your mobile even when Deck is closed. Task progress, goal check-ins, and activation reminders.",
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
+          tag: "push-enabled",
         });
-
-        // Save a push subscription placeholder (real push needs VAPID)
-        try {
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) {
-            await api.pushSubscribe({
-              endpoint: sub.endpoint,
-              keys: sub.toJSON().keys,
-            });
-          }
-        } catch {}
-      }
+      } catch {}
     } catch (e) {
-      console.error(e);
+      console.error("Enable push failed:", e);
+      alert(`Failed to enable push: ${e.message}. Try using Chrome/Edge on Android or desktop. iOS Safari needs Add to Home Screen first.`);
     } finally {
       setPushLoading(false);
+    }
+  }
+
+  async function handleTestPush() {
+    setTestPushSending(true);
+    setTestResult("");
+    try {
+      const res = await fetch("/api/reminders/push/test", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "🔔 Real push test — if you see this on your phone, it's working!" }),
+      });
+      const data = await res.json();
+      if (data.sent > 0) {
+        setTestResult(`✅ Test push sent to ${data.sent} device(s)! Check your phone notification shade.`);
+      } else if (!data.pushConfigured) {
+        setTestResult("⚠️ Push not configured on server. Set VAPID keys in .env. Showing local notification only.");
+        // Fallback local
+        if ("serviceWorker" in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          await reg.showNotification("Test push (local fallback) 🔔", {
+            body: "Real push not configured, but local notifications work. Set VAPID keys for true mobile push.",
+            icon: "/icons/icon-192.png",
+          });
+        }
+      } else {
+        setTestResult("⚠️ No push subscriptions found. Enable push first.");
+      }
+    } catch (e) {
+      setTestResult(`❌ Test failed: ${e.message}`);
+    } finally {
+      setTestPushSending(false);
     }
   }
 
@@ -124,8 +224,8 @@ export default function ReminderManager() {
             <Bell size={18} />
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-text">Smart Reminders</h3>
-            <p className="text-xs text-text-soft">Timely nudges to keep you organized</p>
+            <h3 className="text-sm font-semibold text-text">Smart Reminders — Real Push</h3>
+            <p className="text-xs text-text-soft">Timely nudges to keep you organized, even when app is closed</p>
           </div>
         </div>
         <button
@@ -136,28 +236,54 @@ export default function ReminderManager() {
         </button>
       </div>
 
-      {/* Push enable */}
-      <div className="mt-4 rounded-xl border border-line bg-paper-2 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${pushEnabled ? "bg-emerald-500" : "bg-amber-500"}`} />
-            <span className="text-sm font-medium text-text">
-              {pushEnabled ? "Mobile notifications enabled" : "Enable mobile notifications"}
+      {/* Real Push Status */}
+      <div className={`mt-4 rounded-xl border p-3 ${pushEnabled ? "border-good-line bg-good-tint" : "border-amber-500/20 bg-amber-500/5"}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full ${pushEnabled ? "bg-emerald-500 text-white" : "bg-amber-500/10 text-amber-500"}`}>
+              {pushEnabled ? <CheckCircle size={14} /> : <Smartphone size={14} />}
             </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-text">
+                  {pushEnabled ? "Real mobile push enabled" : "Enable real mobile push"}
+                </span>
+                {vapidConfigured && <span className="rounded-full bg-[#7C5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#7C5CFF]">VAPID READY</span>}
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-text-soft">
+                {pushEnabled
+                  ? "You'll get timely nudges on your phone even when Deck is closed. Perfect for task progress and daily alignment."
+                  : "Get real push notifications on your mobile even when Deck is closed. Uses Web Push (VAPID) — works on Android Chrome, desktop, and iOS PWA."}
+              </p>
+              {!vapidConfigured && !pushEnabled && (
+                <p className="mt-1 text-[11px] text-amber-600">Server VAPID not configured — will use local notifications fallback. Set VAPID keys in .env for true push.</p>
+              )}
+            </div>
           </div>
-          {!pushEnabled && (
-            <button
-              onClick={handleEnablePush}
-              disabled={pushLoading}
-              className="rounded-full bg-card border border-line px-3 py-1 text-xs font-semibold text-text hover:border-[#7C5CFF]/40 disabled:opacity-50"
-            >
-              {pushLoading ? "Enabling..." : "Enable"}
-            </button>
-          )}
+          <div className="flex gap-1.5">
+            {!pushEnabled ? (
+              <button
+                onClick={handleEnablePush}
+                disabled={pushLoading}
+                className="rounded-full bg-[#7C5CFF] px-3.5 py-1.5 text-xs font-semibold text-white shadow hover:bg-[#6A4AF0] disabled:opacity-50"
+              >
+                {pushLoading ? "Enabling..." : "Enable Push"}
+              </button>
+            ) : (
+              <button
+                onClick={handleTestPush}
+                disabled={testPushSending}
+                className="rounded-full border border-line bg-card px-3 py-1.5 text-xs font-semibold text-text hover:border-[#7C5CFF]/40 disabled:opacity-50 inline-flex items-center gap-1"
+              >
+                <Send size={12} />
+                {testPushSending ? "Sending..." : "Test Push"}
+              </button>
+            )}
+          </div>
         </div>
-        <p className="mt-1.5 text-xs text-text-faint">
-          Get reminders on your phone even when Deck is closed. Perfect for task progress updates and daily alignment.
-        </p>
+        {testResult && (
+          <div className="mt-2.5 rounded-lg bg-card border border-line px-3 py-2 text-xs text-text">{testResult}</div>
+        )}
       </div>
 
       {/* Quick actions */}
@@ -254,7 +380,7 @@ export default function ReminderManager() {
               disabled={creating || !form.message.trim()}
               className="w-full rounded-xl bg-[#7C5CFF] py-2.5 text-sm font-semibold text-white shadow hover:bg-[#6A4AF0] disabled:opacity-50"
             >
-              {creating ? "Creating..." : "Create reminder"}
+              {creating ? "Creating..." : "Create reminder (real push)"}
             </button>
           </div>
         </div>
@@ -267,7 +393,7 @@ export default function ReminderManager() {
           <div className="rounded-xl border border-dashed border-line bg-paper-2 px-4 py-6 text-center">
             <Bell size={20} className="mx-auto text-text-faint" />
             <p className="mt-2 text-sm font-medium text-text">No reminders yet</p>
-            <p className="mt-1 text-xs text-text-faint">Create your first reminder to get timely nudges on mobile</p>
+            <p className="mt-1 text-xs text-text-faint">Create your first reminder to get timely real push on mobile</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto">

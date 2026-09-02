@@ -25,6 +25,10 @@ require.cache[mongoModuleId] = {
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || "local-preview-secret";
 process.env.PORT = process.env.PORT || "4000";
+// Real push VAPID keys for preview — enables true mobile push in local dev
+process.env.VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BH7UsygWiTxE6N3t3G0lNE9klvaW2f7J8-5E6YVivyirtwBsosZmPm3V8F43ngU5BPZ-ThedX7M391pDOEO2PWQ";
+process.env.VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "rnu3fRu6BiCbW0Y5pRY3ZsSy-vANyQoaIATLCo3_Z-g";
+process.env.VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@planyourdeck.com";
 
 // Bring in the db layer (now backed by the shim).
 const usersDb = require("../src/db/users");
