@@ -49,11 +49,11 @@ function VoicePageInner() {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow">
                 <Mic size={20} />
               </span>
-              Voice AI Assistant
+              Echo
               <span className="rounded-full bg-[#7C5CFF] px-2.5 py-1 text-xs font-bold text-white">NEW</span>
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-soft">
-              Speak naturally to capture ideas fast. Deck AI listens, takes notes, creates goals and tasks, assigns teammates, and sends timely mobile reminders to keep everyone aligned.
+              Speak naturally to capture ideas fast. Echo, Deck's voice assistant, listens, takes notes, creates goals and tasks, assigns teammates, and sends timely mobile reminders to keep everyone aligned.
             </p>
           </div>
         </div>

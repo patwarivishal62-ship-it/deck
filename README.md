@@ -196,3 +196,32 @@ Notes:
 This project is **proprietary software**. It is not licensed for public use,
 redistribution, or contribution. Copyright (c) 2026 DECK / PlanYourDeck.
 All rights reserved. See [`LICENSE`](./LICENSE).
+
+## Echo — the voice assistant
+
+Echo is Deck's voice AI. Speak, and it turns the transcript into structured
+projects, goals, tasks, assignments, notes and reminders.
+
+### Configuring the model
+
+Echo speaks to any **OpenAI-compatible** `/chat/completions` endpoint, so you can
+point it at OpenAI, Groq, OpenRouter, Together, Gemini's compat layer, or your own
+gateway — configuration only, no code change. All of it lives in
+`server/src/lib/aiConfig.js`.
+
+| Env var | Default | What it does |
+|---|---|---|
+| `ECHO_PROVIDER` | inferred | `openai`, `groq`, `openrouter`, `together`, `gemini`, `custom` |
+| `ECHO_API_KEY` | provider key | API key (falls back to `OPENAI_API_KEY`, `GROQ_API_KEY`, …) |
+| `ECHO_MODEL` | provider default | Model id, e.g. `gpt-4o-mini`, `llama-3.3-70b-versatile` |
+| `ECHO_BASE_URL` | provider default | Override the endpoint (required for `custom`) |
+| `ECHO_TEMPERATURE` | `0.2` | Sampling temperature |
+| `ECHO_MAX_TOKENS` | `1200` | Response cap |
+| `ECHO_JSON_MODE` | `true` | Set `false` for models that reject `response_format` |
+| `ECHO_TIMEOUT_MS` | `20000` | Fall back to the rule-based parser after this |
+| `ECHO_RETRIES` | `1` | Extra attempts on timeouts and 429/5xx |
+
+If no key is set, Echo degrades honestly: it keeps working via the built-in
+rule-based parser and every response says so in `diagnostics`. `GET /api/voice/context`
+reports the live provider and model so the UI can show what's actually running.
+The old `OPENAI_API_KEY` / `OPENAI_MODEL` / `VOICE_AI_*` names still work.

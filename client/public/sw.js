@@ -1,7 +1,7 @@
 /*
  * DECK service worker — makes the app installable (PWA) and keeps the shell
  * usable offline. Now also handles push notifications and periodic reminders
- * for the Voice AI / task progress nudges.
+ * for Echo / task progress nudges.
  *
  * Strategy:
  *  - Navigations (pages): network-first, fall back to cache, then /offline.
