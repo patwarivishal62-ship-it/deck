@@ -30,7 +30,6 @@ function getTypeIcon(type) {
       return "📋";
     case "goal_checkin":
       return "🎯";
-    case "voice_processed":
       return "🎤";
     case "comment":
     case "mention":

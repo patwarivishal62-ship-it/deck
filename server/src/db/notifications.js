@@ -11,7 +11,7 @@ function toNotification(doc) {
   return notification;
 }
 
-// type: project_created | task_assigned | comment | mention | workspace_invite | voice_processed | task_progress | general_nudge
+// type: project_created | task_assigned | comment | mention | workspace_invite | | task_progress | general_nudge
 async function create({ userId, workspaceId, projectId, type, message, link }) {
   const notification = {
     id: nanoid(),
@@ -63,7 +63,6 @@ function getPushTitle(type) {
       return "Goal check-in 🎯";
     case "general_nudge":
       return "Deck reminder 💡";
-    case "voice_processed":
       return "Voice note processed 🎤";
     case "comment":
     case "mention":

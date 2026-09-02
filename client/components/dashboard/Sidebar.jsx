@@ -25,7 +25,6 @@ const PRIMARY_NAV = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/voice", label: "Voice AI", icon: Mic, badge: "NEW" },
 ];
 
 const BOTTOM_NAV = [

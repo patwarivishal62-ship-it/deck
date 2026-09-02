@@ -524,7 +524,6 @@ router.post("/execute", async (req, res) => {
         userId: req.userId,
         workspaceId: defaultWorkspaceId,
         projectId: defaultProject?.id || null,
-        type: "voice_processed",
         message: `Voice note processed: ${results.tasks.length} tasks, ${results.goals.length} goals created`,
         link: defaultProject ? `/projects/${defaultProject.id}` : "/dashboard",
       });

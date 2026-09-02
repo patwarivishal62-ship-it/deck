@@ -182,6 +182,7 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
               <select
                 value={action.priority || "medium"}
                 onChange={(e) => onUpdate(index, { priority: e.target.value })}
+
                 className="rounded-lg border border-line bg-paper-2 px-2 py-1.5 text-xs text-text focus:border-[#7C5CFF]/50 focus:outline-none"
               >
                 <option value="low">Low</option>
@@ -192,12 +193,10 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
             {action.assigneeHint && (
               <div className="flex items-center gap-1.5 text-xs text-text-soft">
                 <User size={12} /> Assign to: <span className="font-medium text-text">{action.assignee?.name || action.assigneeHint}</span>
-                {action.assigneeResolved === false ? (
+                {action.assigneeResolved === false && (
                   <span className="inline-flex items-center gap-1 text-[10px] text-amber-400">
                     <AlertTriangle size={10} /> no teammate matched — will be unassigned
                   </span>
-                ) : (
-                  action.assignee && <span className="text-[10px] text-emerald-400">✓ resolved</span>
                 )}
               </div>
             )}
@@ -253,6 +252,7 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
         )}
 
         {action.type === "create_note" && (
+          <>
           <textarea
             value={action.text || ""}
             onChange={(e) => onUpdate(index, { text: e.target.value })}
@@ -260,7 +260,7 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
             rows={2}
             className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none resize-none"
           />
-        )}
+          )}
 
         {action.type === "create_reminder" && (
           <>
@@ -317,8 +317,6 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
   const [successMsg, setSuccessMsg] = useState("");
   const [voiceNotes, setVoiceNotes] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  // Which stage produced the last parse, so the UI never presents a degraded
-  // rule-based parse as if the model had analysed it.
   const [analysis, setAnalysis] = useState(null);
 
   const speech = useSpeechRecognition();
@@ -383,9 +381,7 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
       if (failures.length > 0 || result.failedCount > 0) {
         const reasons = failures.map((f) => f.error).filter(Boolean).slice(0, 3);
         setError(
-          `${failures.length} item${failures.length === 1 ? "" : "s"} could not be created${
-            reasons.length ? `: ${reasons.join("; ")}` : "."
-          }`
+          `${failures.length} item${failures.length === 1 ? "" : "s"} could not be created${reasons.length ? `: ${reasons.join("; ")}` : "."}`
         );
       }
       setParsedActions([]);
@@ -423,7 +419,7 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
 
   return (
     <>
-      {/* Floating Mic Button */}
+      {/* Floating Mic Button - always visible, no modal popup */}
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_24px_rgba(124,92,255,0.4)] transition hover:scale-105 hover:shadow-[0_12px_32px_rgba(124,92,255,0.5)] active:scale-95"
@@ -435,239 +431,82 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
         </span>
       </button>
 
-      {/* Modal */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          
-          <div className="relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[20px] sm:rounded-[20px] border border-line bg-paper-2 shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-line bg-card px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white">
-                  <Sparkles size={18} />
-                </span>
-                <div>
-                  <h2 className="text-[15px] font-semibold text-text">Deck Voice AI</h2>
-                  <p className="text-xs text-text-soft">Speak to create tasks, goals, notes & assign work</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-soft hover:text-text"
-                >
-                  <Clock size={16} />
-                </button>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-card text-text-soft hover:text-text"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col overflow-hidden">
-              {showHistory ? (
-                <div className="flex-1 overflow-y-auto p-5">
-                  <h3 className="mb-3 text-sm font-semibold text-text">Recent voice notes</h3>
-                  {voiceNotes.length === 0 ? (
-                    <p className="text-sm text-text-soft">No voice notes yet. Your history will appear here.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {voiceNotes.map((note) => (
-                        <div key={note.id} className="rounded-xl border border-line bg-card p-3">
-                          <p className="text-sm text-text line-clamp-2">{note.transcript}</p>
-                          <p className="mt-1 text-xs text-text-faint">{new Date(note.createdAt).toLocaleString()} • {note.summary}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button onClick={() => setShowHistory(false)} className="mt-4 text-sm font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">← Back to assistant</button>
-                </div>
+      {/* Simplified history section - no full modal */}
+      {showHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowHistory(false)} />
+          <div className="absolute inset-y-0 left-0 flex w-[300px] max-w-[90vw] shadow-2xl">
+            <div className="p-5">
+              <h3 className="mb-3 text-sm font-semibold text-text">Recent voice notes</h3>
+              {voiceNotes.length === 0 ? (
+                <p className="text-sm text-text-soft">No voice notes yet. Your history will appear here.</p>
               ) : (
-                <>
-                  {/* Transcript Area */}
-                  <div className="border-b border-line bg-card p-5">
-                    <div className="mb-3 flex items-center justify-between">
-                      <label className="text-xs font-medium uppercase tracking-wide text-text-faint">Voice Input</label>
-                      <div className="flex items-center gap-2">
-                        {speech.isListening && (
-                          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Listening...
-                          </span>
-                        )}
-                        <span className="text-[10px] text-text-faint">{transcript.length} chars</span>
-                      </div>
+                <div className="space-y-2">
+                  {voiceNotes.map((note) => (
+                    <div key={note.id} className="rounded-xl border border-line bg-card p-3">
+                      <p className="text-sm text-text line-clamp-2">{note.transcript}</p>
+                      <p className="mt-1 text-xs text-text-faint">{new Date(note.createdAt).toLocaleString()} • {note.summary}</p>
                     </div>
-
-                    <div className="relative">
-                      <textarea
-                        ref={transcriptRef}
-                        value={transcript}
-                        onChange={(e) => setTranscript(e.target.value)}
-                        placeholder="Tap mic and speak, or type... e.g., 'Create a task to design homepage for tomorrow and assign to John'"
-                        rows={3}
-                        className="w-full resize-none rounded-xl border border-line bg-paper-2 px-4 py-3 pr-12 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]/20"
-                      />
-                      <div className="absolute bottom-2 right-2 flex gap-1.5">
-                        {transcript && (
-                          <button
-                            onClick={() => { setTranscript(""); speech.reset(); setParsedActions([]); }}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-text-faint hover:text-text"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                        <button
-                          onClick={speech.isListening ? speech.stop : speech.start}
-                          disabled={!speech.isSupported}
-                          className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
-                            speech.isListening
-                              ? "bg-red-500 text-white animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.4)]"
-                              : "bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-md hover:scale-105"
-                          } disabled:opacity-40`}
-                        >
-                          {speech.isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {!speech.isSupported && (
-                      <p className="mt-2 text-xs text-amber-400">🎤 Voice recognition not supported in this browser. You can still type your command.</p>
-                    )}
-
-                    {parsedActions.length === 0 && (
-                      <div className="mt-3">
-                        <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-text-faint">Try saying:</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {EXAMPLE_PROMPTS.slice(0, 3).map((ex, i) => (
-                            <button
-                              key={i}
-                              onClick={() => handleExampleClick(ex)}
-                              className="rounded-full border border-line bg-paper-2 px-3 py-1 text-xs text-text-soft transition hover:border-[#7C5CFF]/30 hover:text-text"
-                            >
-                              {ex.slice(0, 50)}...
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={handleParse}
-                        disabled={parsing || !transcript.trim()}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)] transition hover:bg-[#6A4AF0] disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {parsing ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-                        {parsing ? "Analyzing..." : "Parse with AI"}
-                      </button>
-                      {parsedActions.length > 0 && (
-                        <button
-                          onClick={handleExecute}
-                          disabled={executing}
-                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.5)] transition hover:bg-emerald-700 disabled:opacity-50"
-                        >
-                          {executing ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                          {executing ? "Creating..." : `Create ${parsedActions.length} item${parsedActions.length > 1 ? "s" : ""}`}
-                        </button>
-                      )}
-                    </div>
-
-                    {error && (
-                      <div className="mt-3 rounded-xl border border-error-line bg-error-tint px-3 py-2 text-sm text-error-text">
-                        {error}
-                      </div>
-                    )}
-                    {successMsg && (
-                      <div className="mt-3 rounded-xl border border-good-line bg-good-tint px-3 py-2 text-sm text-good-text">
-                        ✅ {successMsg}
-                      </div>
-                    )}
-                    {summary && parsedActions.length > 0 && (
-                      <div className="mt-3 rounded-xl bg-signal-tint px-3 py-2 text-xs text-text-soft border border-line">
-                        <span className="font-medium text-text">AI Summary:</span> {summary}
-                        {analysis && (
-                          <span className="ml-2 rounded-full border border-line bg-card px-2 py-0.5 text-[10px] text-text-faint">
-                            {analysis.source === "llm" ? "model parsed" : "rule-based"}
-                            {analysis.degraded ? " · degraded" : ""}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {analysis?.degraded && parsedActions.length > 0 && (
-                      <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-                        <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                        <span>
-                          The AI model was unavailable, so this was parsed with Deck&apos;s built-in rules — dates and
-                          assignments may be less accurate. Check the cards below before creating.
-                          {analysis.reason ? <span className="block text-[11px] text-amber-400/70">({analysis.reason})</span> : null}
-                        </span>
-                      </div>
-                    )}
-
-                    {analysis?.rejected?.length > 0 && (
-                      <p className="mt-2 text-[11px] text-text-faint">
-                        {analysis.rejected.length} fragment
-                        {analysis.rejected.length === 1 ? "" : "s"} ignored
-                        {analysis.rejected[0]?.reason ? ` (${analysis.rejected[0].reason})` : ""}.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Parsed Actions */}
-                  <div className="flex-1 overflow-y-auto p-5">
-                    {parsedActions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
-                          <Sparkles size={22} />
-                        </span>
-                        <p className="mt-3 text-sm font-medium text-text">Voice AI Ready</p>
-                        <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
-                          Speak naturally. I'll extract tasks, goals, notes, assignments and reminders. Edit before creating.
-                        </p>
-                        {context && (
-                          <div className="mt-4 rounded-xl border border-line bg-card px-3 py-2 text-xs text-text-soft">
-                            <div>📁 {context.projects?.length || 0} projects available</div>
-                            <div>👥 {context.collaborators?.length || 0} teammates can be assigned</div>
-                            <div className={context.aiEnabled ? "text-emerald-400" : "text-amber-400"}>
-                              {context.aiEnabled
-                                ? "✨ AI model connected"
-                                : "⚠️ AI model not configured — rule-based parsing only"}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-3 flex items-center justify-between">
-                          <h3 className="text-sm font-semibold text-text">Detected actions ({parsedActions.length})</h3>
-                          <span className="text-xs text-text-faint">Edit before creating</span>
-                        </div>
-                        <div className="space-y-3">
-                          {parsedActions.map((action, idx) => (
-                            <ActionCard
-                              key={idx}
-                              action={action}
-                              index={idx}
-                              onUpdate={handleUpdateAction}
-                              onRemove={handleRemoveAction}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </>
+                  ))}
+                </div>
               )}
+              <button onClick={() => setShowHistory(false)} className="mt-4 text-sm font-medium text-[#7C5CFF] hover:text-[#8B6DFF]">← Back</button>
             </div>
-
           </div>
         </div>
       )}
+
+      {/* Voice Notes History in main area */}
+      <div className="mt-8 rounded-2xl border border-line bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-text">
+            <Clock size={16} /> Recent Voice Notes
+          </h2>
+          <span className="text-xs text-text-faint">{voiceNotes.length} notes</span>
+        </div>
+
+        <div className="mt-4">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-text-faint">Loading...</p>
+          ) : voiceNotes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line bg-paper-2 px-6 py-10 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-signal-tint text-[#7C5CFF]">
+                <Mic size={20} />
+              </span>
+              <p className="mt-3 text-sm font-medium text-text">No voice notes yet</p>
+              <p className="mt-1 max-w-xs text-xs text-text-faint">Tap the mic button to create your first voice note. It will appear here with tasks and goals extracted.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+              {voiceNotes.map((note) => (
+                <div key={note.id} className="group rounded-xl border border-line bg-paper-2 p-3">
+                  <p className="text-sm text-text leading-relaxed">{note.transcript}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {note.actions?.tasks?.length > 0 && (
+                      <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-400">{note.actions.tasks.length} tasks</span>
+                    )}
+                    {note.actions?.goals?.length > 0 && (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-400">{note.actions.goals.length} goals</span>
+                    )}
+                    {note.actions?.notes?.length > 0 && (
+                      <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-400">{note.actions.notes.length} notes</span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[11px] text-text-faint">{new Date(note.createdAt).toLocaleString()}</span>
+                    <button
+                      onClick={() => handleDelete(note.id)}
+                      className="opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-full bg-card text-text-faint hover:text-error-text hover:bg-error-tint transition"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }

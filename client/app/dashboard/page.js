@@ -248,49 +248,6 @@ function Dashboard() {
                 />
               </div>
 
-              {/* Voice AI Promo Card */}
-              <div className="mt-6 overflow-hidden rounded-2xl border border-[#7C5CFF]/20 bg-gradient-to-br from-[#7C5CFF]/10 via-[#4F7BFF]/10 to-[#7C5CFF]/5 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#4F7BFF] text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)]">
-                      <Mic size={20} />
-                    </span>
-                    <div>
-                      <h3 className="flex items-center gap-2 text-[15px] font-semibold text-text">
-                        Deck Voice AI
-                        <span className="rounded-full bg-[#7C5CFF] px-2 py-0.5 text-[10px] font-bold text-white">NEW</span>
-                      </h3>
-                      <p className="mt-1 max-w-md text-sm leading-relaxed text-text-soft">
-                        Speak naturally to create tasks, goals, notes and assign work. 3x faster than typing. Tap the mic button to try!
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-xs text-text-soft">
-                          <Target size={12} /> Goals
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-xs text-text-soft">
-                          <ListTodo size={12} /> Tasks
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-xs text-text-soft">
-                          <Users size={12} /> Assign
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-2.5 py-1 text-xs text-text-soft">
-                          <Bell size={12} /> Reminders
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-card border border-line text-[#7C5CFF]">
-                    <Sparkles size={16} />
-                  </span>
-                </div>
-                <div className="mt-4 rounded-xl bg-card border border-line p-3">
-                  <p className="text-xs font-medium text-text-faint uppercase tracking-wide mb-2">Try saying:</p>
-                  <p className="text-sm text-text italic">"Create a task to design landing page for tomorrow and assign to Sarah, high priority"</p>
-                </div>
-              </div>
-
-              {/* Projects */}
-              <section className="mt-8" aria-labelledby="dashboard-projects-heading">
                 <div className="mb-3.5 flex items-center justify-between gap-3">
                   <h2 id="dashboard-projects-heading" className="font-display text-base font-bold tracking-tight text-text">
                     Projects

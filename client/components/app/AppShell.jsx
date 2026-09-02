@@ -1,10 +1,10 @@
 "use client";
 
+import VoiceAssistant from "@/components/voice/VoiceAssistant";
 import { useState } from "react";
 import { X } from "lucide-react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import VoiceAssistant from "@/components/voice/VoiceAssistant";
 
 // Shared shell for every signed-in screen — the deep-navy sidebar (fixed on
 // desktop lg+, slide-in drawer on mobile), the sticky header, and the content
