@@ -229,8 +229,8 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-// Reminders and nudges are created by voice and delivered by the server on a
-// schedule — there is intentionally no manual reminders list on the dashboard.
+// Reminders and nudges are delivered by the server on a schedule — there is
+// intentionally no manual reminders list on the dashboard.
 // The only thing a person has to do here is grant the browser permission once,
 // so that push can reach their phone even when Deck is closed.
 function NotificationsSection() {
@@ -319,7 +319,7 @@ function NotificationsSection() {
   return (
     <SettingsCard
       title="Notifications & mobile push"
-      description="Voice reminders and nudges are pushed by the server on a schedule. Grant permission once to receive them on this device even when Deck is closed."
+      description="Reminders and nudges are pushed by the server on a schedule. Grant permission once to receive them on this device even when Deck is closed."
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
