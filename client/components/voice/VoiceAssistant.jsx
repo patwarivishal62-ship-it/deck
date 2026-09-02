@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Mic, MicOff, Sparkles, X, Check, Loader2, Trash2, Clock, User, Target, FileText, Bell, Play, Pause, Wand2, AlertTriangle } from "lucide-react";
+import { Mic, MicOff, Sparkles, X, Check, Loader2, Trash2, Clock, User, Target, FileText, Bell, Play, Pause, Wand2, AlertTriangle, FolderPlus } from "lucide-react";
 import { api } from "@/lib/api";
 
 // Sent with every parse/execute so the server resolves "tomorrow" and reminder
@@ -100,6 +100,7 @@ function useSpeechRecognition() {
 
 function ActionCard({ action, index, onUpdate, onRemove }) {
   const typeIcons = {
+    create_project: <FolderPlus size={14} />,
     create_task: <FileText size={14} />,
     create_goal: <Target size={14} />,
     create_note: <FileText size={14} />,
@@ -108,6 +109,7 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
   };
 
   const typeLabels = {
+    create_project: "Project",
     create_task: "Task",
     create_goal: "Goal",
     create_note: "Note",
@@ -116,6 +118,7 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
   };
 
   const typeColors = {
+    create_project: "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]/20",
     create_task: "bg-violet-500/10 text-violet-400 border-violet-500/20",
     create_goal: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     create_note: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -149,6 +152,18 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
       </div>
 
       <div className="mt-2.5 space-y-2">
+        {action.type === "create_project" && (
+          <>
+            <input
+              value={action.name || ""}
+              onChange={(e) => onUpdate(index, { name: e.target.value })}
+              placeholder="Project name"
+              className="w-full rounded-lg border border-line bg-paper-2 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-[#7C5CFF]/50 focus:outline-none"
+            />
+            <p className="text-[11px] text-text-faint">Goals and tasks in this note that mention it will be placed inside.</p>
+          </>
+        )}
+
         {action.type === "create_task" && (
           <>
             <input
@@ -187,7 +202,12 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
               </div>
             )}
             {action.project && (
-              <div className="text-xs text-text-soft">Project: <span className="font-medium text-text">{action.project.name}</span></div>
+              <div className="flex items-center gap-1.5 text-xs text-text-soft">
+                Project: <span className="font-medium text-text">{action.project.name}</span>
+                {action.project.isNew && (
+                  <span className="rounded-full bg-[#7C5CFF]/10 px-2 py-0.5 text-[10px] font-medium text-[#7C5CFF]">will be created</span>
+                )}
+              </div>
             )}
           </>
         )}
@@ -221,6 +241,14 @@ function ActionCard({ action, index, onUpdate, onRemove }) {
                 <option value="other">Other</option>
               </select>
             </div>
+            {action.project && (
+              <div className="flex items-center gap-1.5 text-xs text-text-soft">
+                Project: <span className="font-medium text-text">{action.project.name}</span>
+                {action.project.isNew && (
+                  <span className="rounded-full bg-[#7C5CFF]/10 px-2 py-0.5 text-[10px] font-medium text-[#7C5CFF]">will be created</span>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -637,12 +665,6 @@ export default function VoiceAssistant({ projectId, onSuccess }) {
               )}
             </div>
 
-            {/* Footer tips */}
-            <div className="border-t border-line bg-card px-5 py-3">
-              <p className="text-[11px] leading-relaxed text-text-faint">
-                💡 <span className="font-medium">Pro tip:</span> Say "assign to [name]" to assign tasks, "due tomorrow" for dates, "high priority" for urgency. Voice makes you 3x faster!
-              </p>
-            </div>
           </div>
         </div>
       )}

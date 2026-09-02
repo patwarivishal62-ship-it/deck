@@ -18,7 +18,7 @@
 
 const { CATEGORY_KEYS, PRIORITY_KEYS, PERIODS, STATUSES } = require("../constants");
 
-const ACTION_TYPES = ["create_task", "create_goal", "create_note", "assign_task", "create_reminder"];
+const ACTION_TYPES = ["create_project", "create_task", "create_goal", "create_note", "assign_task", "create_reminder"];
 const FREQUENCIES = ["once", "daily", "weekdays", "weekly", "hourly"];
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.VOICE_AI_TIMEOUT_MS) || 20000;
@@ -181,6 +181,15 @@ function detectPriority(text) {
   return "medium";
 }
 
+function detectPeriod(text) {
+  const lower = normalize(text);
+  for (const period of ["weekly", "monthly", "quarterly"]) {
+    if (hasWord(lower, period)) return period;
+  }
+  if (/\b(?:one[- ]?time|once)\b/.test(lower)) return "onetime";
+  return "monthly";
+}
+
 function extractDueDate(text, todayISO = localISODate()) {
   const lower = normalize(text);
   if (!lower) return null;
@@ -334,6 +343,28 @@ function splitIntoSentences(transcript) {
     });
 }
 
+/**
+ * "create a project called deck" / "make a new project named Website".
+ * Returns the action plus the bare name so callers can group the sentences that
+ * follow ("in that I want to add goals...") under it.
+ */
+function parseProjectFromSentence(sentence) {
+  const lower = normalize(sentence);
+  if (!hasWord(lower, "project")) return null;
+  const match = sentence.match(
+    /\b(?:create|add|make|start|set\s+up)\s+(?:a\s+|an\s+|new\s+)?project\s*(?:called|named)?\s*[:"]?\s*([^",:.]+)/i
+  );
+  if (!match) return null;
+
+  let name = match[1]
+    .trim()
+    .replace(/\s+(okay|ok|please|now|right|and|with|for|in|that|where)\b.*$/i, "")
+    .replace(/^[":\s]+|[":\s]+$/g, "")
+    .trim();
+  if (name.length < 2 || name.length > 60) return null;
+  return { type: "create_project", name, raw: sentence };
+}
+
 function parseGoalFromSentence(sentence, todayISO) {
   const lower = normalize(sentence);
   if (!hasWord(lower, "goal")) return null;
@@ -368,7 +399,7 @@ function parseGoalFromSentence(sentence, todayISO) {
     targetValue,
     currentValue: 0,
     unit: "",
-    period: "monthly",
+    period: detectPeriod(sentence),
     raw: sentence,
   };
 }
@@ -531,6 +562,10 @@ function parseTranscript(transcript, context = {}) {
   const sentences = splitIntoSentences(transcript);
   const projectHint = detectProjectHint(transcript, projects);
   const actions = [];
+  // When the speaker says "create a project called X ... and in it add ...",
+  // the goals/tasks that follow belong to X even though X has no id yet. We
+  // carry the spoken name so the route layer can attach them after creating it.
+  let pendingProject = null;
 
   for (const sentence of sentences) {
     if (sentence.length < 3) continue;
@@ -554,18 +589,24 @@ function parseTranscript(transcript, context = {}) {
         if (reminderAction) sentenceActions.push(reminderAction);
       }
     } else {
-      const parsers = [
-        (s) => parseGoalFromSentence(s, todayISO),
-        (s) => parseReminderFromSentence(s, todayISO),
-        parseNoteFromSentence,
-        (s) => parseTaskFromSentence(s, projectHint, todayISO, collaborators),
-        (s) => parseAssignmentFromSentence(s, collaborators),
-      ];
-      for (const parser of parsers) {
-        const parsed = parser(sentence);
-        if (parsed) {
-          sentenceActions.push(parsed);
-          break;
+      const projectAction = parseProjectFromSentence(sentence);
+      if (projectAction) {
+        sentenceActions.push(projectAction);
+        pendingProject = projectAction.name;
+      } else {
+        const parsers = [
+          (s) => parseGoalFromSentence(s, todayISO),
+          (s) => parseReminderFromSentence(s, todayISO),
+          parseNoteFromSentence,
+          (s) => parseTaskFromSentence(s, projectHint || pendingProject, todayISO, collaborators),
+          (s) => parseAssignmentFromSentence(s, collaborators),
+        ];
+        for (const parser of parsers) {
+          const parsed = parser(sentence);
+          if (parsed) {
+            sentenceActions.push(parsed);
+            break;
+          }
         }
       }
     }
@@ -597,8 +638,9 @@ function parseTranscript(transcript, context = {}) {
     }
 
     for (const action of sentenceActions) {
-      if ((action.type === "create_task" || action.type === "create_goal") && !action.projectId) {
-        action.projectId = projectHint || context.currentProjectId || null;
+      if (action.type === "create_task" || action.type === "create_goal") {
+        if (!action.projectId) action.projectId = projectHint || context.currentProjectId || null;
+        if (!action.projectId && !action.projectHint && pendingProject) action.projectHint = pendingProject;
       }
       actions.push(action);
     }
@@ -659,6 +701,11 @@ function matchCollaborator(hint, collaborators = []) {
  */
 function completenessChecks(action) {
   switch (action.type) {
+    case "create_project":
+      return [
+        Boolean((action.name || "").trim().length >= 3),
+        Boolean((action.name || "").trim().length >= 6),
+      ];
     case "create_task":
       return [
         Boolean((action.title || "").trim().length >= 6),
@@ -722,7 +769,15 @@ function normalizeActions(rawActions, options = {}) {
 
     const action = { type, raw: raw.raw || raw.source || transcript.slice(0, 200) };
 
-    if (type === "create_task") {
+    if (type === "create_project") {
+      const name = String(raw.name || raw.title || "").trim().slice(0, 60);
+      if (name.length < 2) {
+        rejected.push({ index, type, reason: "missing project name" });
+        return;
+      }
+      action.name = name;
+      action.description = String(raw.description || "").trim().slice(0, 300);
+    } else if (type === "create_task") {
       const title = String(raw.title || raw.label || "").trim().slice(0, 200);
       if (title.length < 3) {
         rejected.push({ index, type, reason: "title too short" });
@@ -736,6 +791,7 @@ function normalizeActions(rawActions, options = {}) {
       action.assigneeHint = raw.assigneeHint ? String(raw.assigneeHint).slice(0, 80) : null;
       action.assigneeId = raw.assigneeId || null;
       action.projectId = raw.projectId || null;
+      action.projectHint = raw.projectHint ? String(raw.projectHint).slice(0, 80) : null;
       action.goalId = raw.goalId || null;
     } else if (type === "create_goal") {
       const label = String(raw.label || raw.title || "").trim().slice(0, 120);
@@ -753,6 +809,7 @@ function normalizeActions(rawActions, options = {}) {
       action.unit = String(raw.unit || "").trim().slice(0, 24);
       action.platform = String(raw.platform || "").trim().slice(0, 60);
       action.projectId = raw.projectId || null;
+      action.projectHint = raw.projectHint ? String(raw.projectHint).slice(0, 80) : null;
     } else if (type === "create_note") {
       const text = String(raw.text || raw.title || raw.content || "").trim().slice(0, 500);
       if (!text) {
@@ -794,6 +851,7 @@ function normalizeActions(rawActions, options = {}) {
  * ------------------------------------------------------------------ */
 
 const TYPE_LABELS = {
+  create_project: "project",
   create_task: "task",
   create_goal: "goal",
   create_note: "note",
@@ -904,14 +962,17 @@ Return a single JSON object, no prose, of the shape:
 }
 
 Each action needs "type" plus the fields for that type:
-- "create_task": title, notes, dueDate (YYYY-MM-DD or null), priority ("low"|"medium"|"high"), assigneeHint (name or null), projectId
-- "create_goal": label, category ("social"|"ads"|"seo"|"content"|"email"|"other"), targetValue (number), unit, period ("weekly"|"monthly"|"quarterly"|"onetime"), projectId
+- "create_project": name
+- "create_task": title, notes, dueDate (YYYY-MM-DD or null), priority ("low"|"medium"|"high"), assigneeHint (name or null), projectId or projectHint
+- "create_goal": label, category ("social"|"ads"|"seo"|"content"|"email"|"other"), targetValue (number), unit, period ("weekly"|"monthly"|"quarterly"|"onetime"), projectId or projectHint
 - "create_note": text
 - "assign_task": taskHint, assigneeHint
 - "create_reminder": message, dueDate (YYYY-MM-DD or null), frequency ("once"|"daily"|"weekly"|"weekdays"|"hourly")
 
 Rules:
 - Split one transcript into as many actions as it genuinely contains.
+- If the user asks to create a project and then add goals/tasks "in it" or "to it", emit one create_project action and set "projectHint" to that new project's NAME on those goals/tasks (do not use projectId for a project that does not exist yet).
+- A phrase like "social media postings of monthly 15" is a goal with category "social", targetValue 15, period "monthly". "X of N" / "N per period" both mean targetValue N.
 - Omit fields the user did not state rather than inventing them; use null for dates they did not mention.
 - Only use a projectId that appears in the list above.
 - Return {"summary": "", "actions": []} if the transcript contains no actionable request.`;

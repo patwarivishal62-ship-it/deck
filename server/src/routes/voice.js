@@ -129,7 +129,9 @@ function resolveProjectByHint(hint, projects, fallbackProjectId) {
   const byId = projects.find((p) => p.id === hint);
   if (byId) return byId;
   const byName = projects.find((p) => p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase()));
-  return byName || projects[0] || null;
+  // An unrecognized name is a *new* project, not "just use the first one".
+  // Defaulting here is what put the user's "Deck" work into BowlVana.
+  return byName || null;
 }
 
 // POST /api/voice/parse — parse transcript without executing
@@ -170,6 +172,10 @@ router.post("/parse", async (req, res) => {
           enrichedAction.project = { id: proj.id, name: proj.name };
           enrichedAction.projectId = proj.id;
           enrichedAction.workspaceId = proj.workspaceId;
+        } else if (action.projectHint) {
+          // Spoken project that doesn't exist yet — will be created on execute.
+          enrichedAction.project = { id: null, name: action.projectHint, isNew: true };
+          enrichedAction.projectHint = action.projectHint;
         }
       }
       // For tasks/goals without project, assign first available
@@ -248,6 +254,7 @@ router.post("/execute", async (req, res) => {
     });
 
     const results = {
+      projects: [],
       notes: [],
       tasks: [],
       goals: [],
@@ -264,6 +271,9 @@ router.post("/execute", async (req, res) => {
     // Resolve default workspace
     const defaultWorkspaceId = workspaceId || req.workspaces.find((w) => w.personal)?.id || req.workspaceIds[0];
     const defaultProject = context.projects.find((p) => p.id === projectId) || context.projects[0] || null;
+    // Projects minted earlier in this same request, keyed by lowercase name, so
+    // "create a project called Deck ... add goals in it" attaches goals to Deck.
+    const createdByName = new Map();
 
     for (const action of validated) {
       try {
@@ -271,12 +281,46 @@ router.post("/execute", async (req, res) => {
         let targetProject = null;
         if (action.projectId) {
           targetProject = context.projects.find((p) => p.id === action.projectId);
-        } else if (action.projectHint) {
-          targetProject = resolveProjectByHint(action.projectHint, context.projects);
-        } else if (projectId) {
+        }
+        if (!targetProject && action.projectHint) {
+          targetProject =
+            createdByName.get(action.projectHint.toLowerCase()) ||
+            resolveProjectByHint(action.projectHint, context.projects);
+        }
+        if (!targetProject && projectId) {
           targetProject = context.projects.find((p) => p.id === projectId);
         }
-        if (!targetProject) targetProject = defaultProject;
+        // Only fall back to the default when nothing was spoken at all.
+        if (!targetProject && !action.projectHint && !action.projectId) targetProject = defaultProject;
+
+        // A create_project carries no project of its own.
+        if (action.type === "create_project") {
+          if (createdByName.has((action.name || "").toLowerCase())) {
+            results.errors.push({ action, error: `Project "${action.name}" already requested in this note.` });
+            continue;
+          }
+          const actor = await usersDb.findById(req.userId);
+          const project = await projectsDb.create({
+            workspaceId: defaultWorkspaceId,
+            userId: req.userId,
+            name: (action.name || "Voice project").slice(0, 60).trim(),
+            description: (action.description || "").trim(),
+          });
+          createdByName.set(project.name.toLowerCase(), project);
+          context.projects.push(project);
+
+          await activityLogDb.log({
+            workspaceId: project.workspaceId,
+            projectId: project.id,
+            actorUserId: req.userId,
+            type: "project_created",
+            message: `${actor?.name || actor?.email} created project via voice: "${project.name}"`,
+          });
+
+          results.projects.push(project);
+          // Handled here, outside the switch — move on to the next action.
+          continue;
+        }
 
         // Resolve assignee
         let assigneeId = action.assigneeId || null;
@@ -453,6 +497,7 @@ router.post("/execute", async (req, res) => {
     }
 
     const created = [
+      `${results.projects.length} project${results.projects.length === 1 ? "" : "s"}`,
       `${results.tasks.length} task${results.tasks.length === 1 ? "" : "s"}`,
       `${results.goals.length} goal${results.goals.length === 1 ? "" : "s"}`,
       `${results.notes.length} note${results.notes.length === 1 ? "" : "s"}`,

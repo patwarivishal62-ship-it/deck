@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Bell, Smartphone, Send, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/app/AppShell";
@@ -217,6 +218,140 @@ function AccountActionsSection() {
   );
 }
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Reminders and nudges are created by voice and delivered by the server on a
+// schedule — there is intentionally no manual reminders list on the dashboard.
+// The only thing a person has to do here is grant the browser permission once,
+// so that push can reach their phone even when Deck is closed.
+function NotificationsSection() {
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [vapidConfigured, setVapidConfigured] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      setPushEnabled(true);
+    }
+    api
+      .listPushSubs()
+      .then((d) => {
+        setVapidConfigured(Boolean(d.vapidConfigured));
+        if (d.subscriptions?.length) setPushEnabled(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleEnable() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setTestResult("This browser can't receive push. Use Chrome/Edge on Android or desktop.");
+      return;
+    }
+    setPushLoading(true);
+    setTestResult("");
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setTestResult("Permission denied — enable notifications in your browser settings.");
+        setPushLoading(false);
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let vapidKey = null;
+      try {
+        const res = await fetch("/api/reminders/push/vapid-key", { credentials: "include" });
+        if (res.ok) vapidKey = (await res.json()).publicKey;
+      } catch {}
+
+      let subscription = await reg.pushManager.getSubscription();
+      if (!subscription) {
+        const options = { userVisibleOnly: true };
+        if (vapidKey) options.applicationServerKey = urlBase64ToUint8Array(vapidKey);
+        subscription = await reg.pushManager.subscribe(options);
+      }
+      await api.pushSubscribe({
+        endpoint: subscription.endpoint,
+        keys: subscription.toJSON().keys,
+        userAgent: navigator.userAgent,
+      });
+      setPushEnabled(true);
+      setVapidConfigured(Boolean(vapidKey));
+      setTestResult("Push enabled — reminders will reach this device even when Deck is closed.");
+    } catch (e) {
+      setTestResult(`Couldn't enable push: ${e.message}`);
+    } finally {
+      setPushLoading(false);
+    }
+  }
+
+  async function handleTest() {
+    setTestSending(true);
+    setTestResult("");
+    try {
+      const res = await fetch("/api/reminders/push/test", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "🔔 Deck push test — if you see this, it's working!" }),
+      });
+      const data = await res.json();
+      if (data.sent > 0) setTestResult(`Sent to ${data.sent} device(s). Check your notification shade.`);
+      else if (!data.pushConfigured) setTestResult("Server VAPID keys aren't set, so only in-app alerts will fire. Add them in .env for true mobile push.");
+      else setTestResult("No subscriptions yet — enable push first.");
+    } catch (e) {
+      setTestResult(`Test failed: ${e.message}`);
+    } finally {
+      setTestSending(false);
+    }
+  }
+
+  return (
+    <SettingsCard
+      title="Notifications & mobile push"
+      description="Voice reminders and nudges are pushed by the server on a schedule. Grant permission once to receive them on this device even when Deck is closed."
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <span className={`flex h-9 w-9 items-center justify-center rounded-full ${pushEnabled ? "bg-good-tint text-good" : "bg-signal-tint text-signal"}`}>
+            {pushEnabled ? <CheckCircle size={16} /> : <Smartphone size={16} />}
+          </span>
+          <div>
+            <p className="text-sm font-medium text-text">{pushEnabled ? "Push is on for this device" : "Push is off"}</p>
+            <p className="mt-1 text-xs leading-relaxed text-text-soft">
+              {pushEnabled
+                ? "You'll get task, goal and reminder nudges on this device automatically."
+                : "Works on Android Chrome, desktop, and iOS PWA. The server does the scheduling — no setup needed after this."}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          {!pushEnabled ? (
+            <Button onClick={handleEnable} disabled={pushLoading}>
+              {pushLoading ? "Enabling…" : "Enable push"}
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={handleTest} disabled={testSending}>
+              <Send size={14} /> {testSending ? "Sending…" : "Test"}
+            </Button>
+          )}
+        </div>
+      </div>
+      {testResult && <p className="mt-3 rounded-lg border border-line bg-paper px-3 py-2 text-xs text-text-soft">{testResult}</p>}
+    </SettingsCard>
+  );
+}
+
 function AppSection() {
   const { installed, platform, canInstall } = usePWA();
 
@@ -275,6 +410,7 @@ function SettingsPageContent() {
         <div className="mt-5 flex flex-col gap-5">
           <ProfileSection />
           <SecuritySection />
+          <NotificationsSection />
           <AppSection />
           <AccountActionsSection />
         </div>

@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/app/AppShell";
-import VoiceAssistant from "@/components/voice/VoiceAssistant";
-import ReminderManager from "@/components/voice/ReminderManager";
 import { api } from "@/lib/api";
 import { Mic, Sparkles, Target, ListTodo, Users, Bell, Clock, Trash2, Play, FileText } from "lucide-react";
 
@@ -111,7 +109,7 @@ function VoicePageInner() {
         </div>
 
         {/* Main grid */}
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mt-8 grid grid-cols-1 gap-6">
           {/* Voice Notes History */}
           <div className="rounded-2xl border border-line bg-card p-5">
             <div className="flex items-center justify-between">
@@ -163,9 +161,6 @@ function VoicePageInner() {
               )}
             </div>
           </div>
-
-          {/* Reminders */}
-          <ReminderManager />
         </div>
 
         {/* Examples */}

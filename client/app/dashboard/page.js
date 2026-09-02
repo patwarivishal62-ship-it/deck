@@ -9,7 +9,6 @@ import DashboardProjectCard from "@/components/dashboard/DashboardProjectCard";
 import TodayTasks from "@/components/dashboard/TodayTasks";
 import ProjectFormModal from "@/components/ProjectFormModal";
 import ConfirmModal from "@/components/ConfirmModal";
-import ReminderManager from "@/components/voice/ReminderManager";
 import { FolderKanban, ListTodo, CalendarClock, Plus, Mic, Sparkles, Bell, Target, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -377,10 +376,6 @@ function Dashboard() {
                 />
               </section>
 
-              {/* Reminders & Mobile Notifications */}
-              <section className="mt-8">
-                <ReminderManager />
-              </section>
             </>
           )}
 
