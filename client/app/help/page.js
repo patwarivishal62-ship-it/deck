@@ -109,11 +109,12 @@ const GUIDE = [
     icon: FileText,
     title: "Reports",
     href: "/reports",
-    body: "Timely PDF reports for any period — weekly, monthly, quarterly, or a custom range.",
+    body: "Timely PDF reports for any individual project or the entire portfolio — weekly, monthly, quarterly, or a custom date range.",
     points: [
-      "Preview the key numbers and the project table before downloading.",
-      "The PDF includes summary tiles, per-project progress bars, and the completed-task log.",
-      "Files download straight to your device — no copy is stored on our servers.",
+      "Download dedicated single-project reports with goals, milestones, and task logs, or full portfolio summaries.",
+      "Pick standard presets or customize exact start and end dates with quick shortcut buttons.",
+      "Preview key numbers, progress bars, and completed tasks live before downloading.",
+      "Files download straight to your device as branded PDFs — no copy is stored on our servers.",
     ],
   },
   {
@@ -216,11 +217,15 @@ const FAQ = [
     items: [
       {
         q: "What period options do reports support?",
-        a: "This week, last week, this month, last month, last 30 days, this quarter, this year, all time — or any custom date range.",
+        a: "This week, last week, this month, last month, last 30 days, this quarter, this year, all time — plus any custom date range where you can pick exact From and To dates.",
+      },
+      {
+        q: "Can I download reports for a specific project?",
+        a: "Yes. In the Reports section, select any project from the Project scope menu or click the PDF button on its table row to download a tailored single-project report including goals, milestones, and task breakdowns.",
       },
       {
         q: "What's inside the PDF?",
-        a: "A branded cover with the period and recipient, key-number tiles (active/completed projects, tasks completed & created, overdue), a per-project performance table with progress bars, and the full completed-task log for the period.",
+        a: "A branded cover with the period, recipient, and project details; key metrics (progress, tasks completed & created, overdue items); channel goals and milestone progress; and full task logs.",
       },
       {
         q: "Are reports stored anywhere?",

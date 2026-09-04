@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import AppShell from "@/components/app/AppShell";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import GoalCard from "@/components/GoalCard";
 import TaskRow from "@/components/TaskRow";
 import GoalFormModal from "@/components/GoalFormModal";
@@ -303,7 +303,13 @@ function ProjectDetail() {
               )}
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link href={`/reports?projectId=${id}`}>
+              <Button variant="secondary" className="gap-1.5">
+                <FileText size={14} />
+                Report
+              </Button>
+            </Link>
             {canManage && (
               <Button variant="secondary" onClick={() => setProjectFormOpen(true)}>
                 Edit project

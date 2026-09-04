@@ -2,7 +2,7 @@
 // Everything here derives display data from real app data (projects, goals,
 // tasks, session user) — no invented numbers anywhere.
 
-import { CATEGORIES } from "./constants";
+import { CATEGORIES } from "./constants.js";
 
 // Bare YYYY-MM-DD in the user's local time — matches the format the API
 // stores on task/project dueDate fields (same convention as the server's
