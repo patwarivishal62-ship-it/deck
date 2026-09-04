@@ -8,14 +8,10 @@ import { CATEGORIES, PRIORITIES, formatMetricValue } from "./constants.js";
 
 export const REPORT_PERIODS = [
   { value: "this_week", label: "This week" },
-  { value: "last_week", label: "Last week" },
   { value: "this_month", label: "This month" },
-  { value: "last_month", label: "Last month" },
   { value: "last_30", label: "Last 30 days" },
-  { value: "this_quarter", label: "This quarter" },
-  { value: "this_year", label: "This year" },
   { value: "all_time", label: "All time" },
-  { value: "custom", label: "Custom range" },
+  { value: "custom", label: "Custom" },
 ];
 
 function pad(n) {
