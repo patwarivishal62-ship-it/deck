@@ -2,9 +2,9 @@
 // derived here from real project data (projects with their goals/tasks/
 // milestones as returned by GET /api/projects). No invented values.
 
-import { CATEGORIES } from "./constants";
-import { getProjectStatus } from "./projectStatus";
-import { projectCategoryKey, projectProgress, todayISO } from "./dashboard";
+import { CATEGORIES } from "./constants.js";
+import { getProjectStatus } from "./projectStatus.js";
+import { projectCategoryKey, projectProgress, todayISO } from "./dashboard.js";
 
 export function taskCompletedDate(task) {
   return (task.completedAt || "").slice(0, 10) || null;
