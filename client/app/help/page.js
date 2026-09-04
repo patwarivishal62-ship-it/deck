@@ -109,12 +109,11 @@ const GUIDE = [
     icon: FileText,
     title: "Reports",
     href: "/reports",
-    body: "Timely PDF reports for any individual project or the entire portfolio — weekly, monthly, quarterly, or a custom date range.",
+    body: "A simple PDF of project or portfolio performance for the period you pick.",
     points: [
-      "Download dedicated single-project reports with goals, milestones, and task logs, or full portfolio summaries.",
-      "Pick standard presets or customize exact start and end dates with quick shortcut buttons.",
-      "Preview key numbers, progress bars, and completed tasks live before downloading.",
-      "Files download straight to your device as branded PDFs — no copy is stored on our servers.",
+      "Choose all projects or one project, then This week, This month, Last 30 days, All time, or a custom range.",
+      "Preview key numbers and completed tasks, then download a branded PDF.",
+      "Files download straight to your device — nothing is stored on our servers.",
     ],
   },
   {
@@ -217,7 +216,7 @@ const FAQ = [
     items: [
       {
         q: "What period options do reports support?",
-        a: "This week, last week, this month, last month, last 30 days, this quarter, this year, all time — plus any custom date range where you can pick exact From and To dates.",
+        a: "This week, this month, last 30 days, all time — or pick exact From and To dates with Custom.",
       },
       {
         q: "Can I download reports for a specific project?",

@@ -1,6 +1,6 @@
 export const metadata = {
   title: "Reports",
-  description: "Generate and download timely DECK performance reports as PDFs.",
+  description: "Preview project performance and download a PDF report.",
   robots: {
     index: false,
     follow: false,
