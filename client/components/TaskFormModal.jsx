@@ -46,6 +46,12 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
     }
   }, [open, initial, projectId]);
 
+  // Every NEW task must be dated — that's what puts it on Today's Tasks, the
+  // calendar, and the overdue counters. Editing is more forgiving: a task that
+  // already has a due date can't be emptied, but legacy tasks created before
+  // the rule (no date at all) stay editable without forcing one on.
+  const dueDateRequired = !initial || Boolean(initial.dueDate);
+
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
@@ -54,6 +60,10 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
     e.preventDefault();
     if (!form.title.trim()) {
       setError("Task title is required.");
+      return;
+    }
+    if (dueDateRequired && !form.dueDate) {
+      setError("Due date is required.");
       return;
     }
     if (form.dueDate && form.dueDate !== initial?.dueDate && form.dueDate < todayISODate()) {
@@ -133,9 +143,10 @@ export default function TaskFormModal({ open, onClose, onSubmit, initial, goals,
             </Select>
           </Field>
         </div>
-        <Field label="Due date (optional)">
+        <Field label={dueDateRequired ? "Due date (required)" : "Due date (optional)"}>
           <TextInput
             type="date"
+            required={dueDateRequired}
             min={todayISODate()}
             value={form.dueDate}
             onChange={(e) => set("dueDate", e.target.value)}

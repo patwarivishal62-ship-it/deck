@@ -49,6 +49,7 @@ function ProjectDetail() {
   const [editingTask, setEditingTask] = useState(null);
   const [deleteTaskTarget, setDeleteTaskTarget] = useState(null);
   const [commentTaskTarget, setCommentTaskTarget] = useState(null);
+  const [togglingTaskId, setTogglingTaskId] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
 
   const [busy, setBusy] = useState(false);
@@ -191,6 +192,32 @@ function ProjectDetail() {
       if (task.goalId) load();
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  // Checkbox tick-off in the Tasks list — flips done <-> todo directly
+  // (the status pill still cycles through "in progress"). Optimistic so the
+  // tick feels instant, rolled back if the request fails.
+  async function handleToggleDone(task) {
+    const nextStatus = task.status === "done" ? "todo" : "done";
+    setTogglingTaskId(task.id);
+    setProject((p) => ({
+      ...p,
+      tasks: p.tasks.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)),
+    }));
+    try {
+      const data = await api.updateTask(id, task.id, { status: nextStatus });
+      setProject((p) => ({ ...p, tasks: p.tasks.map((t) => (t.id === data.task.id ? data.task : t)) }));
+      // Completing/reopening a task moves its linked goal's currentValue.
+      if (task.goalId) load();
+    } catch (err) {
+      setError(err.message);
+      setProject((p) => ({
+        ...p,
+        tasks: p.tasks.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)),
+      }));
+    } finally {
+      setTogglingTaskId(null);
     }
   }
 
@@ -541,6 +568,8 @@ function ProjectDetail() {
                       : null
                   }
                   onCycleStatus={handleCycleStatus}
+                  onToggleDone={handleToggleDone}
+                  toggling={togglingTaskId === task.id}
                   canDelete={canManage}
                   onEdit={(t) => {
                     setEditingTask(t);

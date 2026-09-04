@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { CATEGORIES, PRIORITIES } from "@/lib/constants";
 
 const STATUS_STYLES = {
@@ -9,7 +10,18 @@ const STATUS_STYLES = {
 };
 const STATUS_LABELS = { todo: "To do", in_progress: "In progress", done: "Done" };
 
-export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdit, onDelete, onComment, canDelete = true }) {
+export default function TaskRow({
+  task,
+  goal,
+  assigneeName,
+  onCycleStatus,
+  onToggleDone,
+  toggling = false,
+  onEdit,
+  onDelete,
+  onComment,
+  canDelete = true,
+}) {
   const meta = goal ? CATEGORIES[goal.category] || CATEGORIES.other : null;
   // Tasks created before the field existed have no priority — treat as medium,
   // same rule as the server (db/tasks.js) and the voice parser.
@@ -19,6 +31,27 @@ export default function TaskRow({ task, goal, assigneeName, onCycleStatus, onEdi
   return (
     <div className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
+        {/* Tick a task off (or back on) in one click — same gesture as the
+            Overview's Today's Tasks list. The status pill next to it still
+            cycles todo -> in progress -> done for finer control. */}
+        {onToggleDone && (
+          <button
+            type="button"
+            onClick={() => onToggleDone(task)}
+            disabled={toggling}
+            aria-label={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
+            aria-pressed={done}
+            title={done ? "Mark as not done" : "Mark as done"}
+            className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition duration-150 ${
+              done
+                ? "border-[#7C5CFF] bg-[#7C5CFF] text-white"
+                : "border-line bg-card hover:border-[#7C5CFF] hover:bg-signal-tint"
+            } ${toggling ? "opacity-60" : ""}`}
+          >
+            {done && <Check size={12} strokeWidth={3} />}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => onCycleStatus(task)}

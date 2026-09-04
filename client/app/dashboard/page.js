@@ -8,6 +8,7 @@ import SummaryCard from "@/components/dashboard/SummaryCard";
 import DashboardProjectCard from "@/components/dashboard/DashboardProjectCard";
 import TodayTasks from "@/components/dashboard/TodayTasks";
 import ProjectFormModal from "@/components/ProjectFormModal";
+import QuickAddTaskModal from "@/components/QuickAddTaskModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { FolderKanban, ListTodo, CalendarClock, Plus } from "lucide-react";
 import { api } from "@/lib/api";
@@ -40,7 +41,9 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  const [formOpen, setFormOpen] = useState(false);  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -196,12 +199,24 @@ function Dashboard() {
           ) : (
             <>
               {/* Greeting */}
-              <div>
-                <h1 className="font-display text-[22px] font-bold tracking-tight text-text sm:text-2xl">
-                  Good {partOfDay()}
-                  {greetingName ? `, ${greetingName}` : ""}
-                </h1>
-                <p className="mt-1 text-sm text-text-soft">{greetingSubtitle()}</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h1 className="font-display text-[22px] font-bold tracking-tight text-text sm:text-2xl">
+                    Good {partOfDay()}
+                    {greetingName ? `, ${greetingName}` : ""}
+                  </h1>
+                  <p className="mt-1 text-sm text-text-soft">{greetingSubtitle()}</p>
+                </div>
+                {/* Quick add — file a task against any project, link it to a
+                    goal, and assign it, without leaving the Overview. */}
+                <button
+                  type="button"
+                  onClick={() => setQuickAddOpen(true)}
+                  className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-[#7C5CFF] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)] transition hover:bg-[#6A4AF0]"
+                >
+                  <Plus size={15} strokeWidth={2.2} />
+                  Add task
+                </button>
               </div>
 
               {/* Summary cards */}
@@ -318,12 +333,22 @@ function Dashboard() {
                   <h2 id="dashboard-tasks-heading" className="font-display text-base font-bold tracking-tight text-text">
                     Today&apos;s Tasks
                   </h2>
-                  <Link
-                    href="/projects"
-                    className="text-[13px] font-semibold text-signal transition hover:text-signal"
-                  >
-                    View all
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuickAddOpen(true)}
+                      className="inline-flex items-center gap-1 text-[13px] font-semibold text-signal transition hover:text-signal"
+                    >
+                      <Plus size={14} strokeWidth={2.4} />
+                      Add task
+                    </button>
+                    <Link
+                      href="/projects"
+                      className="text-[13px] font-semibold text-signal transition hover:text-signal"
+                    >
+                      View all
+                    </Link>
+                  </div>
                 </div>
 
                 <TodayTasks
@@ -332,6 +357,7 @@ function Dashboard() {
                   onToggle={handleToggleTask}
                   togglingId={togglingId}
                   max={searching ? undefined : MAX_TASKS}
+                  onAdd={searching ? undefined : () => setQuickAddOpen(true)}
                 />
               </section>
 
@@ -343,6 +369,13 @@ function Dashboard() {
         onClose={() => setFormOpen(false)}
         onSubmit={handleCreateProject}
         workspaces={workspaces}
+      />
+
+      <QuickAddTaskModal
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        projects={list}
+        onCreated={load}
       />
 
       <ConfirmModal

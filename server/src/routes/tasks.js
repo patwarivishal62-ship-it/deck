@@ -108,10 +108,17 @@ router.post("/:projectId/tasks", async (req, res) => {
   }
   const finalStatus = STATUSES.includes(status) ? status : "todo";
 
+  // Every task created through the app must be dated — that's what puts it on
+  // Today's Tasks, the calendar, and the overdue counters. (Voice-dictated
+  // tasks go straight through db/tasks.js and are deliberately exempt, since
+  // people dictate loose backlog items.)
+  if (!dueDate) {
+    return res.status(400).json({ error: "Due date is required." });
+  }
   // A task can be scheduled for today or any future date, kept ready as a
   // "to do" — but not backdated, since that would let progress get recorded
   // as if it happened before it actually did.
-  if (dueDate && dueDate < todayISODate()) {
+  if (dueDate < todayISODate()) {
     return res.status(400).json({ error: "Due date can't be in the past." });
   }
 
@@ -170,6 +177,12 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
   }
   if (priority !== undefined && priority !== "" && !PRIORITY_KEYS.includes(priority)) {
     return res.status(400).json({ error: "Invalid priority." });
+  }
+  // A dated task can't be un-dated — clearing it would drop the task out of
+  // Today's Tasks and the calendar. (Tasks that never had a date, from before
+  // the rule, can still be saved as-is.)
+  if (dueDate !== undefined && !dueDate && task.dueDate) {
+    return res.status(400).json({ error: "Due date is required." });
   }
   // Only validate when the due date is actually being changed to something
   // new — an existing task that's already overdue (because time passed,
