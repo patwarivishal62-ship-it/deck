@@ -14,7 +14,7 @@
 // app"). The activate handler below deletes every cache whose name doesn't
 // carry the current VERSION, so installed/cached clients drop the stale shell
 // and load the fresh build instead of the old UI.
-const VERSION = "v5-echo";
+const VERSION = "v6-quick-add-task";
 const STATIC_CACHE = `deck-static-${VERSION}`;
 const PAGES_CACHE = `deck-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
