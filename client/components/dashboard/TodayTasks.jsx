@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Inbox } from "lucide-react";
+import { Check, Inbox, Plus } from "lucide-react";
 import { CATEGORIES, PRIORITIES } from "@/lib/constants";
 import { projectCategoryKey, todayISO } from "@/lib/dashboard";
 
@@ -79,7 +79,7 @@ function TaskItem({ task, onToggle, busy }) {
 
 // Today's Tasks section list. Tasks come from real project data (due today /
 // overdue / completed today). Empty and loading states included.
-export default function TodayTasks({ tasks, loading, onToggle, togglingId, max = 6 }) {
+export default function TodayTasks({ tasks, loading, onToggle, togglingId, max = 6, onAdd }) {
   if (loading) {
     return (
       <div className="space-y-1.5">
@@ -104,6 +104,16 @@ export default function TodayTasks({ tasks, loading, onToggle, togglingId, max =
         <p className="mt-1 max-w-xs text-xs leading-relaxed text-text-faint">
           Tasks due today — or overdue — from your projects will show up here.
         </p>
+        {onAdd && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#7C5CFF] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.7)] transition hover:bg-[#6A4AF0]"
+          >
+            <Plus size={15} strokeWidth={2.2} />
+            Add task
+          </button>
+        )}
       </div>
     );
   }
