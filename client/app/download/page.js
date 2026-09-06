@@ -69,7 +69,7 @@ export default function DownloadPage() {
             ))}
           </ol>
 
-          <p className="mt-10 text-xs text-text-faint">Free · Phone and desktop</p>
+          <p className="mt-10 text-xs text-text-faint">Phone and desktop</p>
         </section>
       </main>
     </div>

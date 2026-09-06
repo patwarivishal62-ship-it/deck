@@ -100,14 +100,6 @@ function LandingPage() {
           text: "DECK is for creators, founders, and marketers who need clarity over clutter. It is designed for busy teams that run multiple campaigns across multiple clients.",
         },
       },
-      {
-        "@type": "Question",
-        name: "Is DECK free to use?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes, DECK is free to start. Create your first project in under a minute, no credit card required.",
-        },
-      },
     ],
   };
   const howToJsonLd = {
@@ -116,7 +108,7 @@ function LandingPage() {
     name: "How to organize marketing projects with DECK",
     description: "Organize any marketing campaign in three layers — Projects, Goals, Tasks — to keep every channel and deadline visible.",
     totalTime: "PT5M",
-    supply: [{ "@type": "HowToSupply", name: "DECK account (free)" }],
+    supply: [{ "@type": "HowToSupply", name: "DECK account" }],
     tool: [{ "@type": "HowToTool", name: "DECK — Plan. Track. Achieve." }],
     step: [
       {
@@ -189,7 +181,7 @@ function LandingPage() {
                 href="/login?mode=signup"
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#7C5CFF] px-6 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(124,92,255,0.4)] transition hover:bg-[#6A44FF] hover:shadow-[0_0_32px_rgba(124,92,255,0.5)] hover:scale-[1.02] active:scale-[0.98]"
               >
-                Create free account
+                Create account
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-2">
                   <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -203,9 +195,6 @@ function LandingPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-6 text-xs text-text-faint">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[#22D3A6]" /> No credit card
-              </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-[#4F7BFF]" /> Under 60 seconds
               </span>
@@ -282,7 +271,6 @@ function LandingPage() {
               { q: "How does goal tracking work in DECK?", a: "Pick a channel, set a target (e.g., 20 Reels, 500 leads), and watch the meter fill as linked tasks are completed. Each task completion moves its goal by the goal's step, so progress is always tied to real work." },
               { q: "How are tasks linked to goals in DECK?", a: "When you create a task you can link it to a goal. Completing the task advances the goal. This creates accountability and shows which work actually moved the metric." },
               { q: "Who is DECK for?", a: "DECK is for creators, founders, and marketers who need clarity over clutter. It is designed for busy teams that run multiple campaigns across multiple clients." },
-              { q: "Is DECK free to use?", a: "Yes, DECK is free to start. Create your first project in under a minute, no credit card required." },
             ].map((item) => (
               <details key={item.q} className="group px-5 py-4 open:bg-ink-2/50">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-sm font-semibold text-text">
@@ -305,13 +293,13 @@ function LandingPage() {
               Ready to see campaigns clearly?
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-text-soft">
-              Free to use. Minimal by design. Powerful where it counts. Create your first project in under a minute.
+              Minimal by design. Powerful where it counts. Create your first project in under a minute.
             </p>
             <Link
               href="/login?mode=signup"
               className="mt-7 inline-flex items-center rounded-full bg-text text-paper px-7 py-3 text-sm font-semibold shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition hover:scale-[1.02] active:scale-[0.98]"
             >
-              Create free account
+              Create account
             </Link>
             <p className="mt-3 text-xs text-text-faint">No spam. No onboarding calls. Just DECK.</p>
           </div>
